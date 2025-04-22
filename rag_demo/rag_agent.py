@@ -2,14 +2,14 @@ import streamlit as st
 from retry import retry
 from langchain_community.llms import Ollama
 from langchain_openai import ChatOpenAI
-from graph_cypher_tool import graph_cypher_tool  # Make sure this is defined correctly
+from graph_cypher_tool import graph_cypher_tool 
 
-# Choose one of the LLMs
+
 # llm = Ollama(model="llama3")
 llm = ChatOpenAI(
-    openai_api_key=st.secrets["OPENAI_API_KEY"],
-    temperature=0.2,
-    model_name="gpt-4o-mini"
+    openai_api_key = st.secrets["OPENAI_API_KEY"],
+    temperature = 0.2,
+    model_name = "gpt-4o-mini"
 )
 
 # Conversation history
@@ -18,17 +18,17 @@ conversation_history = []
 def process_with_llm(question: str) -> str:
     """Uses LLM to respond based on prior messages and graph result."""
 
-    # 1. Build past conversation text
+    # Build past conversation text
     conversation_text = "\n".join([
         f"User: {msg['input']}\nBot: {msg['output']}"
         for msg in conversation_history
     ])
 
-    # 2. Run the question through the Cypher tool
+    #Run the question through the Cypher tool
     tool_output = graph_cypher_tool.invoke(question)
     result_only = tool_output.get("result", "No results found.")
 
-    # 3. LLM prompt with only the result
+    # LLM prompt with only the result
     final_prompt = f"""
 Based on the conversation and the user question, provide a relevant and helpful response.
 
@@ -45,7 +45,7 @@ Please process the output and answer the user question clearly. If the output is
 
     final_response = llm.predict(final_prompt).strip()
 
-    # 4. Inject Neo4j button if there was a result
+    # Inject Neo4j button if there was a result
     if tool_output.get("result"):
         last_query = tool_output.get("intermediate_steps", [{}])[-1].get("query", "")
         final_response = final_response.replace(
@@ -55,7 +55,7 @@ Please process the output and answer the user question clearly. If the output is
     else:
         final_response = final_response.replace("[[button_query]]", "")
 
-    # 5. Update history
+    # Update history
     conversation_history.append({
         "input": question,
         "output": final_response
@@ -63,10 +63,10 @@ Please process the output and answer the user question clearly. If the output is
 
     return final_response
 
-@retry(tries=2, delay=10)
+@retry(tries = 2, delay = 10)
 def get_results(question: str) -> dict:
     """Main processing function for external calls"""
-    llm_processed_output = process_with_llm(question=question)
+    llm_processed_output = process_with_llm(question = question)
     return {
         "input": question,
         "output": llm_processed_output,
