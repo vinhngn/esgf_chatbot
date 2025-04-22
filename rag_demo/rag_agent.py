@@ -46,7 +46,7 @@ Please process the output and answer the user question clearly. If the output is
     final_response = llm.predict(final_prompt).strip()
 
     # Inject Neo4j button if there was a result
-    if tool_output.get("result"):
+    if type(tool_output) is not str and tool_output.get("result"):
         last_query = tool_output.get("intermediate_steps", [{}])[-1].get("query", "")
         final_response = final_response.replace(
             "[[button_query]]",
