@@ -26,7 +26,7 @@ def process_with_llm(question: str) -> str:
 
     #Run the question through the Cypher tool
     tool_output = graph_cypher_tool.invoke(question)
-    result_only = tool_output.get("result", "No results found.")
+    result_only = tool_output if tool_output is str else tool_output.get("result", "No results found.")
 
     # LLM prompt with only the result
     final_prompt = f"""
