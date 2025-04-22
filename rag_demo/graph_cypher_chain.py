@@ -10,7 +10,6 @@ from langchain.prompts.prompt import PromptTemplate
 from langchain_ollama import ChatOllama
 from langchain_openai import ChatOpenAI
 
-
 CYPHER_GENERATION_TEMPLATE = """
 You are a Cypher expert who translates natural language questions into Cypher queries for a Neo4j graph database. 
 The database contains entities such as:
@@ -101,24 +100,21 @@ MATCH (p)-[z:Mention]-(l)
 WHERE l.wikidata_description CONTAINS "United States" 
 RETURN p,t,l;
 
-
 ---
 
 Now generate a Cypher query for:
 {question}
 """
 
-
-
 CYPHER_GENERATION_PROMPT = PromptTemplate(
-    input_variables=["schema", "question"], template=CYPHER_GENERATION_TEMPLATE
+    input_variables = ["schema", "question"], template = CYPHER_GENERATION_TEMPLATE
 )
 
 MEMORY = ConversationBufferMemory(
-    memory_key="chat_history", 
-    input_key='question', 
-    output_key='answer', 
-    return_messages=True
+    memory_key = "chat_history", 
+    input_key = 'question', 
+    output_key = 'answer', 
+    return_messages = True
 )
 
 # Neo4j connection
@@ -127,36 +123,36 @@ username = st.secrets["NEO4J_USERNAME"]
 password = st.secrets["NEO4J_PASSWORD"]
 
 graph = Neo4jGraph(
-    url=url,
-    username=username,
-    password=password,
-    sanitize=True
+    url = url,
+    username = username,
+    password = password,
+    sanitize = True
 )
 
 
 graph_chain = GraphCypherQAChain.from_llm(
-    #cypher_llm=ChatOllama(model="qwen2", temperature=0),
-    #qa_llm=ChatOllama(model="qwen2", temperature=0),
-    cypher_llm=ChatOpenAI(
+    #cypher_llm=ChatOllama(model = "qwen2", temperature = 0),
+    #qa_llm=ChatOllama(model = "qwen2", temperature = 0),
+    cypher_llm = ChatOpenAI(
          openai_api_key=st.secrets["OPENAI_API_KEY"], 
-         temperature=0, 
-         model_name="gpt-4o-mini"
+         temperature = 0, 
+         model_name = "gpt-4o-mini"
      ),
-     qa_llm=ChatOpenAI(
-         openai_api_key=st.secrets["OPENAI_API_KEY"], 
-         temperature=0, 
-         model_name="gpt-4o-mini"),
-    graph=graph,
-    cypher_prompt=CYPHER_GENERATION_PROMPT,  
-    validate_cypher=True,
-    return_direct=True,
-    verbose=True,
-    allow_dangerous_requests=True,
-    return_intermediate_steps=True,
+     qa_llm = ChatOpenAI(
+         openai_api_key = st.secrets["OPENAI_API_KEY"], 
+         temperature = 0, 
+         model_name = "gpt-4o-mini"),
+    graph = graph,
+    cypher_prompt = CYPHER_GENERATION_PROMPT,  
+    validate_cypher = True,
+    return_direct = True,
+    verbose = True,
+    allow_dangerous_requests = True,
+    return_intermediate_steps = True,
 )
 
 
-@retry(tries=2, delay=12)
+@retry(tries = 2, delay = 12)
 def get_results(question) -> str:
     """Generate a response from the GraphCypherQAChain using a cleaned schema and improved prompt."""
     
@@ -167,7 +163,7 @@ def get_results(question) -> str:
     #print("\n========= Raw Schema from Neo4j =========\n")
     #print(graph.get_schema)
 
-    prompt = CYPHER_GENERATION_PROMPT.format(schema=graph.get_schema, question=question)
+    prompt = CYPHER_GENERATION_PROMPT.format(schema = graph.get_schema, question = question)
     print('\n========= Prompt to LLM =========\n')
     print(prompt)
 
@@ -175,7 +171,7 @@ def get_results(question) -> str:
         chain_result = graph_chain.invoke(
             {"query": question},
             prompt=prompt,
-            return_only_outputs=True,
+            return_only_outputs = True,
         )
     except Exception as e:
         logging.warning(f'Handled exception running GraphCypher chain: {e}')
@@ -192,7 +188,7 @@ def get_results(question) -> str:
 
     result = chain_result.get("result", None)
     print("\n========= Final Result =========\n")
-    print(json.dumps(chain_result, indent=2))
+    print(json.dumps(chain_result, indent = 2))
     
     try:
         query = chain_result["intermediate_steps"][-1]["query"].replace("cypher", "", 1).strip()
