@@ -40,7 +40,17 @@ def sidebar():
                     </style>
                     """, unsafe_allow_html=True)
         
-        sample_questions = "How many companies are in the filings?", "Which companies are in the healthcare industry?","Which companies are vulnerable to lithium shortage?", "Which managers own more than one company?", "List the top 3 managers by the number of companies they own.", "Which 5 companies have the most managers?"
+        sample_questions = [
+    """Which papers mention anomalous temperature regimes such as cold air outbreaks (CAOs) or
+    warm waves (WWs) in relation to North America, specifically in the sentences where these
+    terms appear?""",
+    """Which papers discuss ocean circulation processes—such as thermohaline circulation—in oceanic
+    regions that include either “North” or “South” in their names?""",
+    """Which papers mention CMIP5 models and the North Atlantic Oscillation (NAO) in the context of the Southeast United States?""",
+    """Which papers mention the Pacific-North American (PNA) pattern in connection with locations in the United States?""",
+    """What ocean circulation processes are associated with the Southern Ocean and mentioned in
+connection with upwelling?"""
+        ]
 
         for text, col in zip(sample_questions, st.columns(len(sample_questions))):
             if col.button(text, key=text):
