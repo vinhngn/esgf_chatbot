@@ -17,3 +17,4 @@ __pycache__
 .qodo
 .secrets.toml
 secrets.toml
+.streamlit/secrets.toml
