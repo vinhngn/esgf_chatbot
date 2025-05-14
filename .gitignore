@@ -18,3 +18,4 @@ __pycache__
 .secrets.toml
 secrets.toml
 .streamlit/secrets.toml
+.streamlit/secrets.toml
