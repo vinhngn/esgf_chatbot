@@ -17,11 +17,6 @@ def ChangeButtonColour(wgt_txt, wch_hex_colour='12px'):
 
 def sidebar():
     with st.sidebar:
-        # Input for OpenAI Key
-        with st.expander("OpenAI Key"):
-            new_oak = st.text_input("Your OpenAI API Key", type="password")
-            st.session_state["USER_OPENAI_KEY"] = new_oak
-
         # Images
         st.markdown(
             f"""This is the schema in which the EDGAR filings are stored in Neo4j:<br>
