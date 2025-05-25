@@ -18,11 +18,8 @@ def ChangeButtonColour(wgt_txt, wch_hex_colour='12px'):
 def sidebar():
     with st.sidebar:
         # Images
-        st.markdown(
-            f"""This is the schema in which the EDGAR filings are stored in Neo4j:<br>
-            <img style="width: 70%; height: auto;" src="{SCHEMA_IMG_PATH}"/>""",
-            unsafe_allow_html=True
-        )
+        st.markdown("This is the GCMD+ taxonomy schema used to organize climate science concepts in our knowledge graph:")
+        st.image("rag_demo/images/GCMD+.png", width=400)
 
         st.markdown(
             f"""This is how the Chatbot flow goes:<br>
