@@ -28,7 +28,7 @@ def sidebar():
         )
 
         # Section Title
-        st.markdown("**Questions you can ask of the dataset:**")
+        st.markdown("**Questions you can ask:**")
 
         # Optional: robust CSS (not required if going vertical)
         st.markdown("""
