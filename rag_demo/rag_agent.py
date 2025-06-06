@@ -50,7 +50,7 @@ Please process the output and answer the user question clearly. If the output is
         last_query = tool_output.get("intermediate_steps", [{}])[-1].get("query", "")
         final_response = final_response.replace(
             "[[button_query]]",
-            f"[Open Neo4J](https://neoforj.templeuni.com/browser/?cmd=edit&arg={last_query})"
+            f"[Open Neo4J](https://neoforj.templeuni.com/browser/?preselectAuthMethod=NO_AUTH&cmd=edit&arg={last_query})"
         )
     else:
         final_response = final_response.replace("[[button_query]]", "")
