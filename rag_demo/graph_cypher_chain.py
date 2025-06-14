@@ -54,6 +54,18 @@ Here are some examples:
 Natural Language Question:
 Which papers mention anomalous temperature regimes such as cold air outbreaks (CAOs) or warm waves (WWs) in relation to North America, specifically in the sentences where these terms appear?
 
+Intent:
+The user wants to locate mentions of CAOs or WWs, explicitly in sentences that also mention "North America".
+
+Interpretation:
+- The user is querying for instances of the node type <Paper> that are connected via a <MENTION> relationship to entities of type <WeatherEvent> whose names include "cold air outbreak" or "warm wave".
+- Additionally, the <WeatherEvent> is expected to be linked via <TargetsLocation> to a <Location> node with Name = "North America".
+- The constraint is that the mention must occur within the same sentence, which may involve filtering on Mention_Sentence.
+
+Sample Triplets:
+- <Paper> -[MENTION]-> <WeatherEvent>
+- <WeatherEvent> -[TargetsLocation]-> <Location (Name = "North America")>
+
 Cypher:
 MATCH (we)-[:TargetsLocation]-(l{{Name:"NORTH_AMERICA"}}) 
 MATCH (p:Paper)-[m:Mention]-(we) 
@@ -65,6 +77,17 @@ RETURN p,l,we;
 ### Example 2
 Natural Language Question:
 Which papers discuss ocean circulation processes—such as thermohaline circulation—in oceanic regions that include either “North” or “South” in their names?
+
+Intent:
+Retrieve papers that mention specific ocean circulation processes and associate them with named oceanic regions.
+
+Interpretation:
+- The user is asking for <Paper> nodes linked via <MENTION> to <OceanCirculation> nodes (e.g., "thermohaline circulation").
+- These <OceanCirculation> nodes are expected to be linked via <TargetsLocation> to <Location> nodes where the name contains "North" or "South".
+
+Sample Triplets:
+- <Paper> -[MENTION]-> <OceanCirculation>
+- <OceanCirculation> -[TargetsLocation]-> <Location (Name CONTAINS "North" OR "South")>
 
 Cypher:
 MATCH (n:Location) 
@@ -80,6 +103,20 @@ RETURN n,oc,p;
 Natural Language Question:
 Which papers mention CMIP5 models and the North Atlantic Oscillation (NAO) in the context of the Southeast United States?
 
+Intent:
+Identify studies linking CMIP5 model simulations to NAO impacts in the Southeast U.S.
+
+Interpretation:
+- Querying for <Paper> nodes that mention:
+  - A <Model|Project> node with Name = "CMIP5"
+  - A <Teleconnection (Name = "NAO")> linked via <TargetsLocation> to <Location (Name includes "Southeast")>
+- Implicit expectation that these concepts are co-mentioned in the paper.
+
+Sample Triplets:
+- <Paper> -[MENTION]-> <Model|Project (CMIP5)>
+- <Paper> -[MENTION]-> <Teleconnection (NAO)>
+- <Teleconnection> -[TargetsLocation]-> <Location (Southeast US)>
+
 Cypher:
 MATCH (p:Paper)-[r:Mention]->(m:Model|Project) 
 WHERE m.Name CONTAINS 'CMIP_5' 
@@ -93,6 +130,18 @@ RETURN p,m,n;
 Natural Language Question:
 Which papers mention the Pacific-North American (PNA) pattern in connection with locations in the United States?
 
+Intent:
+Search for papers that mention the PNA pattern and link it to U.S. regions or cities.
+
+Interpretation:
+- Looking for <Paper> nodes that mention <Teleconnection (Name = "PNA")>
+- The <Teleconnection> should be linked to <Location> nodes associated with <Country (Name = "USA")>, inferred via description or relation.
+
+Sample Triplets:
+- <Paper> -[MENTION]-> <Teleconnection (PNA)>
+- <Teleconnection> -[TargetsLocation]-> <Location>
+- <Location> -[IN_COUNTRY]-> <Country (USA)> or contains "United States" in description
+
 Cypher:
 MATCH (p:Paper)-[z:Mention]->(t:Teleconnection{{Name:"PACIFIC_NORTH_AMERICAN_PNA_PATTERN"}}) 
 MATCH (t)-[:TargetsLocation]-(l:Location) 
@@ -100,10 +149,9 @@ MATCH (p)-[z:Mention]-(l)
 WHERE l.wikidata_description CONTAINS "United States" 
 RETURN p,t,l;
 
----
-
 Now generate a Cypher query for:
 {question}
+
 """
 
 CYPHER_GENERATION_PROMPT = PromptTemplate(
