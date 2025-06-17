@@ -53,6 +53,8 @@ Here are some examples:
 ### Example 1
 Natural Language Question:
 Which papers mention anomalous temperature regimes such as cold air outbreaks (CAOs) or warm waves (WWs) in relation to North America, specifically in the sentences where these terms appear?
+Intent: 
+The user is looking for scientific papers that explicitly refer to cold air outbreaks or warm waves and want these terms to be mentioned in the same sentence as a reference to North America. The focus is on detecting specific events (CAOs or WWs) and understanding where they are discussed geographically—specifically in the North American context.
 
 Cypher:
 MATCH (we)-[:TargetsLocation]-(l{{Name:"NORTH_AMERICA"}}) 
@@ -65,6 +67,8 @@ RETURN p,l,we;
 ### Example 2
 Natural Language Question:
 Which papers discuss ocean circulation processes—such as thermohaline circulation—in oceanic regions that include either “North” or “South” in their names?
+Intent: 
+This question aims to find papers that talk about large-scale ocean circulation processes (like thermohaline circulation) and relate them to ocean basins or regions with names containing "North" or "South" such as the North Atlantic or South Pacific. The interest is in both the process and the spatial domain it affects.
 
 Cypher:
 MATCH (n:Location) 
@@ -79,6 +83,8 @@ RETURN n,oc,p;
 ### Example 3
 Natural Language Question:
 Which papers mention CMIP5 models and the North Atlantic Oscillation (NAO) in the context of the Southeast United States?
+Intent: 
+The user wants to identify papers that make a connection between CMIP5 climate models and the North Atlantic Oscillation (NAO), particularly in studies or findings that are relevant to the Southeast U.S. They’re looking for discussion of model-based simulation or analysis where NAO impacts this region and CMIP5 is the modeling framework used.
 
 Cypher:
 MATCH (p:Paper)-[r:Mention]->(m:Model|Project) 
@@ -92,6 +98,8 @@ RETURN p,m,n;
 ### Example 4
 Natural Language Question:
 Which papers mention the Pacific-North American (PNA) pattern in connection with locations in the United States?
+Intent: 
+This query is asking for papers that discuss the Pacific-North American (PNA) pattern and how it relates to or affects various locations within the U.S. The goal is to explore where the PNA pattern is considered in the context of American weather or climate outcomes.
 
 Cypher:
 MATCH (p:Paper)-[z:Mention]->(t:Teleconnection{{Name:"PACIFIC_NORTH_AMERICAN_PNA_PATTERN"}}) 
@@ -102,7 +110,6 @@ RETURN p,t,l;
 
 ---
 
-Now generate a Cypher query for:
 {question}
 """
 
@@ -135,12 +142,12 @@ graph_chain = GraphCypherQAChain.from_llm(
     #qa_llm=ChatOllama(model = "qwen2", temperature = 0),
     cypher_llm = ChatOpenAI(
          openai_api_key=st.secrets["OPENAI_API_KEY"], 
-         temperature = 0, 
+         temperature = 0.3, 
          model_name = "gpt-4o-mini"
      ),
      qa_llm = ChatOpenAI(
          openai_api_key = st.secrets["OPENAI_API_KEY"], 
-         temperature = 0, 
+         temperature = 0.7, 
          model_name = "gpt-4o-mini"),
     graph = graph,
     cypher_prompt = CYPHER_GENERATION_PROMPT,  
@@ -153,8 +160,12 @@ graph_chain = GraphCypherQAChain.from_llm(
 
 
 @retry(tries = 2, delay = 12)
-def get_results(question) -> str:
+def get_results(question: str) -> str:
+    
+    [question, history] = question.split('///////////////')
     """Generate a response from the GraphCypherQAChain using a cleaned schema and improved prompt."""
+    
+    print(f'History: {history}')
     
     logging.info(f'Using Neo4j database at URL: {url}')
     graph.refresh_schema()
@@ -163,7 +174,13 @@ def get_results(question) -> str:
     #print("\n========= Raw Schema from Neo4j =========\n")
     #print(graph.get_schema)
 
-    prompt = CYPHER_GENERATION_PROMPT.format(schema = graph.get_schema, question = question)
+    prompt = CYPHER_GENERATION_PROMPT.format(schema = graph.get_schema, question=f'''
+Here is history chat bot:
+{history}
+
+Now generate a Cypher query for:
+{question}                                          
+''')
     print('\n========= Prompt to LLM =========\n')
     print(prompt)
 

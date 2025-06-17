@@ -3,14 +3,40 @@ from retry import retry
 from langchain_community.llms import Ollama
 from langchain_openai import ChatOpenAI
 from graph_cypher_tool import graph_cypher_tool 
+from langchain.schema import HumanMessage, SystemMessage, AIMessage
 
 
 # llm = Ollama(model="llama3")
 llm = ChatOpenAI(
     openai_api_key = st.secrets["OPENAI_API_KEY"],
-    temperature = 0.2,
+    temperature = 0.5,
     model_name = "gpt-4o-mini"
 )
+
+interpreter_llm = ChatOpenAI(
+    openai_api_key = st.secrets["OPENAI_API_KEY"],
+    temperature = 0.3,
+    model_name = "gpt-4o-mini"
+)
+
+def interpret_question(user_question: str, conversation_history: list[dict[str, str]]) -> str:
+    system_prompt = (
+        "You are an assistant that rewrites vague or unclear user questions"
+        "into clear and precies English questions that can be translated to Cypher queries."
+        "If the question is Vietnamese or Japnese, translate it."
+    )
+    messages = [
+        SystemMessage(content=system_prompt),
+        # HumanMessage(content=user_question)
+    ]
+    
+    for turn in conversation_history:
+        messages.append(HumanMessage(content=turn['input']))
+        messages.append(AIMessage(content=turn['output']))
+    
+    messages.append(HumanMessage(content=user_question))
+    
+    return interpreter_llm(messages).content.strip()
 
 # Conversation history
 conversation_history = []
@@ -23,9 +49,14 @@ def process_with_llm(question: str) -> str:
         f"User: {msg['input']}\nBot: {msg['output']}"
         for msg in conversation_history
     ])
+    
+    rewritten = interpret_question(question, conversation_history=conversation_history)
+    
+    print(f'Input = {question}\nRewrite = {rewritten}')
+    st.write(f'Input = {question}\nRewrite = {rewritten}')
 
     #Run the question through the Cypher tool
-    tool_output = graph_cypher_tool.invoke(question)
+    tool_output = graph_cypher_tool.invoke(f"{rewritten}///////////////{conversation_text}")
     result_only = tool_output if tool_output is str or type(tool_output) is str else tool_output.get("result", "No results found.")
 
     # LLM prompt with only the result
@@ -36,6 +67,7 @@ Conversation:
 {conversation_text}
 
 Current question: {question}
+Rewritten question: {rewritten}
 
 Here is the output from the database:
 {result_only}
