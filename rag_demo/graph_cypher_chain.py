@@ -98,8 +98,6 @@ RETURN p,m,n;
 ### Example 4
 Natural Language Question:
 Which papers mention the Pacific-North American (PNA) pattern in connection with locations in the United States?
-Intent: 
-This query is asking for papers that discuss the Pacific-North American (PNA) pattern and how it relates to or affects various locations within the U.S. The goal is to explore where the PNA pattern is considered in the context of American weather or climate outcomes.
 
 Cypher:
 MATCH (p:Paper)-[z:Mention]->(t:Teleconnection{{Name:"PACIFIC_NORTH_AMERICAN_PNA_PATTERN"}}) 

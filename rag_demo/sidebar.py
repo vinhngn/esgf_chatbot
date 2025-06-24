@@ -44,9 +44,11 @@ def sidebar():
         sample_questions = [
             "Which papers mention anomalous temperature regimes such as cold air outbreaks (CAOs) or warm waves (WWs) in relation to North America, specifically in the sentences where these terms appear?",
             "Which papers discuss ocean circulation processes—such as thermohaline circulation—in oceanic regions that include either “North” or “South” in their names?",
-            "Which papers mention CMIP5 models and the North Atlantic Oscillation (NAO) in the context of the Southeast United States?",
+            "What ocean circulation processes are associated with the Southern Ocean and mentioned in connection with upwelling?",
             "Which papers mention the Pacific-North American (PNA) pattern in connection with locations in the United States?",
-            "What ocean circulation processes are associated with the Southern Ocean and mentioned in connection with upwelling?"
+            "Which papers mention CMIP5 models and the North Atlantic Oscillation (NAO) in the context of the Southeast United States?"
+
+
         ]
 
         for question in sample_questions:

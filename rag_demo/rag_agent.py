@@ -21,16 +21,23 @@ interpreter_llm = ChatOpenAI(
 
 def interpret_question(user_question: str, conversation_history: list[dict[str, str]]) -> str:
     system_prompt = (
-        "You are an assistant that rewrites vague or unclear user questions"
-        "into clear and precies English questions that can be translated to Cypher queries."
-        "If the question is Vietnamese or Japnese, translate it."
+
+    "You are an assistant that rewrites vague or unclear user questions "
+    "into clear and precise English questions, and extracts pattern triples "
+    "that can be used to generate Cypher queries for a Neo4j knowledge graph. "
+
+    "Use triples in the form (subject, predicate, object). Use 'UNKNOWN' if the entity is not mentioned. Use '?' for the variable being asked. "
+
+
+
+
     )
     messages = [
         SystemMessage(content=system_prompt),
         # HumanMessage(content=user_question)
     ]
     
-    for turn in conversation_history:
+    for turn in conversation_history[-2:]:
         messages.append(HumanMessage(content=turn['input']))
         messages.append(AIMessage(content=turn['output']))
     
@@ -47,7 +54,7 @@ def process_with_llm(question: str) -> str:
     # Build past conversation text
     conversation_text = "\n".join([
         f"User: {msg['input']}\nBot: {msg['output']}"
-        for msg in conversation_history
+        for msg in conversation_history[-2:]
     ])
     
     rewritten = interpret_question(question, conversation_history=conversation_history)
@@ -72,7 +79,7 @@ Rewritten question: {rewritten}
 Here is the output from the database:
 {result_only}
 
-Please process the output and answer the user question clearly. If the output is not empty please add [[button_query]] in last answer.
+Please process the output and answer the user question clearly. If the output is not empty MUST add [[button_query]] in last answer.
     """.strip()
 
     final_response = llm.predict(final_prompt).strip()
