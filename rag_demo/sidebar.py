@@ -1,6 +1,7 @@
 from constants import SCHEMA_IMG_PATH, LANGCHAIN_IMG_PATH
 import streamlit as st
 import streamlit.components.v1 as components
+import os
 
 def ChangeButtonColour(wgt_txt, wch_hex_colour='12px'):
     htmlstr = f"""
@@ -17,9 +18,15 @@ def ChangeButtonColour(wgt_txt, wch_hex_colour='12px'):
 
 def sidebar():
     with st.sidebar:
+        # Base path for this script
+        base_path = os.path.dirname(os.path.abspath(__file__))
+
+        # Absolute path to local image
+        gcmd_img_path = os.path.join(base_path, "images", "GCMD+.png")
+
         # Images
         st.markdown("This is the GCMD+ taxonomy schema used to organize climate science concepts in our knowledge graph:")
-        st.image("rag_demo/images/GCMD+.png", width=400)
+        st.image(gcmd_img_path, width=400)
 
         st.markdown(
             f"""This is how the Chatbot flow goes:<br>
@@ -42,13 +49,12 @@ def sidebar():
 
         # Sample questions displayed vertically
         sample_questions = [
-            "Which papers mention anomalous temperature regimes such as cold air outbreaks (CAOs) or warm waves (WWs) in relation to North America, specifically in the sentences where these terms appear?",
-            "Which papers discuss ocean circulation processes—such as thermohaline circulation—in oceanic regions that include either “North” or “South” in their names?",
-            "What ocean circulation processes are associated with the Southern Ocean and mentioned in connection with upwelling?",
-            "Which papers mention the Pacific-North American (PNA) pattern in connection with locations in the United States?",
-            "Which papers mention CMIP5 models and the North Atlantic Oscillation (NAO) in the context of the Southeast United States?"
-
-
+            "Show all climate models that include the variable 'pr'",
+            "Show regional climate models that predict precipitation over Florida",
+            "Which driving models are linked to regional climate models that predict variable pr?",
+            "Show me all variables related to the model 'HadGEM3-GC31-LL'",
+            "Which variables are associated with the experiment historical, and which models (sources) provide them?",
+            "What is the frequency, resolution, and realm associated with the model 'NorESM2-LM'?",
         ]
 
         for question in sample_questions:
