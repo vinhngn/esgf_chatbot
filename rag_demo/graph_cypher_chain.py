@@ -21,9 +21,13 @@ Cypher generation rules:
 - Use only node types, properties, and relationships defined in the schema.
 - Use exact matching for known names (e.g., Variable {{name: "pr"}}).
 - Use WHERE clauses for text matching and logical conditions (wrap with parentheses if needed).
+- Use OPTIONAL MATCH where appropriate to avoid losing nodes with missing relationships.
+- Use ORDER BY where it improves result readability.
+- Always include LIMIT to prevent overly large result sets.
+- Return all relevant nodes/relationships explicitly and clearly in the RETURN clause — avoid just `RETURN *`.
 - Use directional relationships based on schema structure.
-- Limit results (e.g., LIMIT 20) for queries returning large sets.
 - Match labels and node names exactly — do not invent or abbreviate unless known.
+- Where applicable, use case-insensitive matching for names (e.g., `=~ '(?i).*foo.*'`).
 
 Schema:
 {schema}
@@ -53,17 +57,6 @@ RETURN s, r, c, v;
 
 ### Example 3
 Natural Language Question:
-Which driving models are linked to regional climate models that predict variable pr?
-
-MATCH (s:Source)-[:PRODUCES_VARIABLE]->(v:Variable {{name: "pr"}})
-MATCH (rcm:RCM)-[:DRIVEN_BY_SOURCE]->(s)
-RETURN s, rcm
-LIMIT 20;
-
----
-
-### Example 4
-Natural Language Question:
 Which variables are associated with the experiment historical, and which models (sources) provide them?
 
 MATCH (e:Experiment {{name: "historical"}})<-[:USED_IN_EXPERIMENT]-(s:Source)-[:PRODUCES_VARIABLE]->(v:Variable)
@@ -72,22 +65,63 @@ LIMIT 20;
 
 ---
 
+### Example 4
+Natural Language Question:
+Show the components, shared models, and realm that ACCESS models belong to.
+
+MATCH (s1:Source)
+WHERE s1.name =~ '(?i).*access.*'
+OPTIONAL MATCH (s1)-[:IS_OF_TYPE]->(type:SourceType)
+OPTIONAL MATCH (s1)-[:HAS_SOURCE_COMPONENT]->(sc:SourceComponent)
+OPTIONAL MATCH (sc)<-[:HAS_SOURCE_COMPONENT]-(s2:Source)
+OPTIONAL MATCH (s1)-[:APPLIES_TO_REALM]->(realm:Realm)
+RETURN s1, type, sc, s2, realm
+LIMIT 50;
+
+---
+
 ### Example 5
 Natural Language Question:
-What is the frequency, resolution, and realm associated with the model 'NorESM2-LM'?
+Show all models produced by NASA-GISS, their components, and any other models that use the same components.
 
-MATCH (s:Source {{name: "NorESM2-LM"}})
-OPTIONAL MATCH (s)-[:SAMPLED_AT_FREQUENCY]->(f:Frequency)
-OPTIONAL MATCH (s)-[:HAS_SPATIAL_RESOLUTION]->(res:Resolution)
-OPTIONAL MATCH (s)-[:USED_IN_EXPERIMENT]->(experiment:Experiment)
-OPTIONAL MATCH (experiment)-[:APPLIES_TO_REALM]->(realm:Realm)
-RETURN s, f, res, realm, experiment
+MATCH (i:Institute)<-[:PRODUCED_BY_INSTITUTE]-(s1:Source)
+WHERE toLower(i.name) = "nasa-giss"
+OPTIONAL MATCH (s1)-[:HAS_SOURCE_COMPONENT]->(sc:SourceComponent)
+OPTIONAL MATCH (sc)<-[:HAS_SOURCE_COMPONENT]-(s2:Source)
+RETURN i, s1, sc, s2
+ORDER BY s1.name
+LIMIT 50;
+
+---
+
+### Example 6
+Natural Language Question:
+Which realms are targeted by AOGCM models?
+
+MATCH (s:Source)-[:IS_OF_TYPE]->(type:SourceType)
+WHERE type.name = "AOGCM"
+OPTIONAL MATCH (s)-[:APPLIES_TO_REALM]->(r:Realm)
+RETURN type, s, r
+ORDER BY s.name
+LIMIT 50;
+
+---
+
+### Example 7
+Natural Language Question:
+Show pairs of models producing the variable "AEROD_v".
+
+MATCH (s1:Source)-[:PRODUCES_VARIABLE]->(v:Variable)<-[:PRODUCES_VARIABLE]-(s2:Source)
+WHERE v.name = "AEROD_v" AND s1 <> s2
+RETURN s1, s2, v
+ORDER BY s1.name
 LIMIT 50;
 
 ---
 
 {question}
 """
+
 
 CYPHER_GENERATION_PROMPT = PromptTemplate(
     input_variables=["schema", "question"], template=CYPHER_GENERATION_TEMPLATE
