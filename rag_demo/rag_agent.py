@@ -85,8 +85,11 @@ Rewritten question: {rewritten}
 Here is the output from the database:
 {result_only}
 
-Please process the output and answer the user question clearly. If the output is not empty MUST add [[button_query]] in last answer.
-    """.strip()
+Please process the output and answer the user question clearly.
+If the output is not empty, you MUST end your answer with the exact phrase:
+"Please click here to access the knowledge graph: [[button_query]]"
+Do not use any other wording for the link.
+""".strip()
 
     final_response = llm.predict(final_prompt).strip()
 
