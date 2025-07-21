@@ -165,6 +165,19 @@ graph_chain = GraphCypherQAChain.from_llm(
     return_intermediate_steps=True,
 )
 
+def parse_schema(schema_text: str):
+    labels = set()
+    relationships = set()
+    for line in schema_text.splitlines():
+        line = line.strip()
+        if line.startswith("(:") and ")" in line:
+            label = line.split(":")[1].split(")")[0]
+            labels.add(label)
+        elif "-[" in line and "]-" in line:
+            rel = line.split("[")[1].split("]")[0]
+            relationships.add(rel)
+    return labels, relationships
+
 @retry(tries=2, delay=12)
 def get_results(question: str) -> str:
     [question, history] = question.split('///////////////')
