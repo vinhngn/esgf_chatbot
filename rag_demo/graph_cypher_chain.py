@@ -8,6 +8,7 @@ from langchain.chains.conversation.memory import ConversationBufferMemory
 from langchain_community.graphs import Neo4jGraph
 from langchain.prompts.prompt import PromptTemplate
 from langchain_openai import ChatOpenAI
+import re
 
 CYPHER_GENERATION_TEMPLATE = """
 You are a Cypher expert who translates natural language questions into Cypher queries for a Neo4j graph database.
@@ -164,6 +165,26 @@ graph_chain = GraphCypherQAChain.from_llm(
     allow_dangerous_requests=True,
     return_intermediate_steps=True,
 )
+
+def parse_schema(schema_text: str):
+    labels = set()
+    relationships = set()
+
+    for line in schema_text.splitlines():
+        line = line.strip()
+
+        # Extract labels
+        label_matches = re.findall(r"\(:([A-Za-z0-9_]+)\)", line)
+        for label in label_matches:
+            labels.add(label)
+
+        # Extract relationships
+        rel_matches = re.findall(r"\[:([A-Za-z0-9_]+)\]", line)
+        for rel in rel_matches:
+            relationships.add(rel)
+
+    return labels, relationships
+
 
 @retry(tries=2, delay=12)
 def get_results(question: str) -> str:
