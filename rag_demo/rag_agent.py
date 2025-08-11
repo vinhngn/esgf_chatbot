@@ -166,10 +166,29 @@ def process_with_llm(question: str) -> str:
     st.write(f'Rewritten: {rewritten}')
     st.write(f'Verified Triples: {verified_triples}')
 
+
     tool_output = graph_cypher_tool.invoke(f"{rewritten}///////////////{conversation_text}")
     result_only = tool_output if isinstance(tool_output, str) else tool_output.get("result", "No results found.")
 
-    final_prompt = f"""
+    # Build query + Neo4J link (always try to attach a link)
+    last_query = ""
+    if isinstance(tool_output, dict):
+        last_query = tool_output.get("intermediate_steps", [{}])[-1].get("query", "") or ""
+
+    neo4j_link = (
+        f"[Open Neo4J](https://neoforjcmip.templeuni.com/browser/?preselectAuthMethod=NO_AUTH&cmd=edit&arg={last_query})"
+        if last_query else "[Open Neo4J](https://neoforjcmip.templeuni.com/browser/)"
+    )
+
+    # If no results, return fixed message + link (no LLM needed)
+    if not result_only:
+        final_response = (
+            f"It appears that there are no climate models that include the requested variable in the database. "
+            f"Please click here to access the knowledge graph: {neo4j_link}"
+        )
+    else:
+        # Use LLM, but ALWAYS end with the link phrase
+        final_prompt = f"""
 Based on the conversation and the user question, provide a relevant and helpful response.
 
 Conversation:
@@ -182,21 +201,13 @@ Here is the output from the database:
 {result_only}
 
 Please process the output and answer the user question clearly.
-If the output is not empty, you MUST end your answer with the exact phrase:
+Always end your answer with the exact phrase:
 "Please click here to access the knowledge graph: [[button_query]]"
 Do not use any other wording for the link.
 """.strip()
 
-    final_response = llm.invoke(final_prompt).content.strip()
-
-    if isinstance(tool_output, dict) and tool_output.get("result"):
-        last_query = tool_output.get("intermediate_steps", [{}])[-1].get("query", "")
-        final_response = final_response.replace(
-            "[[button_query]]",
-            f"[Open Neo4J](https://neoforjcmip.templeuni.com/browser/?preselectAuthMethod=NO_AUTH&cmd=edit&arg={last_query})"
-        )
-    else:
-        final_response = final_response.replace("[[button_query]]", "")
+        final_response = llm.invoke(final_prompt).content.strip()
+        final_response = final_response.replace("[[button_query]]", neo4j_link)
 
     conversation_history.append({
         "input": question,
@@ -204,6 +215,7 @@ Do not use any other wording for the link.
     })
 
     return final_response
+
 
 
 # === Public Function ===
