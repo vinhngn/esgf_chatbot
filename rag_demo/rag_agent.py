@@ -7,6 +7,7 @@ from langchain_openai import ChatOpenAI
 from langchain.schema import HumanMessage, SystemMessage, AIMessage
 from graph_cypher_tool import graph_cypher_tool
 from graph_cypher_chain import graph, parse_schema
+import urllib.parse
 
 # === Configure logging ===
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
@@ -30,6 +31,46 @@ schema_text = graph.get_schema
 schema_labels, schema_relationships = parse_schema(schema_text)
 schema_labels_str = "\n".join(f"- {label}" for label in sorted(schema_labels))
 schema_rels_str = "\n".join(f"- {rel}" for rel in sorted(schema_relationships))
+
+# === Definitions block ===
+entity_definitions = """
+The definitions of the entity types are given below:
+
+Activity: A coordinated modeling effort or scientific campaign.
+ExperimentFamily: A group of related experiments sharing a common scientific goal.
+Experiment: A specific simulation scenario (e.g., historical, ssp585).
+SubExperiment: A variant or subset of an experiment, usually with specific configurations.
+Source: A climate model or system used to generate data (e.g., GFDL-ESM4).
+SourceType: The classification of the model
+SourceComponent: A component of a climate model.
+PhysicalScheme: A physical process representation used in a model (e.g., cloud scheme).
+PhysicalFeature: Unique physical characteristics of a model (e.g., terrain-following grid).
+SimulationType: Type of simulation performed (e.g., transient, equilibrium).
+Metric: Quantitative measure of model performance (e.g., climate sensitivity).
+Project: A broader initiative under which models/experiments are conducted (e.g., CMIP6).
+Institute: Organization responsible for developing models or running simulations.
+Variable: Scientific quantities output by models (e.g., temperature, precipitation).
+Realm: Component of the Earth system (e.g., atmosphere, ocean).
+Frequency: Temporal resolution of model output (e.g., daily, monthly).
+Resolution: Spatial resolution or grid size of the data.
+Ensemble: A collection of model runs differing in initial conditions or configurations.
+Member: An individual member of an ensemble.
+MIPEra: A major generation or version of coordinated experiments (e.g., CMIP5, CMIP6).
+RCM (Regional Climate Model): A model used for fine-resolution regional simulations.
+Domain: Geographical coverage of a model.
+Continent: A large continuous landmass (e.g., Asia, Africa).
+Country: A sovereign state or territory (e.g., India, USA).
+Country Subdivision: Administrative units within countries (e.g., California).
+City: Urban locality (e.g., Paris).
+No Country Region: Areas not under country jurisdiction (e.g., open ocean).
+Water Bodies: Oceans, seas, and lakes (e.g., Pacific Ocean).
+Instrument: Device used to observe environmental variables (e.g., radiometer).
+Platform: Physical carrier for an instrument (e.g., satellite).
+Weather event: Specific events like storms, droughts.
+Teleconnection: Large-scale climate patterns (e.g., ENSO, NAO).
+Ocean circulation: Movements of ocean waters (e.g., AMOC).
+Natural hazard: Geophysical events impacting systems (e.g., tsunami, earthquake).
+""".strip()
 
 
 # === Triple-Extractor Function ===
@@ -84,7 +125,8 @@ def interpret_question_with_schema(user_question: str, conversation_history: lis
         "Use `?` for the target being asked.\n"
         "Output format:\n"
         "Rewritten: <...>\n"
-        "Triples:\n1. (...)\n2. (...)\n"
+        "Triples:\n1. (...)\n2. (...)\n\n" +
+        entity_definitions
     )
 
     messages = [SystemMessage(content=system_prompt)]
@@ -166,28 +208,28 @@ def process_with_llm(question: str) -> str:
     st.write(f'Rewritten: {rewritten}')
     st.write(f'Verified Triples: {verified_triples}')
 
-
     tool_output = graph_cypher_tool.invoke(f"{rewritten}///////////////{conversation_text}")
     result_only = tool_output if isinstance(tool_output, str) else tool_output.get("result", "No results found.")
 
-    # Build query + Neo4J link (always try to attach a link)
     last_query = ""
     if isinstance(tool_output, dict):
         last_query = tool_output.get("intermediate_steps", [{}])[-1].get("query", "") or ""
+
+    decoded_query = urllib.parse.unquote(last_query) if last_query else ""
+    if decoded_query:
+        st.code(decoded_query, language="cypher")
 
     neo4j_link = (
         f"[Open Neo4J](https://neoforjcmip.templeuni.com/browser/?preselectAuthMethod=NO_AUTH&cmd=edit&arg={last_query})"
         if last_query else "[Open Neo4J](https://neoforjcmip.templeuni.com/browser/)"
     )
 
-    # If no results, return fixed message + link (no LLM needed)
     if not result_only:
         final_response = (
             f"It appears that there are no climate models that include the requested variable in the database. "
             f"Please click here to access the knowledge graph: {neo4j_link}"
         )
     else:
-        # Use LLM, but ALWAYS end with the link phrase
         final_prompt = f"""
 Based on the conversation and the user question, provide a relevant and helpful response.
 
@@ -215,7 +257,6 @@ Do not use any other wording for the link.
     })
 
     return final_response
-
 
 
 # === Public Function ===
