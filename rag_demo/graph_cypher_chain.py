@@ -34,7 +34,6 @@ Schema:
 {schema}
 
 Examples:
-
 ### Example 1
 Natural Language Question:
 Show all climate models that include the variable 'pr'.
@@ -123,7 +122,6 @@ LIMIT 50;
 {question}
 """
 
-
 CYPHER_GENERATION_PROMPT = PromptTemplate(
     input_variables=["schema", "question"], template=CYPHER_GENERATION_TEMPLATE
 )
@@ -172,19 +170,14 @@ def parse_schema(schema_text: str):
 
     for line in schema_text.splitlines():
         line = line.strip()
-
-        # Extract labels
         label_matches = re.findall(r"\(:([A-Za-z0-9_]+)\)", line)
         for label in label_matches:
             labels.add(label)
-
-        # Extract relationships
         rel_matches = re.findall(r"\[:([A-Za-z0-9_]+)\]", line)
         for rel in rel_matches:
             relationships.add(rel)
 
     return labels, relationships
-
 
 @retry(tries=2, delay=12)
 def get_results(question: str) -> str:
@@ -221,10 +214,16 @@ Now generate a Cypher query for:
         return "No answer was generated."
 
     try:
-        query = chain_result["intermediate_steps"][-1]["query"].replace("cypher", "", 1).strip()
-        print("\n========= Generated Cypher =========\n")
-        print(query)
-        chain_result["intermediate_steps"][-1]["query"] = urllib.parse.quote(query)
+        intermediate = chain_result.get("intermediate_steps", [{}])
+        query_raw = intermediate[-1].get("query", "")
+        if not query_raw:
+            logging.warning("⚠️ No query found in intermediate_steps.")
+        else:
+            query = query_raw.replace("cypher", "", 1).strip()
+            print("\n========= Generated Cypher =========\n")
+            print(query)
+            encoded_query = urllib.parse.quote(query)
+            chain_result["intermediate_steps"][-1]["query"] = encoded_query
     except Exception as e:
         logging.warning(f"Failed to extract Cypher query: {e}")
 
