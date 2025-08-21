@@ -29,13 +29,19 @@ interpreter_llm = ChatOpenAI(
 graph.refresh_schema()
 schema_text = graph.get_schema
 schema_labels, schema_relationships = parse_schema(schema_text)
+logging.info("✅ Loaded schema labels:")
+for label in sorted(schema_labels):
+    logging.info(f"   - {label}")
+
+logging.info("✅ Loaded schema relationships:")
+for rel in sorted(schema_relationships):
+    logging.info(f"   - {rel}")
 schema_labels_str = "\n".join(f"- {label}" for label in sorted(schema_labels))
 schema_rels_str = "\n".join(f"- {rel}" for rel in sorted(schema_relationships))
 
 # === Definitions block ===
 entity_definitions = """
 The definitions of the entity types are given below:
-
 Activity: A coordinated modeling effort or scientific campaign.
 ExperimentFamily: A group of related experiments sharing a common scientific goal.
 Experiment: A specific simulation scenario (e.g., historical, ssp585).
@@ -72,8 +78,7 @@ Ocean circulation: Movements of ocean waters (e.g., AMOC).
 Natural hazard: Geophysical events impacting systems (e.g., tsunami, earthquake).
 """.strip()
 
-
-# === Triple-Extractor Function ===
+# === Triple-Extractor Functions ===
 
 def interpret_question(user_question: str, conversation_history: list[dict[str, str]]) -> tuple[str, list[tuple[str,str,str]]]:
     system_prompt = (
@@ -92,7 +97,7 @@ def interpret_question(user_question: str, conversation_history: list[dict[str, 
     )
 
     messages = [SystemMessage(content=system_prompt)]
-    for turn in conversation_history[-2:]:
+    for turn in conversation_history[-3:]:
         messages.append(HumanMessage(content=turn['input']))
         messages.append(AIMessage(content=turn['output']))
     messages.append(HumanMessage(content=user_question))
@@ -130,7 +135,7 @@ def interpret_question_with_schema(user_question: str, conversation_history: lis
     )
 
     messages = [SystemMessage(content=system_prompt)]
-    for turn in conversation_history[-2:]:
+    for turn in conversation_history[-3:]:
         messages.append(HumanMessage(content=turn['input']))
         messages.append(AIMessage(content=turn['output']))
     messages.append(HumanMessage(content=user_question))
@@ -148,7 +153,6 @@ def interpret_question_with_schema(user_question: str, conversation_history: lis
             if match:
                 triples.append(tuple(x.strip() for x in match.groups()))
     return rewritten, triples
-
 
 # === Triple Verification ===
 
@@ -170,18 +174,24 @@ def verify_triples(triples, labels, rels):
             logging.warning(f"   🚫 Invalid object: {obj}")
     return verified
 
-
 # === Conversation History ===
 
 conversation_history = []
 
-
 # === Main LLM Pipeline ===
 
 def process_with_llm(question: str) -> str:
+        # Rebuild conversation_history from Streamlit session
+    conversation_history.clear()
+    for msg in st.session_state.get("messages", []):
+        if msg["role"] == "user":
+            conversation_history.append({"input": msg["content"], "output": ""})
+        elif msg["role"] == "ai" and conversation_history:
+            conversation_history[-1]["output"] = msg["content"]
+
     conversation_text = "\n".join([
         f"User: {msg['input']}\nBot: {msg['output']}"
-        for msg in conversation_history[-2:]
+        for msg in conversation_history[-3:]
     ])
 
     rewritten, triples = interpret_question(question, conversation_history)
@@ -208,7 +218,14 @@ def process_with_llm(question: str) -> str:
     st.write(f'Rewritten: {rewritten}')
     st.write(f'Verified Triples: {verified_triples}')
 
-    tool_output = graph_cypher_tool.invoke(f"{rewritten}///////////////{conversation_text}")
+    # ✅ New: Send dict payload to tool
+    tool_output = graph_cypher_tool.invoke({
+        "question": question,
+        "rewritten": rewritten,
+        "verified_triples": verified_triples,
+        "history": conversation_text
+    })
+
     result_only = tool_output if isinstance(tool_output, str) else tool_output.get("result", "No results found.")
 
     last_query = ""
@@ -257,7 +274,6 @@ Do not use any other wording for the link.
     })
 
     return final_response
-
 
 # === Public Function ===
 

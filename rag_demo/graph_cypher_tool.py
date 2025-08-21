@@ -1,13 +1,26 @@
+from typing import List, Tuple
+from pydantic import BaseModel
 from langchain.tools import tool
 from graph_cypher_chain import get_results
 
-@tool("graph-cypher-tool")
-def graph_cypher_tool(query:str) -> str:
+class GraphToolInput(BaseModel):
+    question: str
+    rewritten: str
+    verified_triples: List[Tuple[str, str, str]]
+    history: str
+
+@tool("graph-cypher-tool", args_schema=GraphToolInput)
+def graph_cypher_tool(question: str, rewritten: str, verified_triples: List[Tuple[str, str, str]], history: str) -> str:
     """
     Useful when answer requires calculating numerical answers like aggregations.
     Use when question asks for a count or how many.
     Use full question as input.
-    Do not call this tool more than once.
-    Do not call another tool if this returns results.
+    Also uses rephrased question, verified triples, and chat history for better Cypher generation.
     """
-    return get_results(query)
+    return get_results(
+    question=question,
+    rewritten=rewritten,
+    verified_triples=verified_triples,
+    history=history
+)
+
