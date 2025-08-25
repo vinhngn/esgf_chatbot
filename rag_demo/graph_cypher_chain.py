@@ -24,7 +24,7 @@ Cypher generation rules:
 - Use WHERE clauses for text matching and logical conditions (wrap with parentheses if needed).
 - Use OPTIONAL MATCH where appropriate to avoid losing nodes with missing relationships.
 - Use ORDER BY where it improves result readability.
-- Always include LIMIT to prevent overly large result sets.
+- Always include LIMIT 50 to prevent overly large result sets.
 - Return all relevant nodes/relationships explicitly and clearly in the RETURN clause — avoid just `RETURN *`.
 - Use directional relationships based on schema structure.
 - Match labels and node names exactly — do not invent or abbreviate unless known.
