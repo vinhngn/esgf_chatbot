@@ -180,22 +180,40 @@ def parse_schema(schema_text: str):
     return labels, relationships
 
 @retry(tries=2, delay=12)
-def get_results(question: str) -> str:
-    [question, history] = question.split('///////////////')
+def get_results(
+    question: str,
+    rewritten: str = "",
+    verified_triples: list[tuple[str, str, str]] = None,
+    history: str = ""
+) -> str:
     logging.info(f'Using Neo4j database at URL: {url}')
-    print(f'History: {history}')
+    
+    verified_triples = verified_triples or []
+    triples_text = "\n".join([f"({s}, {r}, {o})" for (s, r, o) in verified_triples]) or "None"
 
     graph.refresh_schema()
 
     print("\n========= Raw Schema from Neo4j =========\n")
     print(graph.get_schema)
 
-    prompt = CYPHER_GENERATION_PROMPT.format(schema=graph.get_schema, question=f'''
-Here is history chat bot:
+    # FULL PROMPT INJECTION HERE
+    prompt = CYPHER_GENERATION_PROMPT.format(
+        schema=graph.get_schema,
+        question=f'''
+Conversation History:
 {history}
 
 Now generate a Cypher query for:
-{question}''')
+{question}
+
+Rewritten Question:
+{rewritten}
+
+Verified Triples:
+{triples_text}
+'''
+
+    )
 
     print('\n========= Prompt to LLM =========\n')
     print(prompt)
