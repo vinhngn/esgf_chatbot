@@ -16,13 +16,13 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 llm = ChatOpenAI(
     openai_api_key=st.secrets["OPENAI_API_KEY"],
     temperature=0.5,
-    model_name="gpt-4o-mini"
+    model_name="gpt-4o-mini",
 )
 
 interpreter_llm = ChatOpenAI(
     openai_api_key=st.secrets["OPENAI_API_KEY"],
     temperature=0.3,
-    model_name="gpt-4o-mini"
+    model_name="gpt-4o-mini",
 )
 
 # === Fetch & parse schema once ===
@@ -80,7 +80,10 @@ Natural hazard: Geophysical events impacting systems (e.g., tsunami, earthquake)
 
 # === Triple-Extractor Functions ===
 
-def interpret_question(user_question: str, conversation_history: list[dict[str, str]]) -> tuple[str, list[tuple[str,str,str]]]:
+
+def interpret_question(
+    user_question: str, conversation_history: list[dict[str, str]]
+) -> tuple[str, list[tuple[str, str, str]]]:
     system_prompt = (
         "You are a Neo4j graph assistant. Your job is to: \n"
         "1. Rewrite vague or unclear user questions into clear, formal English.\n"
@@ -98,8 +101,8 @@ def interpret_question(user_question: str, conversation_history: list[dict[str, 
 
     messages = [SystemMessage(content=system_prompt)]
     for turn in conversation_history[-3:]:
-        messages.append(HumanMessage(content=turn['input']))
-        messages.append(AIMessage(content=turn['output']))
+        messages.append(HumanMessage(content=turn["input"]))
+        messages.append(AIMessage(content=turn["output"]))
     messages.append(HumanMessage(content=user_question))
 
     response = interpreter_llm.invoke(messages).content.strip()
@@ -117,27 +120,45 @@ def interpret_question(user_question: str, conversation_history: list[dict[str, 
     return rewritten, triples
 
 
-def interpret_question_with_schema(user_question: str, conversation_history: list[dict[str, str]], schema_str: str) -> tuple[str, list[tuple[str,str,str]]]:
+def interpret_question_with_schema(
+    user_question: str, conversation_history: list[dict[str, str]], schema_str: str
+) -> tuple[str, list[tuple[str, str, str]]]:
     system_prompt = (
-        f"You are a Neo4j graph assistant.\n"
-        f"The ONLY node labels you may use are:\n{schema_labels_str}\n"
-        f"The ONLY relationship types you may use are:\n{schema_rels_str}\n\n"
-        "Your job is to:\n"
-        "1. Rewrite vague user questions into clear English.\n"
-        "2. Extract semantic triples ONLY using the allowed labels and relationships.\n\n"
-        "You MUST NOT invent new labels or relationships.\n"
-        "Each triple must be (subject, relationship, object).\n"
-        "Use `?` for the target being asked.\n"
-        "Output format:\n"
-        "Rewritten: <...>\n"
-        "Triples:\n1. (...)\n2. (...)\n\n" +
-        entity_definitions
+        f"""
+You are a Neo4j graph assistant.
+
+Your job is to:
+1. Rewrite vague or ambiguous user questions into **clear, formal English**.
+2. Extract semantic triples using **only the approved node labels and relationship types** below.
+
+### STRICT INSTRUCTIONS ###
+- All triples must follow the format: (SubjectLabel, RELATIONSHIP_TYPE, ObjectLabel)
+- Subject and Object MUST be one of the valid node labels listed below.
+- Relationship MUST be from the allowed relationship types.
+- DO NOT use `?`, `UNKNOWN`, or invent new labels or relationships.
+- If a required element is missing, leave out the triple entirely.
+- If no valid triple can be made, just say: `Rewritten: <clarified question>` and no triples.
+
+### Allowed Node Labels:
+{schema_labels_str}
+
+### Allowed Relationship Types:
+{schema_rels_str}
+
+Output format:
+Rewritten: <clarified question>
+Triples:
+1. (<subject_label>, <relationship_type>, <object_label>)
+2. ...
+""".strip()
+        + "\n\n"
+        + entity_definitions
     )
 
     messages = [SystemMessage(content=system_prompt)]
     for turn in conversation_history[-3:]:
-        messages.append(HumanMessage(content=turn['input']))
-        messages.append(AIMessage(content=turn['output']))
+        messages.append(HumanMessage(content=turn["input"]))
+        messages.append(AIMessage(content=turn["output"]))
     messages.append(HumanMessage(content=user_question))
 
     response = interpreter_llm.invoke(messages).content.strip()
@@ -154,7 +175,9 @@ def interpret_question_with_schema(user_question: str, conversation_history: lis
                 triples.append(tuple(x.strip() for x in match.groups()))
     return rewritten, triples
 
+
 # === Triple Verification ===
+
 
 def verify_triples(triples, labels, rels):
     verified = []
@@ -174,14 +197,16 @@ def verify_triples(triples, labels, rels):
             logging.warning(f"   🚫 Invalid object: {obj}")
     return verified
 
+
 # === Conversation History ===
 
 conversation_history = []
 
 # === Main LLM Pipeline ===
 
+
 def process_with_llm(question: str) -> str:
-        # Rebuild conversation_history from Streamlit session
+    # Rebuild conversation_history from Streamlit session
     conversation_history.clear()
     for msg in st.session_state.get("messages", []):
         if msg["role"] == "user":
@@ -189,48 +214,73 @@ def process_with_llm(question: str) -> str:
         elif msg["role"] == "ai" and conversation_history:
             conversation_history[-1]["output"] = msg["content"]
 
-    conversation_text = "\n".join([
-        f"User: {msg['input']}\nBot: {msg['output']}"
-        for msg in conversation_history[-3:]
-    ])
+    conversation_text = "\n".join(
+        [
+            f"User: {msg['input']}\nBot: {msg['output']}"
+            for msg in conversation_history[-3:]
+        ]
+    )
 
-    rewritten, triples = interpret_question(question, conversation_history)
-    verified_triples = verify_triples(triples, schema_labels, schema_relationships)
+    # === Retry loop for triple extraction ===
+    MAX_ATTEMPTS = 5
+    attempt = 0
+    verified_triples = []
+    triples = []
+    rewritten = ""
 
-    if not verified_triples:
-        logging.warning("No verified triples matched schema — retrying with schema provided to LLM.")
-        schema_str = (
-            "Available Labels:\n" +
-            "\n".join(f"- {label}" for label in sorted(schema_labels)) +
-            "\n\nAvailable Relationships:\n" +
-            "\n".join(f"- {rel}" for rel in sorted(schema_relationships)) +
-            "\n"
-        )
-        st.code(schema_str, language="markdown")
-        rewritten, triples = interpret_question_with_schema(question, conversation_history, schema_str)
+    while attempt < MAX_ATTEMPTS and not verified_triples:
+        if attempt == 0:
+            rewritten, triples = interpret_question(question, conversation_history)
+        else:
+            logging.warning(
+                f"Retry #{attempt}: no valid triples yet — using schema-enforced mode."
+            )
+            schema_str = (
+                "Available Labels:\n"
+                + "\n".join(f"- {label}" for label in sorted(schema_labels))
+                + "\n\nAvailable Relationships:\n"
+                + "\n".join(f"- {rel}" for rel in sorted(schema_relationships))
+                + "\n"
+            )
+            st.code(schema_str, language="markdown")
+            rewritten, triples = interpret_question_with_schema(
+                question, conversation_history, schema_str
+            )
+
         verified_triples = verify_triples(triples, schema_labels, schema_relationships)
+        attempt += 1
 
     if not verified_triples:
-        logging.warning("Still no verified triples after retry — proceeding with unverified triples.")
+        logging.warning(
+            "❌ Still no verified triples after retries — using unverified ones."
+        )
         verified_triples = triples
 
-    st.write(f'Input: {question}')
-    st.write(f'Rewritten: {rewritten}')
-    st.write(f'Verified Triples: {verified_triples}')
+    st.write(f"Input: {question}")
+    st.write(f"Rewritten: {rewritten}")
+    st.write(f"Verified Triples: {verified_triples}")
 
-    # ✅ New: Send dict payload to tool
-    tool_output = graph_cypher_tool.invoke({
-        "question": question,
-        "rewritten": rewritten,
-        "verified_triples": verified_triples,
-        "history": conversation_text
-    })
+    # ✅ Send dict payload to tool
+    tool_output = graph_cypher_tool.invoke(
+        {
+            "question": question,
+            "rewritten": rewritten,
+            "verified_triples": verified_triples,
+            "history": conversation_text,
+        }
+    )
 
-    result_only = tool_output if isinstance(tool_output, str) else tool_output.get("result", "No results found.")
+    result_only = (
+        tool_output
+        if isinstance(tool_output, str)
+        else tool_output.get("result", "No results found.")
+    )
 
     last_query = ""
     if isinstance(tool_output, dict):
-        last_query = tool_output.get("intermediate_steps", [{}])[-1].get("query", "") or ""
+        last_query = (
+            tool_output.get("intermediate_steps", [{}])[-1].get("query", "") or ""
+        )
 
     decoded_query = urllib.parse.unquote(last_query) if last_query else ""
     if decoded_query:
@@ -238,7 +288,8 @@ def process_with_llm(question: str) -> str:
 
     neo4j_link = (
         f"[Open Neo4J](https://neoforjcmip.templeuni.com/browser/?preselectAuthMethod=NO_AUTH&cmd=edit&arg={last_query})"
-        if last_query else "[Open Neo4J](https://neoforjcmip.templeuni.com/browser/)"
+        if last_query
+        else "[Open Neo4J](https://neoforjcmip.templeuni.com/browser/)"
     )
 
     if not result_only:
@@ -268,14 +319,13 @@ Do not use any other wording for the link.
         final_response = llm.invoke(final_prompt).content.strip()
         final_response = final_response.replace("[[button_query]]", neo4j_link)
 
-    conversation_history.append({
-        "input": question,
-        "output": final_response
-    })
+    conversation_history.append({"input": question, "output": final_response})
 
     return final_response
 
+
 # === Public Function ===
+
 
 @retry(tries=2, delay=10)
 def get_results(question: str) -> dict:

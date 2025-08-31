@@ -14,10 +14,8 @@ try:
 except:
     ANALYTICS_ENABLED = False
 
-def track(
-        user_id: str, 
-        event_name: str, 
-        properties: dict):
+
+def track(user_id: str, event_name: str, properties: dict):
     """Simple wrapper for Segment's analytics.track()
 
     Args:
@@ -28,13 +26,10 @@ def track(
 
     if ANALYTICS_ENABLED is False:
         return
-    
+
     if SESSION_ID not in st.session_state:
         st.session_state[SESSION_ID] = str(uuid.uuid4())
 
     properties["session_id"] = st.session_state[SESSION_ID]
 
-    analytics.track(
-        user_id = user_id, 
-        event = event_name, 
-        properties =  properties)
+    analytics.track(user_id=user_id, event=event_name, properties=properties)

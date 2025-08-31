@@ -3,7 +3,8 @@ import streamlit as st
 import streamlit.components.v1 as components
 import os
 
-def ChangeButtonColour(wgt_txt, wch_hex_colour='12px'):
+
+def ChangeButtonColour(wgt_txt, wch_hex_colour="12px"):
     htmlstr = f"""
     <script>
         var elements = window.parent.document.querySelectorAll('*'), i;
@@ -16,6 +17,7 @@ def ChangeButtonColour(wgt_txt, wch_hex_colour='12px'):
     """
     components.html(htmlstr, height=0, width=0)
 
+
 def sidebar():
     with st.sidebar:
         # Base path for this script
@@ -25,27 +27,32 @@ def sidebar():
         gcmd_img_path = os.path.join(base_path, "images", "GCMD+.png")
 
         # Images
-        st.markdown("This is the GCMD+ taxonomy schema used to organize climate science concepts in our knowledge graph:")
+        st.markdown(
+            "This is the GCMD+ taxonomy schema used to organize climate science concepts in our knowledge graph:"
+        )
         st.image(gcmd_img_path, width=400)
 
         st.markdown(
             f"""This is how the Chatbot flow goes:<br>
             <img style="width: 70%; height: auto;" src="{LANGCHAIN_IMG_PATH}"/>""",
-            unsafe_allow_html=True
+            unsafe_allow_html=True,
         )
 
         # Section Title
         st.markdown("**Questions you can ask:**")
 
         # Optional: robust CSS (not required if going vertical)
-        st.markdown("""
+        st.markdown(
+            """
             <style>
                 button[kind="secondary"] {
                     white-space: normal !important;
                     word-wrap: break-word !important;
                 }
             </style>
-        """, unsafe_allow_html=True)
+        """,
+            unsafe_allow_html=True,
+        )
 
         # Sample questions displayed vertically
         sample_questions = [
