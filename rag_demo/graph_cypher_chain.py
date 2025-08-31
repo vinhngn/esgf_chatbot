@@ -128,32 +128,27 @@ CYPHER_GENERATION_PROMPT = PromptTemplate(
 
 MEMORY = ConversationBufferMemory(
     memory_key="chat_history",
-    input_key='question',
-    output_key='answer',
-    return_messages=True
+    input_key="question",
+    output_key="answer",
+    return_messages=True,
 )
 
 url = st.secrets["NEO4J_URI"]
 username = st.secrets["NEO4J_USERNAME"]
 password = st.secrets["NEO4J_PASSWORD"]
 
-graph = Neo4jGraph(
-    url=url,
-    username=username,
-    password=password,
-    sanitize=True
-)
+graph = Neo4jGraph(url=url, username=username, password=password, sanitize=True)
 
 graph_chain = GraphCypherQAChain.from_llm(
     cypher_llm=ChatOpenAI(
         openai_api_key=st.secrets["OPENAI_API_KEY"],
         temperature=0.3,
-        model_name="gpt-4o-mini"
+        model_name="gpt-4o-mini",
     ),
     qa_llm=ChatOpenAI(
         openai_api_key=st.secrets["OPENAI_API_KEY"],
         temperature=0.7,
-        model_name="gpt-4o-mini"
+        model_name="gpt-4o-mini",
     ),
     graph=graph,
     cypher_prompt=CYPHER_GENERATION_PROMPT,
@@ -163,6 +158,7 @@ graph_chain = GraphCypherQAChain.from_llm(
     allow_dangerous_requests=True,
     return_intermediate_steps=True,
 )
+
 
 def parse_schema(schema_text: str):
     labels = set()
@@ -179,17 +175,20 @@ def parse_schema(schema_text: str):
 
     return labels, relationships
 
+
 @retry(tries=2, delay=12)
 def get_results(
     question: str,
     rewritten: str = "",
     verified_triples: list[tuple[str, str, str]] = None,
-    history: str = ""
+    history: str = "",
 ) -> str:
-    logging.info(f'Using Neo4j database at URL: {url}')
-    
+    logging.info(f"Using Neo4j database at URL: {url}")
+
     verified_triples = verified_triples or []
-    triples_text = "\n".join([f"({s}, {r}, {o})" for (s, r, o) in verified_triples]) or "None"
+    triples_text = (
+        "\n".join([f"({s}, {r}, {o})" for (s, r, o) in verified_triples]) or "None"
+    )
 
     graph.refresh_schema()
 
@@ -199,7 +198,7 @@ def get_results(
     # FULL PROMPT INJECTION HERE
     prompt = CYPHER_GENERATION_PROMPT.format(
         schema=graph.get_schema,
-        question=f'''
+        question=f"""
 Conversation History:
 {history}
 
@@ -211,11 +210,10 @@ Rewritten Question:
 
 Verified Triples:
 {triples_text}
-'''
-
+""",
     )
 
-    print('\n========= Prompt to LLM =========\n')
+    print("\n========= Prompt to LLM =========\n")
     print(prompt)
 
     try:
@@ -224,11 +222,11 @@ Verified Triples:
             return_only_outputs=True,
         )
     except Exception as e:
-        logging.warning(f'Handled exception running GraphCypher chain: {e}')
+        logging.warning(f"Handled exception running GraphCypher chain: {e}")
         return "Sorry, I couldn't find an answer to your question"
 
     if chain_result is None:
-        print('No answer was generated.')
+        print("No answer was generated.")
         return "No answer was generated."
 
     try:

@@ -24,7 +24,7 @@ if "SESSION_ID" not in st.session_state:
 # LangChain caching to reduce API calls
 set_llm_cache(InMemoryCache())
 
-st.markdown(TITLE, unsafe_allow_html = True)
+st.markdown(TITLE, unsafe_allow_html=True)
 sidebar()
 placeholder = st.empty()
 emoji_feedback = st.empty()
@@ -41,11 +41,11 @@ if "messages" not in st.session_state:
         # {"role": "ai", "content": f"""This is how the Chatbot flow goes: \n <img style="width: 70%; height: auto;" src="{LANGCHAIN_IMG_PATH}"/>"""}
     ]
 
-# Display chat messages from history 
+# Display chat messages from history
 with placeholder.container():
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
-            st.markdown(message["content"], unsafe_allow_html = True)
+            st.markdown(message["content"], unsafe_allow_html=True)
 
 # User input - switch between sidebar sample quick select or actual user input.
 if free_questions_exhausted() and user_supplied_openai_key_unavailable():
@@ -58,7 +58,7 @@ if "sample" in st.session_state and st.session_state["sample"] is not None:
     user_input = st.session_state["sample"]
 else:
     user_input = st.chat_input(
-        placeholder="Ask question on the SEC Filings", key = "user_input"
+        placeholder="Ask question on the SEC Filings", key="user_input"
     )
 
 if user_input:
@@ -84,7 +84,7 @@ if user_input:
                 # StreamlitCcallbackHandler api doc: https://api.python.langchain.com/en/latest/callbacks/langchain_community.callbacks.streamlit.streamlit_callback_handler.StreamlitCallbackHandler.html
 
                 agent_response = rag_agent.get_results(
-                    question = user_input,
+                    question=user_input,
                 )
 
                 if isinstance(agent_response, dict) is False:
@@ -109,14 +109,14 @@ if user_input:
     if "sample" in st.session_state and st.session_state["sample"] is not None:
         st.session_state["sample"] = None
         user_input = st.chat_input(
-            placeholder = "Ask question on the SEC Filings", key = "user_input"
+            placeholder="Ask question on the SEC Filings", key="user_input"
         )
 
     emoji_feedback = st.empty()
 
 # Emoji feedback
 with emoji_feedback.container():
-    feedback = streamlit_feedback(feedback_type = "thumbs")
+    feedback = streamlit_feedback(feedback_type="thumbs")
     if feedback:
         score = feedback["score"]
         last_bot_message = st.session_state["messages"][-1]["content"]
