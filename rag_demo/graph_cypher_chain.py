@@ -181,13 +181,20 @@ def get_results(
     question: str,
     rewritten: str = "",
     verified_triples: list[tuple[str, str, str]] = None,
+    instance_triples: list[tuple[str, str, str]] = None,  
     history: str = "",
 ) -> str:
+
     logging.info(f"Using Neo4j database at URL: {url}")
 
     verified_triples = verified_triples or []
     triples_text = (
-        "\n".join([f"({s}, {r}, {o})" for (s, r, o) in verified_triples]) or "None"
+        "\n".join([f"({s}, {r}, {o})" for (s, r, o) in verified_triples or []])
+        or "None"
+    )
+    instance_text = (
+        "\n".join([f"({s}, {r}, {o})" for (s, r, o) in instance_triples or []])
+        or "None"
     )
 
     graph.refresh_schema()
@@ -210,6 +217,9 @@ Rewritten Question:
 
 Verified Triples:
 {triples_text}
+
+Instance Triples:
+{instance_text}
 """,
     )
 
