@@ -56,12 +56,14 @@ def sidebar():
 
         # Sample questions displayed vertically
         sample_questions = [
-            "Show all climate models that include the variable 'pr'",
-            "Show regional climate models that predict precipitation over Florida",
+            "Show regional climate models that predict precipitation over Florida, USA",
+            "Show the components, shared models, and realm for ACCESS models",
+            "Show all models produced by NASA-GISS, their components, and any other models that use the same components",
+            "Show all experiments using AGCM models",
+            "What is the frequency, resolution, and realm associated with the model 'NorESM2-LM'?",
             "Which driving models are linked to regional climate models that predict variable pr?",
             "Show me all variables related to the model 'HadGEM3-GC31-LL'",
-            "Which variables are associated with the experiment historical, and which models (sources) provide them?",
-            "What is the frequency, resolution, and realm associated with the model 'NorESM2-LM'?",
+            "Which variables are associated with the experiment historical, and which models (sources) provide them?"
         ]
 
         for question in sample_questions:
