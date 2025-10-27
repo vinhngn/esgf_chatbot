@@ -30,6 +30,18 @@ Cypher generation rules:
 - Match labels and node names exactly — do not invent or abbreviate unless known.
 - Where applicable, use case-insensitive matching for names (e.g., `=~ '(?i).*foo.*'`).
 
+Interpretation guide:
+- "regional climate models" or "RCMs" → use (r:RCM)
+- "global climate models" or "GCMs" → use (s:Source) with (type.name = "AOGCM") if available
+- "climate models" → use (s:Source)
+- "models" → assume (s:Source)
+- "predict" or "forecast" → map to [:PRODUCES_VARIABLE]
+- "temperature" → variable {{name: "tas"}}
+- "precipitation" or "rainfall" → variable {{name: "pr"}}
+- "over <region>" → (r)-[:COVERS_REGION]->(region)
+
+When uncertain about the model type, default to (s:Source), but respect explicit terms like "regional" or "global" when present.
+
 Schema:
 {schema}
 
