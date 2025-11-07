@@ -378,11 +378,29 @@ def process_with_llm(question: str) -> str:
     if decoded_query:
         st.code(decoded_query, language="cypher")
 
-    neo4j_link = (
-        f"[Open Neo4J](https://neoforjcmip.templeuni.com/browser/?preselectAuthMethod=NO_AUTH&cmd=edit&arg={last_query})"
-        if last_query
-        else "[Open Neo4J](https://neoforjcmip.templeuni.com/browser/)"
-    )
+    # --- Build Neo4j Browser link dynamically based on current secrets.toml ---
+    neo4j_uri = st.secrets.get("NEO4J_URI", "neo4j+s://demo.neo4jlabs.com")
+    neo4j_user = st.secrets.get("NEO4J_USERNAME", "")
+    neo4j_db = st.secrets.get("NEO4J_DATABASE", "")
+
+    # Extract host (for demo.neo4jlabs.com case)
+    host = "demo.neo4jlabs.com"
+    if "://" in neo4j_uri:
+        host = neo4j_uri.split("://", 1)[1].split(":")[0].strip("/")
+
+    # Construct correct Neo4j Browser URL
+    if neo4j_user and neo4j_db:
+        base_browser_url = (
+            f"https://{host}:7473/browser/?dbms=neo4j://{neo4j_user}@{host}&db={neo4j_db}"
+        )
+    else:
+        base_browser_url = f"https://{host}:7473/browser/"
+
+    if last_query:
+        neo4j_link = f"[Open Neo4J]({base_browser_url}&cmd=edit&arg={last_query})"
+    else:
+        neo4j_link = f"[Open Neo4J]({base_browser_url})"
+
 
     if not result_only:
         final_response = (
