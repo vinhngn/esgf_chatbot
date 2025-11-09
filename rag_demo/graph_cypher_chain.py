@@ -9,10 +9,10 @@ from langchain_community.graphs import Neo4jGraph
 from langchain.prompts.prompt import PromptTemplate
 from langchain_openai import ChatOpenAI
 import re
-from .templates.cypher_climate_template import CYPHER_GENERATION_TEMPLATE
+from rag_demo.templates.cypher_climate_template import CYPHER_GENERATION_TEMPLATE
 
 CYPHER_GENERATION_PROMPT = PromptTemplate(
-    input_variables=["schema", "question"], template = CYPHER_GENERATION_TEMPLATE
+    input_variables=["schema", "question"], template=CYPHER_GENERATION_TEMPLATE
 )
 
 MEMORY = ConversationBufferMemory(
@@ -70,7 +70,7 @@ def get_results(
     question: str,
     rewritten: str = "",
     verified_triples: list[tuple[str, str, str]] = None,
-    instance_triples: list[tuple[str, str, str]] = None,  
+    instance_triples: list[tuple[str, str, str]] = None,
     history: str = "",
 ) -> str:
 

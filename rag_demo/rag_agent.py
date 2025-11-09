@@ -8,14 +8,14 @@ from langchain.schema import HumanMessage, SystemMessage, AIMessage
 from graph_cypher_tool import graph_cypher_tool
 from graph_cypher_chain import graph, parse_schema
 import urllib.parse
-from templates.entity_definitions import entity_definitions
-from templates.match_properties_map import match_properties_map
+from rag_demo.templates.entity_definitions import entity_definitions
+from rag_demo.templates.match_properties_map import match_properties_map
 
 
-#Configure logging 
+# Configure logging
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
-#LLM Configuration
+# LLM Configuration
 llm = ChatOpenAI(
     openai_api_key=st.secrets["OPENAI_API_KEY"],
     temperature=0.5,
@@ -44,7 +44,7 @@ def strip_quotes(s):
     return s.strip("'").strip('"')
 
 
-#Fetch & parse schema once
+# Fetch & parse schema once
 graph.refresh_schema()
 schema_text = graph.get_schema
 schema_labels, schema_relationships = parse_schema(schema_text)
@@ -59,8 +59,8 @@ schema_labels_str = "\n".join(f"- {label}" for label in sorted(schema_labels))
 schema_rels_str = "\n".join(f"- {rel}" for rel in sorted(schema_relationships))
 
 
+# Triple-Extractor Functions
 
-#Triple-Extractor Functions
 
 def interpret_question(
     user_question: str, conversation_history: list[dict[str, str]]
@@ -99,6 +99,7 @@ def interpret_question(
             if match:
                 triples.append(tuple(strip_quotes(x.strip()) for x in match.groups()))
     return rewritten, triples
+
 
 def interpret_question_with_schema(
     user_question: str, conversation_history: list[dict[str, str]], schema_str: str
@@ -156,13 +157,14 @@ Triples:
     return rewritten, triples
 
 
-#Triple Verification
+# Triple Verification
+
 
 def verify_triples(triples, schema_labels, schema_relationships):
     verified_triples = []
     instance_triples = []
 
-    #Collect all literals from subject/object that are NOT labels or relationships
+    # Collect all literals from subject/object that are NOT labels or relationships
     literals = set()
     for s, p, o in triples:
         s_clean = strip_quotes(s)
@@ -172,7 +174,7 @@ def verify_triples(triples, schema_labels, schema_relationships):
         if o_clean not in schema_labels and o_clean not in schema_relationships:
             literals.add(o_clean)
 
-    #Try matching each literal across schema labels + their properties
+    # Try matching each literal across schema labels + their properties
     for literal in literals:
         for label in schema_labels:
             properties_to_try = match_properties_map.get(
@@ -212,11 +214,12 @@ def verify_triples(triples, schema_labels, schema_relationships):
     return verified_triples, instance_triples
 
 
-#Conversation History
+# Conversation History
 
 conversation_history = []
 
-#Main LLM Pipeline
+# Main LLM Pipeline
+
 
 def process_with_llm(question: str) -> str:
     # Rebuild conversation_history from Streamlit session
@@ -235,7 +238,7 @@ def process_with_llm(question: str) -> str:
         ]
     )
 
-    #Retry loop for triple extraction
+    # Retry loop for triple extraction
     MAX_ATTEMPTS = 5
     attempt = 0
     verified_triples = []
@@ -314,11 +317,26 @@ def process_with_llm(question: str) -> str:
     if decoded_query:
         st.code(decoded_query, language="cypher")
 
-    neo4j_link = (
-        f"[Open Neo4J](https://neoforjcmip.templeuni.com/browser/?preselectAuthMethod=NO_AUTH&cmd=edit&arg={last_query})"
-        if last_query
-        else "[Open Neo4J](https://neoforjcmip.templeuni.com/browser/)"
-    )
+    # --- Build Neo4j Browser link dynamically based on current secrets.toml ---
+    neo4j_uri = st.secrets.get("NEO4J_URI", "neo4j+s://demo.neo4jlabs.com")
+    neo4j_user = st.secrets.get("NEO4J_USERNAME", "")
+    neo4j_db = st.secrets.get("NEO4J_DATABASE", "")
+
+    # Extract host (for demo.neo4jlabs.com case)
+    host = "demo.neo4jlabs.com"
+    if "://" in neo4j_uri:
+        host = neo4j_uri.split("://", 1)[1].split(":")[0].strip("/")
+
+    # Construct correct Neo4j Browser URL
+    if neo4j_user and neo4j_db:
+        base_browser_url = f"https://{host}:7473/browser/?dbms=neo4j://{neo4j_user}@{host}&db={neo4j_db}"
+    else:
+        base_browser_url = f"https://{host}:7473/browser/"
+
+    if last_query:
+        neo4j_link = f"[Open Neo4J]({base_browser_url}&cmd=edit&arg={last_query})"
+    else:
+        neo4j_link = f"[Open Neo4J]({base_browser_url})"
 
     if not result_only:
         final_response = (
@@ -352,7 +370,8 @@ Do not use any other wording for the link.
     return final_response
 
 
-#Public Function
+# Public Function
+
 
 @retry(tries=2, delay=10)
 def get_results(question: str) -> dict:
