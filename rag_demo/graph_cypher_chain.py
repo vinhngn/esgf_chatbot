@@ -1,14 +1,17 @@
 import json
 import logging
-import streamlit as st
+import re
 import urllib.parse
-from retry import retry
+
+import streamlit as st
 from langchain.chains import GraphCypherQAChain
 from langchain.chains.conversation.memory import ConversationBufferMemory
-from langchain_community.graphs import Neo4jGraph
 from langchain.prompts.prompt import PromptTemplate
 from langchain_openai import ChatOpenAI
-import re
+from langchain_community.graphs import Neo4jGraph
+from datetime import datetime, date, time
+from retry import retry
+
 from rag_demo.templates.cypher_climate_template import CYPHER_GENERATION_TEMPLATE
 
 CYPHER_GENERATION_PROMPT = PromptTemplate(
@@ -30,14 +33,14 @@ graph = Neo4jGraph(url=url, username=username, password=password, sanitize=True)
 
 graph_chain = GraphCypherQAChain.from_llm(
     cypher_llm=ChatOpenAI(
-        openai_api_key=st.secrets["OPENAI_API_KEY"],
+        api_key=st.secrets["OPENAI_API_KEY"],
         temperature=0.3,
-        model_name="gpt-4o-mini",
+        model="gpt-4o-mini",
     ),
     qa_llm=ChatOpenAI(
-        openai_api_key=st.secrets["OPENAI_API_KEY"],
+        api_key=st.secrets["OPENAI_API_KEY"],
         temperature=0.7,
-        model_name="gpt-4o-mini",
+        model="gpt-4o-mini",
     ),
     graph=graph,
     cypher_prompt=CYPHER_GENERATION_PROMPT,
@@ -46,6 +49,7 @@ graph_chain = GraphCypherQAChain.from_llm(
     verbose=True,
     allow_dangerous_requests=True,
     return_intermediate_steps=True,
+    top_k=100,
 )
 
 
@@ -91,25 +95,27 @@ def get_results(
     print("\n========= Raw Schema from Neo4j =========\n")
     print(graph.get_schema)
 
-    # FULL PROMPT INJECTION HERE
-    prompt = CYPHER_GENERATION_PROMPT.format(
-        schema=graph.get_schema,
-        question=f"""
+    conversation_history = history or "None"
+    question_block = f"""
 Conversation History:
-{history}
+{conversation_history}
 
 Now generate a Cypher query for:
 {question}
 
 Rewritten Question:
-{rewritten}
+{rewritten or question}
 
 Verified Triples:
 {triples_text}
 
 Instance Triples:
 {instance_text}
-""",
+""".strip()
+
+    prompt = CYPHER_GENERATION_PROMPT.format(
+        schema=graph.get_schema,
+        question=question_block,
     )
 
     print("\n========= Prompt to LLM =========\n")
@@ -143,6 +149,11 @@ Instance Triples:
         logging.warning(f"Failed to extract Cypher query: {e}")
 
     print("\n========= Final Result =========\n")
-    print(json.dumps(chain_result, indent=2))
+    def _json_default(obj):
+        if isinstance(obj, (datetime, date, time)):
+            return obj.isoformat()
+        return str(obj)
+
+    print(json.dumps(chain_result, indent=2, default=_json_default))
 
     return chain_result

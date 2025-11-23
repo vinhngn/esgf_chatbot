@@ -1,15 +1,41 @@
 import streamlit as st
 import logging
 import re
+import urllib.parse
+from datetime import datetime, date, time
 from retry import retry
-from langchain_community.llms import Ollama
 from langchain_openai import ChatOpenAI
 from langchain.schema import HumanMessage, SystemMessage, AIMessage
 from graph_cypher_tool import graph_cypher_tool
 from graph_cypher_chain import graph, parse_schema
-import urllib.parse
 from rag_demo.templates.entity_definitions import entity_definitions
 from rag_demo.templates.match_properties_map import match_properties_map
+
+
+# Shared helpers
+def _extract_cypher_queries(chain_result):
+    steps = chain_result.get("intermediate_steps", [])
+    if not isinstance(steps, list):
+        return None, None
+
+    for step in steps:
+        if isinstance(step, dict):
+            encoded = step.get("query")
+            if encoded:
+                return encoded, urllib.parse.unquote(encoded)
+    return None, None
+
+
+def _normalize_value(value):
+    if isinstance(value, (datetime, date, time)):
+        return value.isoformat()
+    if isinstance(value, dict):
+        return {k: _normalize_value(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_normalize_value(v) for v in value]
+    if isinstance(value, tuple):
+        return tuple(_normalize_value(v) for v in value)
+    return value
 
 
 # Configure logging
@@ -17,15 +43,15 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
 # LLM Configuration
 llm = ChatOpenAI(
-    openai_api_key=st.secrets["OPENAI_API_KEY"],
+    api_key=st.secrets["OPENAI_API_KEY"],
     temperature=0.5,
-    model_name="gpt-4o-mini",
+    model="gpt-4o-mini",
 )
 
 interpreter_llm = ChatOpenAI(
-    openai_api_key=st.secrets["OPENAI_API_KEY"],
+    api_key=st.secrets["OPENAI_API_KEY"],
     temperature=0.3,
-    model_name="gpt-4o-mini",
+    model="gpt-4o-mini",
 )
 
 
@@ -80,7 +106,7 @@ def interpret_question(
         "Be concise. Do NOT add explanation or extra commentary.\n"
     )
 
-    messages = [SystemMessage(content=system_prompt)]
+    messages: list = [SystemMessage(content=system_prompt)]
     for turn in conversation_history[-3:]:
         messages.append(HumanMessage(content=turn["input"]))
         messages.append(AIMessage(content=turn["output"]))
@@ -136,7 +162,7 @@ Triples:
         + entity_definitions
     )
 
-    messages = [SystemMessage(content=system_prompt)]
+    messages: list = [SystemMessage(content=system_prompt)]
     for turn in conversation_history[-3:]:
         messages.append(HumanMessage(content=turn["input"]))
         messages.append(AIMessage(content=turn["output"]))
@@ -184,7 +210,7 @@ def verify_triples(triples, schema_labels, schema_relationships):
                 try:
                     query = f"""
                     MATCH (n:{label})
-                    WHERE toLower(n.{prop}) = toLower($name)
+                    WHERE toLower(toString(n.{prop})) = toLower(toString($name))
                     RETURN n LIMIT 1
                     """
                     result = graph.query(query, {"name": literal})
@@ -223,7 +249,6 @@ conversation_history = []
 
 def process_with_llm(question: str) -> str:
     # Rebuild conversation_history from Streamlit session
-    history_msgs = st.session_state.get("messages", [])[-6:]  # 3 pairs
     conversation_history.clear()
     for msg in st.session_state.get("messages", []):
         if msg["role"] == "user":
@@ -301,19 +326,19 @@ def process_with_llm(question: str) -> str:
         }
     )
 
-    result_only = (
-        tool_output
-        if isinstance(tool_output, str)
-        else tool_output.get("result", "No results found.")
-    )
-
-    last_query = ""
     if isinstance(tool_output, dict):
-        last_query = (
-            tool_output.get("intermediate_steps", [{}])[-1].get("query", "") or ""
-        )
+        result_payload = tool_output
+        encoded_query, decoded_query = _extract_cypher_queries(tool_output)
+    else:
+        result_payload = {"result": tool_output}
+        encoded_query, decoded_query = "", ""
 
-    decoded_query = urllib.parse.unquote(last_query) if last_query else ""
+    encoded_query = encoded_query or ""
+    decoded_query = decoded_query or ""
+    result_payload["result"] = _normalize_value(result_payload.get("result"))
+    result_only = result_payload.get("result")
+    if not result_only:
+        result_only = result_payload.get("error") or "No results found."
     if decoded_query:
         st.code(decoded_query, language="cypher")
 
@@ -333,14 +358,14 @@ def process_with_llm(question: str) -> str:
     else:
         base_browser_url = f"https://{host}:7473/browser/"
 
-    if last_query:
-        neo4j_link = f"[Open Neo4J]({base_browser_url}&cmd=edit&arg={last_query})"
+    if encoded_query:
+        neo4j_link = f"[Open Neo4J]({base_browser_url}&cmd=edit&arg={encoded_query})"
     else:
         neo4j_link = f"[Open Neo4J]({base_browser_url})"
 
     if not result_only:
         final_response = (
-            f"It appears that there are no climate models that include the requested variable in the database. "
+            f"It appears that there are no models that include the requested variable in the database. "
             f"Please click here to access the knowledge graph: {neo4j_link}"
         )
     else:
