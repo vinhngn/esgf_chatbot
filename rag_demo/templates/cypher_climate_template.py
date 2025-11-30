@@ -12,10 +12,10 @@ Cypher generation rules:
 - Use only node types, properties, and relationships defined in the schema.
 - Use exact matching for known names (e.g., Variable {{name: "pr"}}).
 - Use WHERE clauses for text matching and logical conditions (wrap with parentheses if needed).
-- Use OPTIONAL MATCH where appropriate to avoid losing nodes with missing relationships.
+- Prefer MATCH for required relationships; only introduce OPTIONAL MATCH when the user explicitly needs optional data or missing relationships would otherwise drop a relevant node.
 - Use ORDER BY where it improves result readability.
 - Always include LIMIT 50 to prevent overly large result sets.
-- Return all relevant nodes/relationships explicitly and clearly in the RETURN clause — avoid just `RETURN *`.
+- Return only the nodes/properties explicitly requested or necessary to answer the question, and list them clearly in the RETURN clause — avoid just `RETURN *` or projecting unrelated data.
 - Use directional relationships based on schema structure.
 - Match labels and node names exactly — do not invent or abbreviate unless known.
 - Where applicable, use case-insensitive matching for names (e.g., `=~ '(?i).*foo.*'`).
@@ -146,9 +146,9 @@ Strict rules:
 1. Use only the schema-provided labels, relationship types, and properties. Never invent new structures.
 2. Match property names exactly for equality checks (e.g., Movie {{title: "The Matrix"}}); use toLower/regex only for partial matches.
 3. Alias every relationship when you need its properties or counts (MATCH (p)-[f:FOLLOWS]->(q) ... COUNT(f)) and when returning relationship fields (MATCH (p)-[r:ACTED_IN]->(m) ... r.roles).
-4. Keep Cypher readable with explicit aliases. Use OPTIONAL MATCH when missing relationships should not drop the primary node.
+4. Keep Cypher readable with explicit aliases, preferring MATCH for relationships; only reach for OPTIONAL MATCH when the user explicitly needs optional data or when missing links would otherwise drop a required node.
 5. Always include LIMIT 50 (or a smaller limit if it makes sense) to avoid overly large result sets.
-6. Return meaningful projections instead of RETURN *. Order the output when useful.
+6. Return only the nodes/properties requested or necessary to answer the question; avoid RETURN * and extra projections. Order the output when useful.
 7. Use aggregations deliberately (COUNT, COLLECT) and alias them; combine MATCH + OPTIONAL MATCH + WITH when counting relationships so the query stays valid. If you need to reuse an aggregated list (e.g., its size), introduce a second WITH clause or call `size(COLLECT(...))` directly—never reference an alias before it is defined.
 8. When queries mention “roles” or “review summary/rating,” reference ACTED_IN.roles or REVIEWED.summary/rating through the relationship alias.
 9. When measuring the length of strings or lists, use `size(...)` (e.g., `ORDER BY size(m.title) DESC`) instead of `LENGTH`, which is reserved for path patterns.
@@ -287,9 +287,9 @@ Cypher generation rules:
 - Use only node types, properties, and relationships defined in the schema.
 - Match property names exactly (e.g., Movie {{title: "Inception"}} or User {{userId: "123"}}).
 - Use WHERE clauses for flexible text matching when appropriate (e.g., `toLower(p.name) CONTAINS "nolan"`).
-- Use OPTIONAL MATCH to include related nodes even if some relationships are missing.
+- Prefer MATCH for required relationships, introducing OPTIONAL MATCH only when questions explicitly call for optional data or missing relationships would drop necessary nodes.
 - Always include LIMIT 50 to prevent overly large result sets.
-- Return meaningful node and relationship data — avoid just `RETURN *`.
+- Return only the nodes/properties requested or necessary to answer the question — avoid just `RETURN *` or projecting unrelated results.
 - Use clear aliases (e.g., m for Movie, p for Person, u for User, g for Genre) and consistent relationship directions.
 - When the question mentions “who,” assume Person, Actor, or Director nodes depending on context.
 - When the question mentions “film,” “movie,” or “title,” assume Movie nodes.
@@ -397,9 +397,9 @@ Cypher generation rules:
 - Use only node types, properties, and relationships defined in the schema.
 - Match property names exactly (e.g., Movie {{title: "Inception"}} or User {{userId: "123"}}).
 - Use WHERE clauses for flexible text matching when appropriate (e.g., `toLower(p.name) CONTAINS "nolan"`).
-- Use OPTIONAL MATCH to include related nodes even if some relationships are missing.
+- Prefer MATCH for required relationships, introducing OPTIONAL MATCH only when questions explicitly call for optional data or missing relationships would drop necessary nodes.
 - Always include LIMIT 50 to prevent overly large result sets.
-- Return meaningful node and relationship data — avoid just `RETURN *`.
+- Return only the nodes/properties requested or necessary to answer the question — avoid just `RETURN *` or projecting unrelated results.
 - Use clear aliases (e.g., m for Movie, p for Person, u for User, g for Genre) and consistent relationship directions.
 - When the question mentions “who,” assume Person, Actor, or Director nodes depending on context.
 - When the question mentions “film,” “movie,” or “title,” assume Movie nodes.
@@ -514,8 +514,8 @@ Strict rules:
 2. Match property names exactly; use toLower(...) or regexes only for partial matches.
 3. Alias every relationship when you read its properties or aggregates (MATCH (o)-[r:ORDERS]->(p) ... r.quantity).
 4. Many numeric values (freight, unitPrice, discount) are stored as strings. Convert them before math using toFloat(...) or toInteger(...).
-5. Keep Cypher readable with explicit aliases (p for Product, c for Customer, s for Supplier, o for Order, cat for Category). Use OPTIONAL MATCH when missing relationships should not drop the main node.
-6. Return meaningful projections instead of RETURN *. Order the output when it improves clarity.
+5. Keep Cypher readable with explicit aliases (p for Product, c for Customer, s for Supplier, o for Order, cat for Category). Prefer MATCH for relationships, using OPTIONAL MATCH only when the user explicitly asks for optional data or when missing links would drop a necessary node.
+6. Return only the nodes/properties requested or necessary to answer the question; avoid RETURN * and extra projections. Order the output when it improves clarity.
 7. Always include LIMIT 50 unless a smaller limit is clearly requested.
 8. Use aggregations (COUNT, SUM, AVG, COLLECT) deliberately and alias the result. If you need both a collection and its size, use a second WITH clause or call size(COLLECT(...)) directly.
 9. When filtering by dates or text, compare consistently formatted strings. Convert string numbers to numeric types before comparisons or math.
@@ -642,8 +642,8 @@ Strict rules:
 2. Match property names exactly; use toLower(...) or regex only for partial matches.
 3. Alias every relationship when you need its properties or plan to return it (MATCH (u)-[s:SIMILAR_TO]->(v) ... s.score).
 4. Text fields like tweet text or URLs should be filtered with case-insensitive comparisons when appropriate.
-5. Keep Cypher readable with explicit aliases (u for User, m for Me, t for Tweet, h for Hashtag, l for Link, s for Source). Use OPTIONAL MATCH when missing relationships should not drop the main node.
-6. Return meaningful projections instead of RETURN *. Order results when helpful.
+5. Keep Cypher readable with explicit aliases (u for User, m for Me, t for Tweet, h for Hashtag, l for Link, s for Source). Prefer MATCH for relationships, using OPTIONAL MATCH only when the user explicitly asks for optional data or when missing links would drop a necessary node.
+6. Return only the nodes/properties requested or necessary to answer the question; avoid RETURN * and extra projections. Order results when helpful.
 7. Always include LIMIT 50 unless a smaller limit is clearly justified.
 8. Use aggregations deliberately (COUNT, COLLECT, AVG) and introduce extra WITH clauses when reusing aggregated results.
 9. When measuring tweet or list lengths, use size(...). When filtering by date/time, compare the DATE_TIME values directly.
