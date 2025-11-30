@@ -12,10 +12,10 @@ from langchain_community.graphs import Neo4jGraph
 from datetime import datetime, date, time
 from retry import retry
 
-from rag_demo.templates.cypher_climate_template import CYPHER_GENERATION_TEMPLATE
+from rag_demo.templates.cypher_climate_template import CYPHER_GENERATION_CLIMATE_TEMPLATE
 
 CYPHER_GENERATION_PROMPT = PromptTemplate(
-    input_variables=["schema", "question"], template=CYPHER_GENERATION_TEMPLATE
+    input_variables=["schema", "question"], template=CYPHER_GENERATION_CLIMATE_TEMPLATE
 )
 
 MEMORY = ConversationBufferMemory(

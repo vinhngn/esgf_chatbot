@@ -193,6 +193,7 @@ match_twitter_properties_map = {
     "Source": ["name"],
 }
 
+"""
 
 import tomllib
 
@@ -211,3 +212,5 @@ elif db == "northwind":
     match_properties_map = match_northwind_properties_map
 elif db == "twitter":
     match_properties_map = match_twitter_properties_map
+    
+"""

@@ -36,12 +36,13 @@ Schema:
 {schema}
 
 Examples:
+
 ### Example 1
 Natural Language Question:
 Show all climate models that include the variable 'pr'.
 
 MATCH (s:Source)-[:PRODUCES_VARIABLE]->(v:Variable {{name: "pr"}})
-RETURN s, v
+RETURN s
 LIMIT 20;
 
 ---
@@ -50,10 +51,11 @@ LIMIT 20;
 Natural Language Question:
 Show regional climate models that predict precipitation over Florida.
 
-MATCH (s:Source)-[:PRODUCES_VARIABLE]->(v:Variable {{name: "pr"}})
-MATCH (r:RCM)-[:DRIVEN_BY_SOURCE]->(s)
+MATCH (r:RCM)-[:DRIVEN_BY_SOURCE]->(s:Source)
+MATCH (s)-[:PRODUCES_VARIABLE]->(v:Variable {{name: "pr"}})
 MATCH (r)-[:COVERS_REGION]->(c:Country_Subdivision {{name: "Florida", code: "US.FL"}})
-RETURN s, r, c, v;
+RETURN r
+LIMIT 50;
 
 ---
 
@@ -61,8 +63,9 @@ RETURN s, r, c, v;
 Natural Language Question:
 Which variables are associated with the experiment historical, and which models (sources) provide them?
 
-MATCH (e:Experiment {{name: "historical"}})<-[:USED_IN_EXPERIMENT]-(s:Source)-[:PRODUCES_VARIABLE]->(v:Variable)
-RETURN e, s, v
+MATCH (e:Experiment {{name: "historical"}})<-[:USED_IN_EXPERIMENT]-(s:Source)
+MATCH (s)-[:PRODUCES_VARIABLE]->(v:Variable)
+RETURN v, s
 LIMIT 20;
 
 ---
@@ -73,11 +76,10 @@ Show the components, shared models, and realm that ACCESS models belong to.
 
 MATCH (s1:Source)
 WHERE s1.name =~ '(?i).*access.*'
-OPTIONAL MATCH (s1)-[:IS_OF_TYPE]->(type:SourceType)
-OPTIONAL MATCH (s1)-[:HAS_SOURCE_COMPONENT]->(sc:SourceComponent)
+MATCH (s1)-[:HAS_SOURCE_COMPONENT]->(sc:SourceComponent)
 OPTIONAL MATCH (sc)<-[:HAS_SOURCE_COMPONENT]-(s2:Source)
 OPTIONAL MATCH (s1)-[:APPLIES_TO_REALM]->(realm:Realm)
-RETURN s1, type, sc, s2, realm
+RETURN s1, sc, s2, realm
 LIMIT 50;
 
 ---
@@ -88,7 +90,7 @@ Show all models produced by NASA-GISS, their components, and any other models th
 
 MATCH (i:Institute)<-[:PRODUCED_BY_INSTITUTE]-(s1:Source)
 WHERE toLower(i.name) = "nasa-giss"
-OPTIONAL MATCH (s1)-[:HAS_SOURCE_COMPONENT]->(sc:SourceComponent)
+MATCH (s1)-[:HAS_SOURCE_COMPONENT]->(sc:SourceComponent)
 OPTIONAL MATCH (sc)<-[:HAS_SOURCE_COMPONENT]-(s2:Source)
 RETURN i, s1, sc, s2
 ORDER BY s1.name
@@ -103,8 +105,8 @@ Which realms are targeted by AOGCM models?
 MATCH (s:Source)-[:IS_OF_TYPE]->(type:SourceType)
 WHERE type.name = "AOGCM"
 OPTIONAL MATCH (s)-[:APPLIES_TO_REALM]->(r:Realm)
-RETURN type, s, r
-ORDER BY s.name
+RETURN r
+ORDER BY r.name
 LIMIT 50;
 
 ---
@@ -113,9 +115,10 @@ LIMIT 50;
 Natural Language Question:
 Show pairs of models producing the variable "AEROD_v".
 
-MATCH (s1:Source)-[:PRODUCES_VARIABLE]->(v:Variable)<-[:PRODUCES_VARIABLE]-(s2:Source)
-WHERE v.name = "AEROD_v" AND s1 <> s2
-RETURN s1, s2, v
+MATCH (s1:Source)-[:PRODUCES_VARIABLE]->(v:Variable {{name: "AEROD_v"}})
+MATCH (s2:Source)-[:PRODUCES_VARIABLE]->(v)
+WHERE s1 <> s2
+RETURN s1, s2
 ORDER BY s1.name
 LIMIT 50;
 
@@ -736,7 +739,7 @@ LIMIT 10;
 {question}
 """
 
-
+"""
 import tomllib
 
 with open(".streamlit/secrets.toml", "rb") as f:
@@ -754,3 +757,4 @@ elif db == "northwind":
     CYPHER_GENERATION_TEMPLATE = CYPHER_GENERATION_NORTHWIND_TEMPLATE
 elif db == "twitter":
     CYPHER_GENERATION_TEMPLATE = CYPHER_GENERATION_TWITTER_TEMPLATE
+"""

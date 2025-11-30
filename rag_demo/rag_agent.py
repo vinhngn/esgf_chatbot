@@ -8,8 +8,8 @@ from langchain_openai import ChatOpenAI
 from langchain.schema import HumanMessage, SystemMessage, AIMessage
 from graph_cypher_tool import graph_cypher_tool
 from graph_cypher_chain import graph, parse_schema
-from rag_demo.templates.entity_definitions import entity_definitions
-from rag_demo.templates.match_properties_map import match_properties_map
+from rag_demo.templates.entity_definitions import entity_climate_definitions
+from rag_demo.templates.match_properties_map import match_climate_properties_map
 
 
 # Shared helpers
@@ -159,7 +159,7 @@ Triples:
 2. ...
 """.strip()
         + "\n\n"
-        + entity_definitions
+        + entity_climate_definitions
     )
 
     messages: list = [SystemMessage(content=system_prompt)]
@@ -203,7 +203,7 @@ def verify_triples(triples, schema_labels, schema_relationships):
     # Try matching each literal across schema labels + their properties
     for literal in literals:
         for label in schema_labels:
-            properties_to_try = match_properties_map.get(
+            properties_to_try = match_climate_properties_map.get(
                 label, ["name"]
             )  # fallback to "name"
             for prop in properties_to_try:
@@ -343,25 +343,14 @@ def process_with_llm(question: str) -> str:
         st.code(decoded_query, language="cypher")
 
     # --- Build Neo4j Browser link dynamically based on current secrets.toml ---
-    neo4j_uri = st.secrets.get("NEO4J_URI", "neo4j+s://demo.neo4jlabs.com")
-    neo4j_user = st.secrets.get("NEO4J_USERNAME", "")
-    neo4j_db = st.secrets.get("NEO4J_DATABASE", "")
+    # --- Force Neo4j Browser link for CMIP climate model instance ---
+    last_query = encoded_query  # encoded_query already created above
 
-    # Extract host (for demo.neo4jlabs.com case)
-    host = "demo.neo4jlabs.com"
-    if "://" in neo4j_uri:
-        host = neo4j_uri.split("://", 1)[1].split(":")[0].strip("/")
-
-    # Construct correct Neo4j Browser URL
-    if neo4j_user and neo4j_db:
-        base_browser_url = f"https://{host}:7473/browser/?dbms=neo4j://{neo4j_user}@{host}&db={neo4j_db}"
-    else:
-        base_browser_url = f"https://{host}:7473/browser/"
-
-    if encoded_query:
-        neo4j_link = f"[Open Neo4J]({base_browser_url}&cmd=edit&arg={encoded_query})"
-    else:
-        neo4j_link = f"[Open Neo4J]({base_browser_url})"
+    neo4j_link = (
+        f"[Open Neo4J](https://neoforjcmip.templeuni.com/browser/?preselectAuthMethod=NO_AUTH&cmd=edit&arg={last_query})"
+        if last_query
+        else "[Open Neo4J](https://neoforjcmip.templeuni.com/browser/)"
+    )
 
     if not result_only:
         final_response = (
