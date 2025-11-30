@@ -1,27 +1,25 @@
 from __future__ import annotations
 
 from urllib.parse import unquote
-from typing import Any
 
 from flask import Flask, jsonify, request
 
-from .graph_cypher_chain import get_results
+from graph_cypher_chain import get_results
 
 app = Flask(__name__)
 
 
-def _extract_generated_cypher(chain_result: dict[str, Any]) -> str | None:
-    """Return the decoded Cypher query from the LangChain intermediate steps."""
+def _extract_cypher_queries(chain_result):
     steps = chain_result.get("intermediate_steps", [])
     if not isinstance(steps, list):
-        return None
+        return None, None
 
     for step in steps:
         if isinstance(step, dict):
-            query = step.get("query")
-            if query:
-                return unquote(query)
-    return None
+            encoded = step.get("query")
+            if encoded:
+                return encoded, unquote(encoded)
+    return None, None
 
 
 @app.post("/api/text2cypher")
@@ -42,14 +40,13 @@ def text2cypher():
             }
         )
 
-    generated_cypher = _extract_generated_cypher(chain_result)
-    result_text = chain_result.get("result")
-
+    encoded_query, decoded_query = _extract_cypher_queries(chain_result)
     return jsonify(
         {
             "input_question": question,
-            "cypher_query": generated_cypher,
-            "result": result_text,
+            "cypher_query": decoded_query,
+            "result": chain_result.get("result"),
+            "error": chain_result.get("error"),
         }
     )
 

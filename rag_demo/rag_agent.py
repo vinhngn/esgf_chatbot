@@ -1,28 +1,57 @@
 import streamlit as st
 import logging
 import re
+import urllib.parse
+from datetime import datetime, date, time
 from retry import retry
-from langchain_community.llms import Ollama
 from langchain_openai import ChatOpenAI
 from langchain.schema import HumanMessage, SystemMessage, AIMessage
 from graph_cypher_tool import graph_cypher_tool
 from graph_cypher_chain import graph, parse_schema
-import urllib.parse
+from rag_demo.templates.entity_definitions import entity_climate_definitions
+from rag_demo.templates.match_properties_map import match_climate_properties_map
 
-#Configure logging 
+
+# Shared helpers
+def _extract_cypher_queries(chain_result):
+    steps = chain_result.get("intermediate_steps", [])
+    if not isinstance(steps, list):
+        return None, None
+
+    for step in steps:
+        if isinstance(step, dict):
+            encoded = step.get("query")
+            if encoded:
+                return encoded, urllib.parse.unquote(encoded)
+    return None, None
+
+
+def _normalize_value(value):
+    if isinstance(value, (datetime, date, time)):
+        return value.isoformat()
+    if isinstance(value, dict):
+        return {k: _normalize_value(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_normalize_value(v) for v in value]
+    if isinstance(value, tuple):
+        return tuple(_normalize_value(v) for v in value)
+    return value
+
+
+# Configure logging
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
-#LLM Configuration
+# LLM Configuration
 llm = ChatOpenAI(
-    openai_api_key=st.secrets["OPENAI_API_KEY"],
+    api_key=st.secrets["OPENAI_API_KEY"],
     temperature=0.5,
-    model_name="gpt-4o-mini",
+    model="gpt-4o-mini",
 )
 
 interpreter_llm = ChatOpenAI(
-    openai_api_key=st.secrets["OPENAI_API_KEY"],
+    api_key=st.secrets["OPENAI_API_KEY"],
     temperature=0.3,
-    model_name="gpt-4o-mini",
+    model="gpt-4o-mini",
 )
 
 
@@ -41,7 +70,7 @@ def strip_quotes(s):
     return s.strip("'").strip('"')
 
 
-#Fetch & parse schema once
+# Fetch & parse schema once
 graph.refresh_schema()
 schema_text = graph.get_schema
 schema_labels, schema_relationships = parse_schema(schema_text)
@@ -55,46 +84,9 @@ for rel in sorted(schema_relationships):
 schema_labels_str = "\n".join(f"- {label}" for label in sorted(schema_labels))
 schema_rels_str = "\n".join(f"- {rel}" for rel in sorted(schema_relationships))
 
-#Definitions block
-entity_definitions = """
-The definitions of the entity types are given below:
-Activity: A coordinated modeling effort or scientific campaign.
-ExperimentFamily: A group of related experiments sharing a common scientific goal.
-Experiment: A specific simulation scenario (e.g., historical, ssp585).
-SubExperiment: A variant or subset of an experiment, usually with specific configurations.
-Source: A climate model or system used to generate data (e.g., GFDL-ESM4).
-SourceType: The classification of the model
-SourceComponent: A component of a climate model.
-PhysicalScheme: A physical process representation used in a model (e.g., cloud scheme).
-PhysicalFeature: Unique physical characteristics of a model (e.g., terrain-following grid).
-SimulationType: Type of simulation performed (e.g., transient, equilibrium).
-Metric: Quantitative measure of model performance (e.g., climate sensitivity).
-Project: A broader initiative under which models/experiments are conducted (e.g., CMIP6).
-Institute: Organization responsible for developing models or running simulations.
-Variable: Scientific quantities output by models (e.g., temperature, precipitation).
-Realm: Component of the Earth system (e.g., atmosphere, ocean).
-Frequency: Temporal resolution of model output (e.g., daily, monthly).
-Resolution: Spatial resolution or grid size of the data.
-Ensemble: A collection of model runs differing in initial conditions or configurations.
-Member: An individual member of an ensemble.
-MIPEra: A major generation or version of coordinated experiments (e.g., CMIP5, CMIP6).
-RCM (Regional Climate Model): A model used for fine-resolution regional simulations.
-Domain: Geographical coverage of a model.
-Continent: A large continuous landmass (e.g., Asia, Africa).
-Country: A sovereign state or territory (e.g., India, USA).
-Country Subdivision: Administrative units within countries (e.g., California).
-City: Urban locality (e.g., Paris).
-No Country Region: Areas not under country jurisdiction (e.g., open ocean).
-Water Bodies: Oceans, seas, and lakes (e.g., Pacific Ocean).
-Instrument: Device used to observe environmental variables (e.g., radiometer).
-Platform: Physical carrier for an instrument (e.g., satellite).
-Weather event: Specific events like storms, droughts.
-Teleconnection: Large-scale climate patterns (e.g., ENSO, NAO).
-Ocean circulation: Movements of ocean waters (e.g., AMOC).
-Natural hazard: Geophysical events impacting systems (e.g., tsunami, earthquake).
-""".strip()
 
-#Triple-Extractor Functions
+# Triple-Extractor Functions
+
 
 def interpret_question(
     user_question: str, conversation_history: list[dict[str, str]]
@@ -114,7 +106,7 @@ def interpret_question(
         "Be concise. Do NOT add explanation or extra commentary.\n"
     )
 
-    messages = [SystemMessage(content=system_prompt)]
+    messages: list = [SystemMessage(content=system_prompt)]
     for turn in conversation_history[-3:]:
         messages.append(HumanMessage(content=turn["input"]))
         messages.append(AIMessage(content=turn["output"]))
@@ -133,6 +125,7 @@ def interpret_question(
             if match:
                 triples.append(tuple(strip_quotes(x.strip()) for x in match.groups()))
     return rewritten, triples
+
 
 def interpret_question_with_schema(
     user_question: str, conversation_history: list[dict[str, str]], schema_str: str
@@ -166,10 +159,10 @@ Triples:
 2. ...
 """.strip()
         + "\n\n"
-        + entity_definitions
+        + entity_climate_definitions
     )
 
-    messages = [SystemMessage(content=system_prompt)]
+    messages: list = [SystemMessage(content=system_prompt)]
     for turn in conversation_history[-3:]:
         messages.append(HumanMessage(content=turn["input"]))
         messages.append(AIMessage(content=turn["output"]))
@@ -190,13 +183,14 @@ Triples:
     return rewritten, triples
 
 
-#Triple Verification
+# Triple Verification
+
 
 def verify_triples(triples, schema_labels, schema_relationships):
     verified_triples = []
     instance_triples = []
 
-    #Collect all literals from subject/object that are NOT labels or relationships
+    # Collect all literals from subject/object that are NOT labels or relationships
     literals = set()
     for s, p, o in triples:
         s_clean = strip_quotes(s)
@@ -206,47 +200,17 @@ def verify_triples(triples, schema_labels, schema_relationships):
         if o_clean not in schema_labels and o_clean not in schema_relationships:
             literals.add(o_clean)
 
-    #Map of label → matchable properties
-    match_properties_map = {
-        "Experiment": ["name", "experiment_title", "names"],
-        "SubExperiment": ["name", "names"],
-        "Activity": ["name", "names"],
-        "Realm": ["name", "names"],
-        "Country": ["name", "iso", "iso3", "country", "fips"],
-        "Project": ["name", "names"],
-        "Variable": ["name", "cf_standard_name", "variable_long_name", "names"],
-        "Forcing": ["name", "names"],
-        "Institute": ["name", "names"],
-        "ExperimentFamily": ["name", "names"],
-        "Frequency": ["name", "names"],
-        "GridLabel": ["name", "names"],
-        "Member": ["name", "names"],
-        "MIPEra": ["name", "names"],
-        "Resolution": ["name", "names"],
-        "Source": ["name", "names"],
-        "SourceType": ["name", "names"],
-        "Ensemble": ["name", "names"],
-        "Domain": ["name", "names"],
-        "RCM": ["name", "names", "rcm_version"],
-        "Continent": ["name", "iso"],
-        "Water_Bodies": ["name", "Name"],
-        "City": ["name", "asciiname", "alternatenames"],
-        "No_Country_Region": ["name", "asciiname", "alternatenames"],
-        "Country_Subdivision": ["name", "code", "asciiname"],
-        "SourceComponent": ["name"],
-    }
-
-    #Try matching each literal across schema labels + their properties
+    # Try matching each literal across schema labels + their properties
     for literal in literals:
         for label in schema_labels:
-            properties_to_try = match_properties_map.get(
+            properties_to_try = match_climate_properties_map.get(
                 label, ["name"]
             )  # fallback to "name"
             for prop in properties_to_try:
                 try:
                     query = f"""
                     MATCH (n:{label})
-                    WHERE toLower(n.{prop}) = toLower($name)
+                    WHERE toLower(toString(n.{prop})) = toLower(toString($name))
                     RETURN n LIMIT 1
                     """
                     result = graph.query(query, {"name": literal})
@@ -276,15 +240,15 @@ def verify_triples(triples, schema_labels, schema_relationships):
     return verified_triples, instance_triples
 
 
-#Conversation History
+# Conversation History
 
 conversation_history = []
 
-#Main LLM Pipeline
+# Main LLM Pipeline
+
 
 def process_with_llm(question: str) -> str:
     # Rebuild conversation_history from Streamlit session
-    history_msgs = st.session_state.get("messages", [])[-6:]  # 3 pairs
     conversation_history.clear()
     for msg in st.session_state.get("messages", []):
         if msg["role"] == "user":
@@ -299,7 +263,7 @@ def process_with_llm(question: str) -> str:
         ]
     )
 
-    #Retry loop for triple extraction
+    # Retry loop for triple extraction
     MAX_ATTEMPTS = 5
     attempt = 0
     verified_triples = []
@@ -362,21 +326,25 @@ def process_with_llm(question: str) -> str:
         }
     )
 
-    result_only = (
-        tool_output
-        if isinstance(tool_output, str)
-        else tool_output.get("result", "No results found.")
-    )
-
-    last_query = ""
     if isinstance(tool_output, dict):
-        last_query = (
-            tool_output.get("intermediate_steps", [{}])[-1].get("query", "") or ""
-        )
+        result_payload = tool_output
+        encoded_query, decoded_query = _extract_cypher_queries(tool_output)
+    else:
+        result_payload = {"result": tool_output}
+        encoded_query, decoded_query = "", ""
 
-    decoded_query = urllib.parse.unquote(last_query) if last_query else ""
+    encoded_query = encoded_query or ""
+    decoded_query = decoded_query or ""
+    result_payload["result"] = _normalize_value(result_payload.get("result"))
+    result_only = result_payload.get("result")
+    if not result_only:
+        result_only = result_payload.get("error") or "No results found."
     if decoded_query:
         st.code(decoded_query, language="cypher")
+
+    # --- Build Neo4j Browser link dynamically based on current secrets.toml ---
+    # --- Force Neo4j Browser link for CMIP climate model instance ---
+    last_query = encoded_query  # encoded_query already created above
 
     neo4j_link = (
         f"[Open Neo4J](https://neoforjcmip.templeuni.com/browser/?preselectAuthMethod=NO_AUTH&cmd=edit&arg={last_query})"
@@ -386,7 +354,7 @@ def process_with_llm(question: str) -> str:
 
     if not result_only:
         final_response = (
-            f"It appears that there are no climate models that include the requested variable in the database. "
+            f"It appears that there are no models that include the requested variable in the database. "
             f"Please click here to access the knowledge graph: {neo4j_link}"
         )
     else:
@@ -416,7 +384,8 @@ Do not use any other wording for the link.
     return final_response
 
 
-#Public Function
+# Public Function
+
 
 @retry(tries=2, delay=10)
 def get_results(question: str) -> dict:
