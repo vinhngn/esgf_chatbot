@@ -8,8 +8,8 @@ from langchain_openai import ChatOpenAI
 from langchain.schema import HumanMessage, SystemMessage, AIMessage
 from graph_cypher_tool import graph_cypher_tool
 from graph_cypher_chain import graph, parse_schema
-from rag_demo.templates.entity_definitions import entity_climate_definitions
-from rag_demo.templates.match_properties_map import match_climate_properties_map
+from templates.entity_definitions import entity_climate_definitions
+from templates.match_properties_map import match_climate_properties_map
 
 
 # Shared helpers
