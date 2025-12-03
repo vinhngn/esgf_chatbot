@@ -426,7 +426,11 @@ Only the following structures exist in this database:
   - Supplier {{supplierID: STRING, companyName: STRING, contactName: STRING, contactTitle: STRING, address: STRING, city: STRING, region: STRING, postalCode: STRING, country: STRING, phone: STRING, fax: STRING, homePage: STRING}}
   - Customer {{customerID: STRING, companyName: STRING, contactName: STRING, contactTitle: STRING, address: STRING, city: STRING, region: STRING, postalCode: STRING, country: STRING, phone: STRING, fax: STRING}}
   - Order {{orderID: STRING, customerID: STRING, employeeID: STRING, orderDate: STRING, requiredDate: STRING, shippedDate: STRING, shipName: STRING, shipAddress: STRING, shipCity: STRING, shipRegion: STRING, shipPostalCode: STRING, shipCountry: STRING, shipVia: STRING, freight: STRING}}
-- Relationships: [:PART_OF], [:SUPPLIES], [:PURCHASED], [:ORDERS]
+- Relationships:
+  - [:PART_OF]
+  - [:SUPPLIES]
+  - [:PURCHASED]
+  - [:ORDERS]
 - Relationship properties:
   - ORDERS {{orderID: STRING, productID: STRING, unitPrice: STRING, quantity: INTEGER, discount: STRING}}
 
@@ -434,28 +438,44 @@ Schema (auto-refreshed):
 {schema}
 
 Strict rules:
-1. Use only the labels, relationship types, and properties shown above. Never invent new structures.
-2. Match property names exactly; use toLower(...) or regexes only for partial matches.
-3. Alias every relationship when you read its properties or aggregates (MATCH (o)-[r:ORDERS]->(p) ... r.quantity).
-4. Many numeric values (freight, unitPrice, discount) are stored as strings. Convert them before math using toFloat(...) or toInteger(...).
-5. Keep Cypher readable with explicit aliases (p for Product, c for Customer, s for Supplier, o for Order, cat for Category). Prefer MATCH for relationships, using OPTIONAL MATCH only when the user explicitly asks for optional data or when missing links would drop a necessary node.
-6. Return only the nodes/properties requested or necessary to answer the question; avoid RETURN * and extra projections. Order the output when it improves clarity.
-7. Always include LIMIT 50 unless a smaller limit is clearly requested.
-8. Use aggregations (COUNT, SUM, AVG, COLLECT) deliberately and alias the result. If you need both a collection and its size, use a second WITH clause or call size(COLLECT(...)) directly.
-9. When filtering by dates or text, compare consistently formatted strings. Convert string numbers to numeric types before comparisons or math.
-10. When questions mention specific supply or purchase flows, combine Supplier-[:SUPPLIES]->Product, Product-[:PART_OF]->Category, and Customer-[:PURCHASED]->Order-[:ORDERS]->Product as needed.
+1. Use only the labels, relationship types, and properties defined in the schema. Never invent new structures or properties.
+2. Use exact equality when matching IDs, names, or specific properties. Use toLower(), regex, or CONTAINS only when the question explicitly requests partial or fuzzy matching.
+3. Alias every relationship when accessing its properties or aggregating  
+   (MATCH (o)-[r:ORDERS]->(p) RETURN r.quantity).
+4. Many numeric values (freight, unitPrice, discount, quantity) are stored as strings — convert them before math using toFloat(...) or toInteger(...).
+5. Use explicit aliases (p:Product, c:Customer, s:Supplier, o:Order, cat:Category).  
+   Use MATCH for all required data.  
+   OPTIONAL MATCH may only be used when the natural language question explicitly requests optional/missing data or when missing links would drop required rows.
+6. Always include LIMIT 50 unless a smaller limit is explicitly requested.
+7. Return only the nodes/properties explicitly requested. Never use RETURN *.  
+   Avoid projection pollution — do not return traversal helper nodes unless the user asks for them.
+8. Use aggregations (COUNT, SUM, AVG, COLLECT) carefully, and alias results clearly.  
+   Use multiple WITH clauses when computing both aggregates and their derived values.
+9. When filtering by dates or text, compare consistently formatted strings.  
+   Convert numeric strings before numeric comparisons.
+10. When the question involves workflows like suppliers → products → orders → customers, combine:
+      - Supplier-[:SUPPLIES]->Product
+      - Product-[:PART_OF]->Category
+      - Customer-[:PURCHASED]->Order-[:ORDERS]->Product
+
+Explicit Projection Intent:
+- Only RETURN what the question explicitly asks for.  
+- Do NOT return extra nodes such as p, o, r, c unless explicitly needed.  
+- If asked for a property (e.g., freight, revenue, category name), return only that.  
+- Avoid projection pollution in every query.
 
 Interpretation hints:
-- "product" / "item" -> (p:Product)
-- "category" / "group" -> (cat:Category)
-- "supplier" / "vendor" -> (s:Supplier)
-- "customer" / "buyer" / "client" -> (c:Customer)
-- "order" / "shipment" / "transaction" -> (o:Order)
-- "order line" / "order item" -> [:ORDERS]
-- "freight" / "shipping cost" -> o.freight (convert to float)
-- "unit price" / "discount" on order lines -> r.unitPrice, r.discount (convert to float)
+- "product" / "item" → (p:Product)
+- "category" / "group" → (cat:Category)
+- "supplier" / "vendor" → (s:Supplier)
+- "customer" / "buyer" / "client" → (c:Customer)
+- "order" / "shipment" / "transaction" → (o:Order)
+- "order line" / "order item" → [:ORDERS]
+- "freight" / "shipping cost" → o.freight (convert to float)
+- "unit price" / "discount" (on order lines) → r.unitPrice, r.discount (convert to float)
 
 Examples:
+
 ### Example 1
 Question:
 Which supplier supplies the most products?
@@ -542,6 +562,7 @@ LIMIT 5;
 
 {question}
 """
+
 
 CYPHER_GENERATION_TWITTER_TEMPLATE = """
 You are a Cypher expert who writes exact Cypher queries for a Neo4j Twitter interaction graph.
