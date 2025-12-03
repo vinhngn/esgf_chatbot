@@ -143,24 +143,40 @@ Schema (auto-refreshed):
 {schema}
 
 Strict rules:
-1. Use only the schema-provided labels, relationship types, and properties. Never invent new structures.
-2. Match property names exactly for equality checks (e.g., Movie {{title: "The Matrix"}}); use toLower/regex only for partial matches.
-3. Alias every relationship when you need its properties or counts (MATCH (p)-[f:FOLLOWS]->(q) ... COUNT(f)) and when returning relationship fields (MATCH (p)-[r:ACTED_IN]->(m) ... r.roles).
-4. Keep Cypher readable with explicit aliases, preferring MATCH for relationships; only reach for OPTIONAL MATCH when the user explicitly needs optional data or when missing links would otherwise drop a required node.
-5. Always include LIMIT 50 (or a smaller limit if it makes sense) to avoid overly large result sets.
-6. Return only the nodes/properties requested or necessary to answer the question; avoid RETURN * and extra projections. Order the output when useful.
-7. Use aggregations deliberately (COUNT, COLLECT) and alias them; combine MATCH + OPTIONAL MATCH + WITH when counting relationships so the query stays valid. If you need to reuse an aggregated list (e.g., its size), introduce a second WITH clause or call `size(COLLECT(...))` directly—never reference an alias before it is defined.
-8. When queries mention “roles” or “review summary/rating,” reference ACTED_IN.roles or REVIEWED.summary/rating through the relationship alias.
-9. When measuring the length of strings or lists, use `size(...)` (e.g., `ORDER BY size(m.title) DESC`) instead of `LENGTH`, which is reserved for path patterns.
+1. Use only schema-defined labels, relationship types, and properties. Never invent structures.
+2. Match properties with exact equality when the question is explicit (e.g., Movie {{title: "The Matrix"}}). Use regex or toLower() only when the user explicitly requests partial or fuzzy matching.
+3. Alias every relationship when you reference its properties or need to count it  
+   (MATCH (p)-[f:FOLLOWS]->(q) ... COUNT(f); MATCH (p)-[r:ACTED_IN]->(m) RETURN r.roles).
+4. Use MATCH for all required data. OPTIONAL MATCH may only be used when the question explicitly requests optional/missing data or when omitting missing links would drop required results.
+5. Always include LIMIT 50 (or a smaller limit if the question requires).
+6. Return only the nodes/properties explicitly requested.  
+   Avoid returning traversal helpers (p, m, r, etc.) unless explicitly asked.  
+   Never use RETURN *.
+7. Use aggregations (COUNT, COLLECT) intentionally, alias them clearly, and maintain valid Cypher order:
+   MATCH → WITH (aggregations) → WHERE (filters) → RETURN.  
+   Never reference an alias before it is defined.
+8. When referencing roles or review properties, use the relationship alias  
+   (e.g., r.roles, rev.summary, rev.rating).
+9. Use size() for measuring lengths (e.g., ORDER BY size(m.title) DESC). LENGTH() must not be used for strings.
+10. Exact-name matching is required unless the user explicitly requests fuzzy matching.
+11. Maintain readable formatting and clear aliasing for people, movies, and relationships.
+
+Explicit Projection Intent:
+- The query must RETURN only what the question explicitly requests — nothing more.
+- Do NOT return Person, Movie, or relationship nodes unless the question asks for them.
+- If the question asks for a property, return only that property.
+- If the question asks for “actors”, “movies”, “roles”, etc., return only those.
+- Avoid projection pollution (returning extra intermediate nodes).
 
 Interpretation hints:
 - "movie" / "film" / "title" → (m:Movie)
 - "actor" / "actress" / "person" / "reviewer" / "director" / "writer" / "producer" → (p:Person)
 - "roles" → ACTED_IN.roles
-- "review summary" / "rating" → REVIEWED.summary or REVIEWED.rating
-- "worked on" a movie usually includes ACTED_IN, DIRECTED, PRODUCED, or WROTE.
+- "review summary" / "review" / "rating" → REVIEWED.summary or REVIEWED.rating
+- "worked on" → ACTED_IN, DIRECTED, PRODUCED, or WROTE
 
 Examples:
+
 ### Example 1
 Question:
 List review summaries that contain the word "funny".
