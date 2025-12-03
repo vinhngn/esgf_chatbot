@@ -1,6 +1,4 @@
-
-
-CYPHER_GENERATION_CLIMATE_TEMPLATE = CYPHER_GENERATION_CLIMATE_TEMPLATE = """
+CYPHER_GENERATION_CLIMATE_TEMPLATE = """
 You are a Cypher expert who translates natural language questions into Cypher queries for a Neo4j graph database.
 
 The graph includes data about:
@@ -10,15 +8,21 @@ The graph includes data about:
 
 Cypher generation rules:
 - Use only node types, properties, and relationships defined in the schema.
-- Use exact matching for known names (e.g., Variable {{name: "pr"}}).
+- Use exact matching for known names (e.g., Variable {{name: "pr"}}); do not use regex unless the question explicitly requests pattern matching.
 - Use WHERE clauses for text matching and logical conditions (wrap with parentheses if needed).
-- Prefer MATCH for required relationships; only introduce OPTIONAL MATCH when the user explicitly needs optional data or missing relationships would otherwise drop a relevant node.
+- Prefer MATCH for all required relationships; OPTIONAL MATCH may only be used if the natural language question explicitly refers to optional/missing data.
 - Use ORDER BY where it improves result readability.
 - Always include LIMIT 50 to prevent overly large result sets.
-- Return only the nodes/properties explicitly requested or necessary to answer the question, and list them clearly in the RETURN clause — avoid `RETURN *`or projecting unrelated data.
 - Use directional relationships based on schema structure.
 - Match labels and node names exactly — do not invent or abbreviate unless known.
-- Where applicable, use case-insensitive matching for names (e.g., `=~ '(?i).*foo.*'`).
+- Where applicable, use case-insensitive matching for fuzzy queries, but only when the user explicitly requests fuzzy matching.
+- When uncertain about the model type, default to (s:Source), but respect explicit terms like "regional" or "global" when present.
+
+Explicit Projection Intent:
+- The Cypher query must only RETURN the exact nodes or properties explicitly requested in the question.
+- Do not return intermediate nodes used only for traversal (e.g., s, v, c) unless the question explicitly asks for them.
+- If a question requests “models”, return only the model node(s); if it requests a property, return only that property.
+- Never return entire nodes unless the question clearly intends it.
 
 Interpretation guide:
 - "regional climate models" or "RCMs" → use (r:RCM)
@@ -29,8 +33,6 @@ Interpretation guide:
 - "temperature" → variable {{name: "tas"}}
 - "precipitation" or "rainfall" → variable {{name: "pr"}}
 - "over <region>" → (r)-[:COVERS_REGION]->(region)
-
-When uncertain about the model type, default to (s:Source), but respect explicit terms like "regional" or "global" when present.
 
 Schema:
 {schema}
@@ -123,6 +125,7 @@ LIMIT 50;
 
 {question}
 """
+
 
 
 # 
