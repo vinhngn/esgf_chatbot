@@ -1,5 +1,3 @@
-
-
 CYPHER_GENERATION_CLIMATE_TEMPLATE = """
 You are a Cypher expert who translates natural language questions into Cypher queries for a Neo4j graph database.
 
@@ -10,15 +8,21 @@ The graph includes data about:
 
 Cypher generation rules:
 - Use only node types, properties, and relationships defined in the schema.
-- Use exact matching for known names (e.g., Variable {{name: "pr"}}).
+- Use exact matching for known names (e.g., Variable {{name: "pr"}}); do not use regex unless the question explicitly requests pattern matching.
 - Use WHERE clauses for text matching and logical conditions (wrap with parentheses if needed).
-- Prefer MATCH for required relationships; only introduce OPTIONAL MATCH when the user explicitly needs optional data or missing relationships would otherwise drop a relevant node.
+- Prefer MATCH for all required relationships; OPTIONAL MATCH may only be used if the natural language question explicitly refers to optional/missing data.
 - Use ORDER BY where it improves result readability.
 - Always include LIMIT 50 to prevent overly large result sets.
-- Return only the nodes/properties explicitly requested or necessary to answer the question, and list them clearly in the RETURN clause — avoid just `RETURN *` or projecting unrelated data.
 - Use directional relationships based on schema structure.
 - Match labels and node names exactly — do not invent or abbreviate unless known.
-- Where applicable, use case-insensitive matching for names (e.g., `=~ '(?i).*foo.*'`).
+- Where applicable, use case-insensitive matching for fuzzy queries, but only when the user explicitly requests fuzzy matching.
+- When uncertain about the model type, default to (s:Source), but respect explicit terms like "regional" or "global" when present.
+
+Explicit Projection Intent:
+- The Cypher query must only RETURN the exact nodes or properties explicitly requested in the question.
+- Do not return intermediate nodes used only for traversal (e.g., s, v, c) unless the question explicitly asks for them.
+- If a question requests “models”, return only the model node(s); if it requests a property, return only that property.
+- Never return entire nodes unless the question clearly intends it.
 
 Interpretation guide:
 - "regional climate models" or "RCMs" → use (r:RCM)
@@ -29,8 +33,6 @@ Interpretation guide:
 - "temperature" → variable {{name: "tas"}}
 - "precipitation" or "rainfall" → variable {{name: "pr"}}
 - "over <region>" → (r)-[:COVERS_REGION]->(region)
-
-When uncertain about the model type, default to (s:Source), but respect explicit terms like "regional" or "global" when present.
 
 Schema:
 {schema}
@@ -43,7 +45,7 @@ Show all climate models that include the variable 'pr'.
 
 MATCH (s:Source)-[:PRODUCES_VARIABLE]->(v:Variable {{name: "pr"}})
 RETURN s
-LIMIT 20;
+LIMIT 50;
 
 ---
 
@@ -66,20 +68,21 @@ Which variables are associated with the experiment historical, and which models 
 MATCH (e:Experiment {{name: "historical"}})<-[:USED_IN_EXPERIMENT]-(s:Source)
 MATCH (s)-[:PRODUCES_VARIABLE]->(v:Variable)
 RETURN v, s
-LIMIT 20;
+LIMIT 50;
 
 ---
 
 ### Example 4
 Natural Language Question:
-Show the components, shared models, and realm that ACCESS models belong to.
+Which component does climate model ACCESS-CM2 share with ACCESS-ESM1-5?
 
 MATCH (s1:Source)
-WHERE s1.name =~ '(?i).*access.*'
+WHERE s1.name = "ACCESS-CM2"
 MATCH (s1)-[:HAS_SOURCE_COMPONENT]->(sc:SourceComponent)
-OPTIONAL MATCH (sc)<-[:HAS_SOURCE_COMPONENT]-(s2:Source)
-OPTIONAL MATCH (s1)-[:APPLIES_TO_REALM]->(realm:Realm)
-RETURN s1, sc, s2, realm
+MATCH (s2:Source)
+WHERE s2.name = "ACCESS-ESM1-5" AND s1 <> s2
+MATCH (s2)-[:HAS_SOURCE_COMPONENT]->(sc)
+RETURN sc
 LIMIT 50;
 
 ---
@@ -93,7 +96,6 @@ WHERE toLower(i.name) = "nasa-giss"
 MATCH (s1)-[:HAS_SOURCE_COMPONENT]->(sc:SourceComponent)
 OPTIONAL MATCH (sc)<-[:HAS_SOURCE_COMPONENT]-(s2:Source)
 RETURN i, s1, sc, s2
-ORDER BY s1.name
 LIMIT 50;
 
 ---
@@ -104,28 +106,26 @@ Which realms are targeted by AOGCM models?
 
 MATCH (s:Source)-[:IS_OF_TYPE]->(type:SourceType)
 WHERE type.name = "AOGCM"
-OPTIONAL MATCH (s)-[:APPLIES_TO_REALM]->(r:Realm)
+MATCH (s)-[:APPLIES_TO_REALM]->(r:Realm)
 RETURN r
-ORDER BY r.name
 LIMIT 50;
 
 ---
 
 ### Example 7
 Natural Language Question:
-Show pairs of models producing the variable "AEROD_v".
+Provide the cf standard name of variables produced climate models which are used in the experiment “historical”.
 
-MATCH (s1:Source)-[:PRODUCES_VARIABLE]->(v:Variable {{name: "AEROD_v"}})
-MATCH (s2:Source)-[:PRODUCES_VARIABLE]->(v)
-WHERE s1 <> s2
-RETURN s1, s2
-ORDER BY s1.name
+MATCH (e:Experiment {{name: "historical"}})<-[:USED_IN_EXPERIMENT]-(s:Source)
+MATCH (s)-[:PRODUCES_VARIABLE]->(v:Variable)
+RETURN v.cf_standard_name
 LIMIT 50;
 
 ---
 
 {question}
 """
+
 
 
 # 
