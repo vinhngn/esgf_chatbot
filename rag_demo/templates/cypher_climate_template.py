@@ -575,7 +575,9 @@ Only the following structures exist in this database:
   - Hashtag {{name: STRING}}
   - Link {{url: STRING}}
   - Source {{name: STRING}}
-- Relationships: [:FOLLOWS], [:POSTS], [:INTERACTS_WITH], [:SIMILAR_TO], [:RT_MENTIONS], [:AMPLIFIES], [:MENTIONS], [:USING], [:TAGS], [:CONTAINS], [:RETWEETS], [:REPLY_TO]
+- Relationships:
+  [:FOLLOWS], [:POSTS], [:INTERACTS_WITH], [:SIMILAR_TO], [:RT_MENTIONS],
+  [:AMPLIFIES], [:MENTIONS], [:USING], [:TAGS], [:CONTAINS], [:RETWEETS], [:REPLY_TO]
 - Relationship properties:
   - SIMILAR_TO {{score: FLOAT}}
 
@@ -583,31 +585,41 @@ Schema (auto-refreshed):
 {schema}
 
 Strict rules:
-1. Use only the labels, relationship types, and properties listed above. Never invent new ones.
-2. Match property names exactly; use toLower(...) or regex only for partial matches.
-3. Alias every relationship when you need its properties or plan to return it (MATCH (u)-[s:SIMILAR_TO]->(v) ... s.score).
-4. Text fields like tweet text or URLs should be filtered with case-insensitive comparisons when appropriate.
-5. Keep Cypher readable with explicit aliases (u for User, m for Me, t for Tweet, h for Hashtag, l for Link, s for Source). Prefer MATCH for relationships, using OPTIONAL MATCH only when the user explicitly asks for optional data or when missing links would drop a necessary node.
-6. Return only the nodes/properties requested or necessary to answer the question; avoid RETURN * and extra projections. Order results when helpful.
-7. Always include LIMIT 50 unless a smaller limit is clearly justified.
-8. Use aggregations deliberately (COUNT, COLLECT, AVG) and introduce extra WITH clauses when reusing aggregated results.
-9. When measuring tweet or list lengths, use size(...). When filtering by date/time, compare the DATE_TIME values directly.
-10. Interpret “similar” or “closest” as the SIMILAR_TO relationship with the `score` property; “retweeted” or “interacted” refer to the appropriate relationship types.
+1. Use only the labels, relationship types, and properties shown above. Never invent new ones.
+2. Match property names exactly; use toLower(), regex, or CONTAINS only when the natural language question explicitly requests partial or flexible matching.
+3. Alias every relationship when reading its properties or returning it (MATCH (u)-[s:SIMILAR_TO]->(v) RETURN s.score).
+4. Use clear aliases (u:User, m:Me, t:Tweet, h:Hashtag, l:Link, s:Source). Maintain consistent and readable patterns.
+5. Prefer MATCH for required relationships. OPTIONAL MATCH may only be used when the question explicitly requests optional/missing data or when missing links would drop required results.
+6. Return only what the user explicitly asks for. Never return traversal helpers (u, t, l, s) unless requested. Never use RETURN *.
+7. Always include LIMIT 50 unless the question explicitly requires fewer results.
+8. Use aggregations (COUNT, COLLECT, AVG) intentionally; use WITH clauses to reuse aggregated results without errors.
+9. When measuring string or list lengths, use size(...).  
+   When comparing datetime values, compare DATE_TIME values directly.
+10. Use SIMILAR_TO.score for similarity queries.  
+    Use the appropriate relationship types for retweets, replies, mentions, links, sources, etc.
+11. Use exact equality on screen_name, name, or URL unless fuzzy matching is explicitly requested.
+
+Explicit Projection Intent:
+- RETURN only the nodes or properties explicitly requested.  
+- Do not return extra nodes unless the question requires them.  
+- If the question asks for “screen names,” “links,” “hashtags,” or “sources,” return only those.  
+- Avoid projection pollution in every query.
 
 Interpretation hints:
-- "followers" / "following" -> [:FOLLOWS]
-- "tweet" / "post" -> (t:Tweet) linked via [:POSTS]
-- "mentions" -> [:MENTIONS]
-- "retweets" -> [:RETWEETS]
-- "replies" -> [:REPLY_TO]
-- "hashtags" -> [:TAGS]
-- "links" -> [:CONTAINS]
-- "client" / "source" -> [:USING] to (s:Source)
-- "similar users" -> [:SIMILAR_TO]
-- "RT mentions" -> [:RT_MENTIONS]
-- "amplifies" -> [:AMPLIFIES]
+- "followers" / "following" → [:FOLLOWS]
+- "tweet" / "post" → (t:Tweet) via [:POSTS]
+- "mentions" → [:MENTIONS]
+- "retweets" → [:RETWEETS]
+- "replies" → [:REPLY_TO]
+- "hashtags" → [:TAGS] to (h:Hashtag)
+- "links" → [:CONTAINS] to (l:Link)
+- "client" / "source" → [:USING] to (s:Source)
+- "similar users" → [:SIMILAR_TO] with score
+- "RT mentions" → [:RT_MENTIONS]
+- "amplifies" → [:AMPLIFIES]
 
-Examples:
+---
+
 ### Example 1
 Question:
 What are the first 3 tweets that contain a link starting with "https://twitter.com"?
