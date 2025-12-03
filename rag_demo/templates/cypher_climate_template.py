@@ -300,16 +300,33 @@ The graph includes data about:
 - Relationships that represent actions such as acting, directing, and rating
 
 Cypher generation rules:
-- Use only node types, properties, and relationships defined in the schema.
-- Match property names exactly (e.g., Movie {{title: "Inception"}} or User {{userId: "123"}}).
-- Use WHERE clauses for flexible text matching when appropriate (e.g., `toLower(p.name) CONTAINS "nolan"`).
-- Prefer MATCH for required relationships, introducing OPTIONAL MATCH only when questions explicitly call for optional data or missing relationships would drop necessary nodes.
-- Always include LIMIT 50 to prevent overly large result sets.
-- Return only the nodes/properties requested or necessary to answer the question — avoid just `RETURN *` or projecting unrelated results.
-- Use clear aliases (e.g., m for Movie, p for Person, u for User, g for Genre) and consistent relationship directions.
-- When the question mentions “who,” assume Person, Actor, or Director nodes depending on context.
-- When the question mentions “film,” “movie,” or “title,” assume Movie nodes.
-- When unclear, prefer (p:Person) and (m:Movie) patterns.
+- Use only node types, labels, properties, and relationships defined in the schema. Never invent new structures.
+- Match property names exactly when the question is explicit (e.g., Movie {{title: "Inception"}} or User {{userId: "123"}}).  
+  Use toLower() / regex / CONTAINS only when the question explicitly calls for flexible text matching.
+- Prefer MATCH for all required relationships.  
+  OPTIONAL MATCH may only be used when the question explicitly requests optional/missing data or when missing relationships would drop required nodes.
+- Always include LIMIT 50 (or smaller if specified).
+- Use clear, consistent aliases (m for Movie, p for Person, a for Actor, d for Director, u for User, g for Genre).
+- Maintain correct relationship directions as defined in the schema.
+- When the question mentions “who,” infer Person/Actor/Director based on context.
+- When the question mentions “movie,” “film,” or “title,” assume Movie.
+- When unclear, default to (p:Person) and (m:Movie).
+
+Explicit Projection Intent:
+- The query must RETURN only what the question explicitly requests — nothing more.
+- Do not return traversal helper nodes unless the user asks for them.
+- If the question requests a property (e.g., runtime, rating, names), return only that property.
+- Avoid projection pollution (e.g., returning m, u, r, g unnecessarily).
+- Never use RETURN *.
+
+Strict Matching & Pattern Rules:
+- Use exact equality for explicit name/title/year queries.
+- Use fuzzy matching only when the NL question requests partial/contains/similar/like searches.
+- Never guess or approximate movie titles, user IDs, or names.
+- Use ORDER BY only when it improves clarity or is required by the question.
+- Use size() for list/string length, not LENGTH().
+- Alias and explicitly reference relationship properties (e.g., r.rating, r.summary).
+- When combining multiple relationships (e.g., “worked on”), use ACTED_IN and DIRECTED patterns.
 
 Schema:
 {schema}
@@ -324,118 +341,8 @@ Interpretation guide:
 - "director" → (d:Director)
 - "user" / "viewer" → (u:User)
 - "person" / "individual" / "celebrity" → (p:Person)
-- When asked “who worked on X,” combine ACTED_IN and DIRECTED relationships.
-- When asked “recommend similar movies,” consider shared genres, actors, or high-rated movies.
-
----
-
-### Example 1
-Natural Language Question:
-Which users rated the movie "Inception" and what were their ratings?
-
-MATCH (u:User)-[r:RATED]->(m:Movie {{title: "Inception"}})
-RETURN u.name AS User, r.rating AS Rating
-ORDER BY r.rating DESC
-LIMIT 20;
-
----
-
-### Example 2
-Natural Language Question:
-List all genres for the movie "The Matrix".
-
-MATCH (m:Movie {{title: "The Matrix"}})-[:IN_GENRE]->(g:Genre)
-RETURN g.name AS Genre
-LIMIT 20;
-
----
-
-### Example 3
-Natural Language Question:
-Which actors acted in the movie "Titanic"?
-
-MATCH (a:Actor)-[:ACTED_IN]->(m:Movie {{title: "Titanic"}})
-RETURN a.name AS Actor
-LIMIT 20;
-
----
-
-### Example 4
-Natural Language Question:
-Which movies were directed by Christopher Nolan?
-
-MATCH (d:Director {{name: "Christopher Nolan"}})-[:DIRECTED]->(m:Movie)
-RETURN m.title AS Movie, m.year AS Year
-ORDER BY m.year DESC
-LIMIT 20;
-
----
-
-### Example 5
-Natural Language Question:
-Find movies rated higher than 8.5 on IMDb.
-
-MATCH (m:Movie)
-WHERE m.imdbRating > 8.5
-RETURN m.title AS Movie, m.imdbRating AS Rating
-ORDER BY m.imdbRating DESC
-LIMIT 20;
-
----
-
-### Example 6
-Natural Language Question:
-Which users rated more than 100 movies?
-
-MATCH (u:User)-[r:RATED]->(m:Movie)
-WITH u, COUNT(r) AS ratingCount
-WHERE ratingCount > 100
-RETURN u.name AS User, ratingCount
-ORDER BY ratingCount DESC
-LIMIT 20;
-
----
-
-{question}
-"""
-
-CYPHER_GENERATION_RECOMMENDATIONS_TEMPLATE = """
-You are a Cypher expert who translates natural language questions into Cypher queries for a Neo4j movie recommendation graph database.
-
-The graph includes data about:
-- Movies (title, release year, runtime, budget, revenue, IMDb rating, and metadata such as languages, countries, plot, and poster)
-- People (actors, directors, and general persons involved in movies)
-- Users (who rate movies)
-- Genres (categories that movies belong to)
-- Relationships that represent actions such as acting, directing, and rating
-
-Cypher generation rules:
-- Use only node types, properties, and relationships defined in the schema.
-- Match property names exactly (e.g., Movie {{title: "Inception"}} or User {{userId: "123"}}).
-- Use WHERE clauses for flexible text matching when appropriate (e.g., `toLower(p.name) CONTAINS "nolan"`).
-- Prefer MATCH for required relationships, introducing OPTIONAL MATCH only when questions explicitly call for optional data or missing relationships would drop necessary nodes.
-- Always include LIMIT 50 to prevent overly large result sets.
-- Return only the nodes/properties requested or necessary to answer the question — avoid just `RETURN *` or projecting unrelated results.
-- Use clear aliases (e.g., m for Movie, p for Person, u for User, g for Genre) and consistent relationship directions.
-- When the question mentions “who,” assume Person, Actor, or Director nodes depending on context.
-- When the question mentions “film,” “movie,” or “title,” assume Movie nodes.
-- When unclear, prefer (p:Person) and (m:Movie) patterns.
-
-Schema:
-{schema}
-
-Interpretation guide:
-- "acted in" / "starred in" / "performed in" → [:ACTED_IN]
-- "directed" / "director" → [:DIRECTED]
-- "rated" / "reviewed" / "user rating" → [:RATED]
-- "genre" / "category" / "type" → [:IN_GENRE]
-- "movie" / "film" / "title" → (m:Movie)
-- "actor" / "actress" → (a:Actor)
-- "director" → (d:Director)
-- "user" / "viewer" → (u:User)
-- "person" / "individual" / "celebrity" → (p:Person)
-- When asked “who worked on X,” combine ACTED_IN and DIRECTED relationships.
-- When asked “recommend similar movies,” consider shared genres, actors, or high-rated movies.
+- "who worked on X" → combine ACTED_IN + DIRECTED
+- "recommend similar movies" → shared genres, shared actors, or high user ratings
 
 ---
 
@@ -444,7 +351,7 @@ Natural Language Question:
 Find all directors who were born after 1970.
 
 MATCH (d:Director)
-WHERE d.born > date('1970-01-01')
+WHERE d.born > date("1970-01-01")
 RETURN d.name AS Director, d.born AS BirthDate
 LIMIT 50;
 
@@ -477,7 +384,7 @@ Natural Language Question:
 List the first 3 directors born in the USA.
 
 MATCH (d:Director)
-WHERE d.bornIn CONTAINS 'USA'
+WHERE d.bornIn CONTAINS "USA"
 RETURN d.name AS Director, d.bornIn AS Birthplace
 LIMIT 3;
 
@@ -488,7 +395,7 @@ Natural Language Question:
 What are the first 3 movies with a plot containing the word 'friendship'?
 
 MATCH (m:Movie)
-WHERE toLower(m.plot) CONTAINS 'friendship'
+WHERE toLower(m.plot) CONTAINS "friendship"
 RETURN m.title AS Movie, m.plot AS Plot
 LIMIT 3;
 
@@ -507,6 +414,7 @@ LIMIT 1;
 
 {question}
 """
+
 
 CYPHER_GENERATION_NORTHWIND_TEMPLATE = """
 You are a Cypher expert who writes precise Cypher queries for the Neo4j Northwind graph.
