@@ -8,8 +8,8 @@ from langchain_openai import ChatOpenAI
 from langchain.schema import HumanMessage, SystemMessage, AIMessage
 from graph_cypher_tool import graph_cypher_tool
 from graph_cypher_chain import graph, parse_schema
-from rag_demo.templates.entity_definitions import entity_definitions
-from rag_demo.templates.match_properties_map import match_properties_map
+from templates.entity_definitions import entity_definitions
+from templates.match_properties_map import match_properties_map
 
 
 # Shared helpers
@@ -74,13 +74,6 @@ def strip_quotes(s):
 graph.refresh_schema()
 schema_text = graph.get_schema
 schema_labels, schema_relationships = parse_schema(schema_text)
-logging.info("✅ Loaded schema labels:")
-for label in sorted(schema_labels):
-    logging.info(f"   - {label}")
-
-logging.info("✅ Loaded schema relationships:")
-for rel in sorted(schema_relationships):
-    logging.info(f"   - {rel}")
 schema_labels_str = "\n".join(f"- {label}" for label in sorted(schema_labels))
 schema_rels_str = "\n".join(f"- {rel}" for rel in sorted(schema_relationships))
 
@@ -218,24 +211,15 @@ def verify_triples(triples, schema_labels, schema_relationships):
                         triple = (literal, "instanceOf", label)
                         if triple not in instance_triples:
                             instance_triples.append(triple)
-                            logging.info(
-                                f"🔎 Matched instance: {literal} as {label}.{prop}"
-                            )
                 except Exception as e:
                     logging.warning(
-                        f"⚠️ Error checking {literal} on {label}.{prop}: {e}"
+                        f"Error checking {literal} on {label}.{prop}: {e}"
                     )
 
     # Validate triples against schema relationships
     for s, p, o in triples:
         if p in schema_relationships and s in schema_labels and o in schema_labels:
             verified_triples.append((s, p, o))
-        else:
-            logging.warning(f"❌ Rejected triple: ({s}, {p}, {o})")
-            if s not in schema_labels:
-                logging.warning(f"   🚫 Invalid subject: {s}")
-            if o not in schema_labels:
-                logging.warning(f"   🚫 Invalid object: {o}")
 
     return verified_triples, instance_triples
 
@@ -275,11 +259,7 @@ def process_with_llm(question: str) -> str:
         if attempt == 0:
             rewritten, triples = interpret_question(question, conversation_history)
         else:
-            logging.warning(
-                f"Retry #{attempt}: no valid triples yet — using schema-enforced mode."
-            )
             schema_str = get_schema_str()
-
             st.code(schema_str, language="markdown")
             rewritten, triples = interpret_question_with_schema(
                 question, conversation_history, schema_str
@@ -300,14 +280,7 @@ def process_with_llm(question: str) -> str:
         attempt += 1
 
     if not verified_triples:
-        if not verified_triples:
-            logging.warning(
-                f"❌ Still no verified triples after {attempt} attempts — using unverified ones: {triples}"
-            )
-
         verified_triples = triples
-        if not instance_triples:
-            logging.warning("⚠️ No instance triples found — falling back without them.")
 
     st.write(f"Input: {question}")
     st.write(f"Rewritten: {rewritten}")
@@ -315,7 +288,6 @@ def process_with_llm(question: str) -> str:
     st.write(f"Instance Triples: {instance_triples}")
 
     # Send dict payload to tool
-    logging.info(f"💾 FINAL instance_triples passed to LLM: {instance_triples}")
     tool_output = graph_cypher_tool.invoke(
         {
             "question": question,
@@ -343,25 +315,14 @@ def process_with_llm(question: str) -> str:
         st.code(decoded_query, language="cypher")
 
     # --- Build Neo4j Browser link dynamically based on current secrets.toml ---
-    neo4j_uri = st.secrets.get("NEO4J_URI", "neo4j+s://demo.neo4jlabs.com")
-    neo4j_user = st.secrets.get("NEO4J_USERNAME", "")
-    neo4j_db = st.secrets.get("NEO4J_DATABASE", "")
+    # --- Force Neo4j Browser link for CMIP climate model instance ---
+    last_query = encoded_query  # encoded_query already created above
 
-    # Extract host (for demo.neo4jlabs.com case)
-    host = "demo.neo4jlabs.com"
-    if "://" in neo4j_uri:
-        host = neo4j_uri.split("://", 1)[1].split(":")[0].strip("/")
-
-    # Construct correct Neo4j Browser URL
-    if neo4j_user and neo4j_db:
-        base_browser_url = f"https://{host}:7473/browser/?dbms=neo4j://{neo4j_user}@{host}&db={neo4j_db}"
-    else:
-        base_browser_url = f"https://{host}:7473/browser/"
-
-    if encoded_query:
-        neo4j_link = f"[Open Neo4J]({base_browser_url}&cmd=edit&arg={encoded_query})"
-    else:
-        neo4j_link = f"[Open Neo4J]({base_browser_url})"
+    neo4j_link = (
+        f"[Open Neo4J](https://neoforjcmip.templeuni.com/browser/?preselectAuthMethod=NO_AUTH&cmd=edit&arg={last_query})"
+        if last_query
+        else "[Open Neo4J](https://neoforjcmip.templeuni.com/browser/)"
+    )
 
     if not result_only:
         final_response = (

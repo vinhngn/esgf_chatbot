@@ -193,7 +193,6 @@ match_twitter_properties_map = {
     "Source": ["name"],
 }
 
-
 import tomllib
 
 with open(".streamlit/secrets.toml", "rb") as f:

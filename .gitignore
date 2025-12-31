@@ -1,21 +1,23 @@
-# Notebook output
-failed_files.json
+# Virtual environment
+venv/
+.venv/
 
-# Jupyter Notebook
-.ipynb_checkpoints
-__pycache__
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.Python
 
-# Mac System file
-.DS_STORE
-
-# UI file
-.env
-# secrets.toml
-
-# Dependency managers
-*.lock
-.qodo
-.secrets.toml
-secrets.toml
+# Secrets
 .streamlit/secrets.toml
-.streamlit/secrets.toml
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
