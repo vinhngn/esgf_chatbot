@@ -31,9 +31,6 @@ def get_results(question: str) -> dict:
         if attempt == 0:
             rewritten, triples = interpret_question(question, [])
         else:
-            logging.warning(
-                f"Retry #{attempt}: no valid triples yet — using schema-enforced mode."
-            )
             schema_str = get_schema_str()
 
             rewritten, triples = interpret_question_with_schema(
@@ -55,17 +52,9 @@ def get_results(question: str) -> dict:
         attempt += 1
 
     if not verified_triples:
-        if not verified_triples:
-            logging.warning(
-                f"❌ Still no verified triples after {attempt} attempts — using unverified ones: {triples}"
-            )
-
         verified_triples = triples
-        if not instance_triples:
-            logging.warning("⚠️ No instance triples found — falling back without them.")
 
     # Send dict payload to tool
-    logging.info(f"💾 FINAL instance_triples passed to LLM: {instance_triples}")
     tool_output = graph_cypher_tool.invoke(
         {
             "question": question,

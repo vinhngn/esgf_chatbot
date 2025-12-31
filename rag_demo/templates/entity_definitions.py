@@ -89,8 +89,6 @@ Relationships:
 - REPLY_TO: Connects a Tweet to another Tweet it replies to.
 """.strip()
 
-
-"""
 import tomllib
 
 with open(".streamlit/secrets.toml", "rb") as f:
@@ -108,5 +106,3 @@ elif db == "northwind":
     entity_definitions = entity_northwind_definitions
 elif db == "twitter":
     entity_definitions = entity_twitter_definitions
-
-"""

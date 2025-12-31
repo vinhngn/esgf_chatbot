@@ -12,10 +12,10 @@ from langchain_community.graphs import Neo4jGraph
 from datetime import datetime, date, time
 from retry import retry
 
-from templates.cypher_climate_template import CYPHER_GENERATION_CLIMATE_TEMPLATE
+from templates.cypher_climate_template import CYPHER_GENERATION_TEMPLATE
 
 CYPHER_GENERATION_PROMPT = PromptTemplate(
-    input_variables=["schema", "question"], template=CYPHER_GENERATION_CLIMATE_TEMPLATE
+    input_variables=["schema", "question"], template=CYPHER_GENERATION_TEMPLATE
 )
 
 MEMORY = ConversationBufferMemory(
@@ -28,8 +28,15 @@ MEMORY = ConversationBufferMemory(
 url = st.secrets["NEO4J_URI"]
 username = st.secrets["NEO4J_USERNAME"]
 password = st.secrets["NEO4J_PASSWORD"]
+database = st.secrets["NEO4J_DATABASE"]
 
-graph = Neo4jGraph(url=url, username=username, password=password, sanitize=True)
+graph = Neo4jGraph(
+    url=url, 
+    username=username, 
+    password=password, 
+    database=database,
+    sanitize=True
+)
 
 graph_chain = GraphCypherQAChain.from_llm(
     cypher_llm=ChatOpenAI(
@@ -92,9 +99,6 @@ def get_results(
 
     graph.refresh_schema()
 
-    print("\n========= Raw Schema from Neo4j =========\n")
-    print(graph.get_schema)
-
     conversation_history = history or "None"
     question_block = f"""
 Conversation History:
@@ -113,14 +117,6 @@ Instance Triples:
 {instance_text}
 """.strip()
 
-    prompt = CYPHER_GENERATION_PROMPT.format(
-        schema=graph.get_schema,
-        question=question_block,
-    )
-
-    print("\n========= Prompt to LLM =========\n")
-    print(prompt)
-
     try:
         chain_result = graph_chain.invoke(
             {"query": question},
@@ -131,29 +127,28 @@ Instance Triples:
         return "Sorry, I couldn't find an answer to your question"
 
     if chain_result is None:
-        print("No answer was generated.")
         return "No answer was generated."
 
     try:
         intermediate = chain_result.get("intermediate_steps", [{}])
         query_raw = intermediate[-1].get("query", "")
-        if not query_raw:
-            logging.warning("⚠️ No query found in intermediate_steps.")
-        else:
-            query = query_raw.replace("cypher", "", 1).strip()
-            print("\n========= Generated Cypher =========\n")
-            print(query)
+        if query_raw:
+            # Clean up the generated Cypher query
+            query = query_raw
+            
+            # Remove markdown code blocks
+            query = re.sub(r'```cypher\s*', '', query, flags=re.IGNORECASE)
+            query = re.sub(r'```\s*', '', query)
+            
+            # Remove "cypher" keyword at the beginning (case-insensitive)
+            query = re.sub(r'^\s*cypher\s+', '', query, flags=re.IGNORECASE)
+            
+            # Remove trailing semicolon and whitespace
+            query = query.rstrip(';').strip()
+            
             encoded_query = urllib.parse.quote(query)
             chain_result["intermediate_steps"][-1]["query"] = encoded_query
     except Exception as e:
         logging.warning(f"Failed to extract Cypher query: {e}")
-
-    print("\n========= Final Result =========\n")
-    def _json_default(obj):
-        if isinstance(obj, (datetime, date, time)):
-            return obj.isoformat()
-        return str(obj)
-
-    print(json.dumps(chain_result, indent=2, default=_json_default))
 
     return chain_result
