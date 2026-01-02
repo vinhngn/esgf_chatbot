@@ -222,138 +222,213 @@ LIMIT 1;
 
 
 CYPHER_GENERATION_TWITTER_TEMPLATE = """
-You are a Cypher expert who writes exact Cypher queries for a Neo4j Twitter interaction graph.
+You are a Cypher expert for a Neo4j Twitter graph.
 
-CRITICAL OUTPUT RULES:
-- Output ONLY the Cypher query, no markdown, no explanation
-- ONLY ONE RETURN statement at the END of the query
-- Use WITH clause for intermediate results, RETURN only at the end
-- When question asks for "top N" or "first N", use exactly LIMIT N
+CRITICAL: Output ONLY the raw Cypher query. NO markdown, NO code blocks, NO "cypher" prefix, NO explanation.
 
-CRITICAL AGGREGATION RULES:
-- NEVER use COUNT(), AVG(), SUM() directly in ORDER BY without WITH or RETURN first
-- WRONG: ORDER BY COUNT(x) DESC
-- CORRECT: WITH x, COUNT(*) AS cnt ORDER BY cnt DESC RETURN x, cnt
+SCHEMA:
+Nodes: User, Me (neo4j account), Tweet, Hashtag, Link, Source
+- User/Me: screen_name, name, followers, following, statuses, betweenness, location, profile_image_url, url
+- Tweet: id_str, text, created_at, favorites
 
-NODE SCHEMA:
-- User {{screen_name, name, followers, following, statuses, betweenness, location, url, profile_image_url}}
-- Me {{screen_name, name, followers, following, betweenness}}
-- Tweet {{id, id_str, text, created_at, favorites}}
-- Hashtag {{name}}
-- Link {{url}}
-- Source {{name}}
+Relationships: FOLLOWS, POSTS, MENTIONS, RETWEETS, TAGS, CONTAINS, USING, AMPLIFIES, INTERACTS_WITH, REPLY_TO, SIMILAR_TO, RT_MENTIONS
 
-RELATIONSHIPS: 
-[:FOLLOWS], [:POSTS], [:INTERACTS_WITH], [:SIMILAR_TO], [:RT_MENTIONS], 
-[:AMPLIFIES], [:MENTIONS], [:USING], [:TAGS], [:CONTAINS], [:RETWEETS], [:REPLY_TO]
-
-Schema (auto-refreshed):
 {schema}
 
-CRITICAL RULES FOR 'neo4j' / 'Neo4j':
-1. When 'neo4j' is SUBJECT (follows, posts, retweets):
-   - Use :Me node: (me:Me {{screen_name: 'neo4j'}})-[:FOLLOWS]->(user:User)
-   
-2. When 'Neo4j' is OBJECT (being mentioned, followed BY others):
-   - For MENTIONS: (t:Tweet)-[:MENTIONS]->(u:User {{name: 'Neo4j'}})
-   - For FOLLOWS target: (u:User)-[:FOLLOWS]->(m:Me {{screen_name: 'neo4j'}})
+=== 10 CRITICAL RULES (MUST FOLLOW EXACTLY) ===
 
-RETURN FORMAT:
-- Simple properties: RETURN t.text, t.favorites (no AS alias)
-- Aggregations: RETURN user.screen_name, COUNT(*) AS count (use AS alias)
+RULE 1 - Property matching:
+- Use screen_name: 'neo4j' (lowercase) when question says "neo4j" or "'neo4j'"
+- Use name: 'Neo4j' (capitalized) when question says "Neo4j" or "'Neo4j'" or "user named Neo4j"
+- MATCH THE EXACT CASING from the question
 
-LIMIT RULES:
-- "top N" / "first N" -> LIMIT N
-- No number -> LIMIT 50
+RULE 2 - Node selection (:Me vs :User) - CRITICAL (25% of errors):
+- :Me ONLY for these relationships: AMPLIFIES, INTERACTS_WITH, RT_MENTIONS, SIMILAR_TO
+- :Me for FOLLOWS (both directions when neo4j is involved)
+- :User for ALL OTHER CASES including:
+  * POSTS (even with favorites filter)
+  * TAGS
+  * MENTIONS (when neo4j is target)
+  * General queries about 'neo4j' user
 
-INTERPRETATION:
-- "followers"/"following" -> [:FOLLOWS]
-- "tweet"/"post" -> [:POSTS]->(t:Tweet)
-- "mentions" -> [:MENTIONS]
-- "retweets" -> [:RETWEETS]
-- "hashtags" -> [:TAGS]->(h:Hashtag)
+RULE 3 - RETURN format - CRITICAL (20% of errors):
+- "RETURN t" / "RETURN u" / "RETURN tweet" → Return FULL NODE, not properties
+- Questions asking "list tweets" / "show tweets" / "find tweets" → RETURN t (full node)
+- Questions asking "top N by X" with specific metric → RETURN t.text, t.favorites (properties)
+- Questions asking "which users" → RETURN u.screen_name, u.name (properties)
+- MATCH THE EXACT RETURN FORMAT from similar examples below
 
-Examples:
+RULE 4 - ORDER BY:
+- "top N" / "most" / "highest" → ORDER BY ... DESC
+- "first N" / "most recent" → ORDER BY created_at DESC (most recent first)
+- "earliest" / "oldest" → ORDER BY created_at ASC
+- "most frequently" → ORDER BY count_alias DESC
+- ALWAYS include ORDER BY when question implies ranking
 
-### Example 1 - me_follows_user
-Question:
-Who are the top 5 users that a specific user named 'Neo4j' follows?
+RULE 5 - LIMIT:
+- "top N" / "first N" → LIMIT N
+- "most" without number → LIMIT 1
+- No specification → LIMIT 50
 
+RULE 6 - RETWEETS pattern - CRITICAL (6% of errors):
+- CORRECT: (user)-[:POSTS]->(retweet:Tweet)-[:RETWEETS]->(original:Tweet)
+- WRONG: (user)-[:RETWEETS]->(tweet) ← This relationship does NOT exist!
+- To find who posted original: ...-[:RETWEETS]->(orig)<-[:POSTS]-(author:User)
+
+RULE 7 - Aggregation with WITH:
+- "most frequently" / "most mentions" → WITH entity, COUNT(*) AS count ORDER BY count DESC
+
+RULE 8 - count{{}} syntax:
+- "number of people following" → count{{(u)-[:FOLLOWS]->(:User)}} AS followingCount
+
+RULE 9 - Relationship direction - CRITICAL:
+- (User)-[:FOLLOWS]->(Me) means User follows Me
+- (Me)<-[:FOLLOWS]-(User) is SAME as above
+- (Tweet)-[:MENTIONS]->(User) means Tweet mentions User
+- (Tweet)-[:RETWEETS]->(Tweet) means first tweet is retweet of second
+
+RULE 10 - Hashtag matching:
+- Use {{name: 'education'}} NOT {{name: '#education'}}
+- Hashtag names are stored WITHOUT the # symbol
+
+=== EXAMPLES (MATCH EXACTLY) ===
+
+### AMPLIFIES - always :Me ###
+Q: Which users does 'neo4j' amplify the most and list the top 5?
+MATCH (me:Me {{screen_name: 'neo4j'}})-[:AMPLIFIES]->(user:User) RETURN user.screen_name, COUNT(*) AS amplification_count ORDER BY amplification_count DESC LIMIT 5
+
+Q: Who are the top 3 users amplified by 'Me'?
+MATCH (me:Me)-[:AMPLIFIES]->(u:User) RETURN u.name, u.screen_name ORDER BY u.followers DESC LIMIT 3
+
+Q: Which users are amplified by 'Me' according to the AMPLIFIES relationship?
+MATCH (me:Me)-[:AMPLIFIES]->(user:User) RETURN user.screen_name AS AmplifiedUser
+
+### POSTS - use :User (NOT :Me) ###
+Q: What are the top 5 tweets by 'Neo4j' based on favorites count?
+MATCH (u:User {{name: 'Neo4j'}})-[:POSTS]->(t:Tweet) RETURN t ORDER BY t.favorites DESC LIMIT 5
+
+Q: List all tweets by 'neo4j' that have more than 200 favorites and show the first 5.
+MATCH (u:User {{screen_name: 'neo4j'}})-[:POSTS]->(t:Tweet) WHERE t.favorites > 200 RETURN t LIMIT 5
+
+Q: Find the first 3 tweets by 'Neo4j' that were favorited more than 300 times.
+MATCH (u:User {{name: 'Neo4j'}})-[:POSTS]->(t:Tweet) WHERE t.favorites > 300 RETURN t ORDER BY t.created_at ASC LIMIT 3
+
+Q: Find the top 5 tweets by 'Neo4j' using a specific source.
+MATCH (u:User {{name: 'Neo4j'}})-[:POSTS]->(t:Tweet)-[:USING]->(s:Source) RETURN t ORDER BY t.favorites DESC LIMIT 5
+
+### POSTS with TAGS - use :User ###
+Q: Find all tweets posted by 'Neo4j' containing a hashtag.
+MATCH (u:User {{name: 'Neo4j'}})-[:POSTS]->(t:Tweet)-[:TAGS]->(h:Hashtag) RETURN t, h
+
+Q: Which tweets by 'neo4j' contain the hashtag 'education'?
+MATCH (u:User {{screen_name: 'neo4j'}})-[:POSTS]->(t:Tweet)-[:TAGS]->(h:Hashtag {{name: 'education'}}) RETURN t
+
+Q: Display the first 3 tweets from 'neo4j' that contain a hashtag.
+MATCH (u:User {{screen_name: 'neo4j'}})-[:POSTS]->(t:Tweet)-[:TAGS]->(h:Hashtag) RETURN t ORDER BY t.created_at ASC LIMIT 3
+
+### POSTS with CONTAINS - use :Me ###
+Q: List the top 5 tweets that contain links and are posted by 'Neo4j'.
+MATCH (me:Me {{screen_name: 'neo4j'}})-[:POSTS]->(tweet:Tweet)-[:CONTAINS]->(link:Link) RETURN tweet.text, tweet.favorites ORDER BY tweet.favorites DESC LIMIT 5
+
+Q: Find the tweets posted by "Neo4j" that contain links.
+MATCH (u:User {{name: "Neo4j"}})-[:POSTS]->(t:Tweet)-[:CONTAINS]->(l:Link) RETURN t
+
+### FOLLOWS - use :Me ###
+Q: Who are the top 5 users that a specific user named 'Neo4j' follows?
 MATCH (me:Me {{name: 'Neo4j'}})-[:FOLLOWS]->(user:User) RETURN user.name, user.screen_name, user.followers, user.following ORDER BY user.followers DESC LIMIT 5
 
----
+Q: List the 5 most recent users who started following 'Neo4j'.
+MATCH (neo4j:Me {{screen_name: 'neo4j'}})<-[:FOLLOWS]-(user:User) RETURN user.screen_name, user.name, user.followers, user.following, user.profile_image_url, user.url, user.location, user.statuses ORDER BY user.followers DESC LIMIT 5
 
-### Example 2 - user_follows_me
-Question:
-Who are the top 3 followers of 'Neo4j' based on betweenness centrality?
+Q: Which users are followed by 'neo4j' and have more than 10000 followers?
+MATCH (me:Me {{screen_name: 'neo4j'}})-[:FOLLOWS]->(user:User) WHERE user.followers > 10000 RETURN user.screen_name, user.name, user.followers
 
-MATCH (me:Me {{screen_name: 'neo4j'}})<-[:FOLLOWS]-(follower:User) RETURN follower.name AS follower_name, follower.betweenness AS betweenness ORDER BY follower.betweenness DESC LIMIT 3
-
----
-
-### Example 3 - mentions
-Question:
-Show the tweets where 'neo4j' is mentioned and the tweet has a favorite count over 100.
-
+### MENTIONS - neo4j as target, use :User ###
+Q: Show the tweets where 'neo4j' is mentioned and the tweet has a favorite count over 100.
 MATCH (t:Tweet)-[:MENTIONS]->(u:User {{screen_name: 'neo4j'}}) WHERE t.favorites > 100 RETURN t.text AS tweet_text, t.favorites AS favorite_count, t.created_at AS created_at
 
----
+Q: List the top 3 tweets that mention 'Neo4j' and have more than 100 favorites.
+MATCH (u:User {{screen_name: 'neo4j'}})<-[:MENTIONS]-(t:Tweet) WHERE t.favorites > 100 RETURN t.text, t.favorites, t.created_at ORDER BY t.favorites DESC LIMIT 3
 
-### Example 4 - aggregation_count
-Question:
-Who does 'neo4j' interact with most frequently?
+Q: List the top 5 tweets that mention the user with the screen name 'neo4j'.
+MATCH (t:Tweet)-[:MENTIONS]->(u:User {{screen_name: 'neo4j'}}) RETURN t ORDER BY t.favorites DESC LIMIT 5
 
+### neo4j MENTIONS others - use :User with POSTS ###
+Q: Who are the users that 'neo4j' mentions most frequently in their tweets?
+MATCH (u:User {{screen_name: 'neo4j'}})-[:POSTS]->(t:Tweet)-[:MENTIONS]->(mentioned:User) RETURN mentioned.screen_name, count(t) AS mentions_count ORDER BY mentions_count DESC
+
+Q: Who are the top 3 users mentioned in the tweets that 'Neo4j' mentions?
+MATCH (me:Me {{screen_name: 'neo4j'}})-[:POSTS]->(tweet:Tweet)-[:MENTIONS]->(mentionedUser:User) WITH mentionedUser, COUNT(*) AS mentionCount ORDER BY mentionCount DESC LIMIT 3 RETURN mentionedUser.screen_name, mentionCount
+
+### RETWEETS - MUST use POSTS->RETWEETS pattern ###
+Q: Who are the top 5 users that 'neo4j' retweets the most?
+MATCH (me:Me {{screen_name: 'neo4j'}})-[:POSTS]->(tweet:Tweet)-[:RETWEETS]->(retweetedTweet:Tweet)<-[:POSTS]-(retweetedUser:User) RETURN retweetedUser.screen_name AS retweeted_user, count(*) AS retweet_count ORDER BY retweet_count DESC LIMIT 5
+
+Q: Show the first 3 tweets that 'Me' has retweeted.
+MATCH (me:Me)-[:POSTS]->(retweet:Tweet)-[:RETWEETS]->(original:Tweet) RETURN original ORDER BY original.created_at ASC LIMIT 3
+
+Q: List the first 3 tweets that 'Neo4j' has retweeted.
+MATCH (u:User {{name: 'Neo4j'}})-[:POSTS]->(t:Tweet)-[:RETWEETS]->(rt:Tweet) RETURN rt LIMIT 3
+
+Q: List the first 3 tweets that 'Neo4j' retweets on '2021-03-16'.
+MATCH (me:Me {{screen_name: 'neo4j'}})-[:POSTS]->(retweet:Tweet)-[:RETWEETS]->(original:Tweet) WHERE date(retweet.created_at) = date('2021-03-16') RETURN original.text, original.created_at ORDER BY retweet.created_at ASC LIMIT 3
+
+Q: Who has 'Neo4j' retweeted the most? List the top 3 users.
+MATCH (neo:User {{name: 'Neo4j'}})-[:POSTS]->(tweet:Tweet)-[:RETWEETS]->(retweetedTweet:Tweet)-[:POSTS]->(retweetedUser:User) RETURN retweetedUser.screen_name AS user, count(*) AS retweet_count ORDER BY retweet_count DESC LIMIT 3
+
+Q: Who are the users that have been retweeted by 'neo4j'?
+MATCH (me:Me {{screen_name: 'neo4j'}})-[:POSTS]->(tweet:Tweet)-[:RETWEETS]->(retweetedTweet:Tweet)<-[:POSTS]-(retweetedUser:User) RETURN DISTINCT retweetedUser.screen_name
+
+Q: List all users retweeted by 'Me'.
+MATCH (me:Me)-[:POSTS]->(retweet:Tweet)-[:RETWEETS]->(original:Tweet)<-[:POSTS]-(user:User) RETURN user
+
+### INTERACTS_WITH - always :Me ###
+Q: Who does 'neo4j' interact with most frequently?
 MATCH (me:Me {{screen_name: 'neo4j'}})-[:INTERACTS_WITH]->(user:User) RETURN user.screen_name, COUNT(*) AS interaction_count ORDER BY interaction_count DESC LIMIT 1
 
----
+Q: Which users interact most frequently with 'neo4j' and list the top 5?
+MATCH (me:Me {{screen_name: 'neo4j'}})-[:INTERACTS_WITH]->(user:User) RETURN user.screen_name, COUNT(*) AS interaction_count ORDER BY interaction_count DESC LIMIT 5
 
-### Example 5 - retweets
-Question:
-List the tweets that mention users who have retweeted tweets that mention "Neo4j".
+### RT_MENTIONS - always :Me ###
+Q: Who are the top 3 users that 'Neo4j' retweets mentions from?
+MATCH (me:Me {{screen_name: 'neo4j'}})-[:RT_MENTIONS]->(user:User) RETURN user.screen_name AS user, count(*) AS mentions ORDER BY mentions DESC LIMIT 3
 
-MATCH (me:Me {{name: 'Neo4j'}})<-[:MENTIONS]-(tweet1:Tweet)<-[:RETWEETS]-(:Tweet)<-[:POSTS]-(user:User)<-[:MENTIONS]-(tweet2:Tweet) RETURN DISTINCT tweet2.id_str
-
----
-
-### Example 6 - hashtags_by_time
-Question:
-List the top 3 tweets with hashtags posted by 'neo4j'.
-
-MATCH (me:Me {{screen_name: 'neo4j'}})-[:POSTS]->(t:Tweet)-[:TAGS]->(h:Hashtag) RETURN t.text AS tweet, h.name AS hashtag ORDER BY t.created_at DESC LIMIT 3
-
----
-
-### Example 7 - simple_user_property
-Question:
-Identify the top 3 users by the number of people they are following.
-
-MATCH (u:User) RETURN u.screen_name AS user, u.following AS following ORDER BY u.following DESC LIMIT 3
-
----
-
-### Example 8 - relationship_property
-Question:
-Which 5 users are most similar to Neo4j based on the SIMILAR_TO score?
-
+### SIMILAR_TO - always :Me ###
+Q: Which 5 users are most similar to Neo4j based on the SIMILAR_TO score?
 MATCH (me:Me {{name: 'Neo4j'}})<-[s:SIMILAR_TO]-(u:User) RETURN u.screen_name AS user, s.score AS similarity ORDER BY similarity DESC LIMIT 5
 
----
+### Counting relationships ###
+Q: Identify the top 3 users by the number of people they are following.
+MATCH (u:User) RETURN u.name, u.screen_name, count{{(u)-[:FOLLOWS]->(:User)}} AS followingCount ORDER BY followingCount DESC LIMIT 3
 
-### Example 9 - complex_chain_retweets
-Question:
-Identify the first 3 users who have retweeted tweets mentioning 'Neo4j'.
+### General queries - return full node ###
+Q: List the first 5 tweets with the highest number of favorites.
+MATCH (t:Tweet) RETURN t.text, t.favorites ORDER BY t.favorites DESC LIMIT 5
 
-MATCH (u:User)-[:POSTS]->(t:Tweet)-[:RETWEETS]->(original:Tweet)-[:MENTIONS]->(m:Me {{screen_name: 'neo4j'}}) RETURN u.screen_name LIMIT 3
+Q: What are the top 5 most recent tweets based on the creation date?
+MATCH (t:Tweet) RETURN t ORDER BY t.created_at DESC LIMIT 5
 
----
+Q: Find the top 5 tweets with the highest number of favorites.
+MATCH (t:Tweet) RETURN t ORDER BY t.favorites DESC LIMIT 5
 
-### Example 10 - follows_posts_contains
-Question:
-List the top 5 tweets that include a link and were posted by users following 'Neo4j'.
+Q: List the first 3 users who have more than 10000 followers.
+MATCH (u:User) WHERE u.followers > 10000 RETURN u.name, u.screen_name, u.followers ORDER BY u.followers DESC LIMIT 3
 
-MATCH (u:User)-[:FOLLOWS]->(me:Me {{screen_name: 'neo4j'}}), (u)-[:POSTS]->(tweet:Tweet)-[:CONTAINS]->(link:Link) RETURN tweet.text AS tweet_text, tweet.created_at AS created_at, link.url AS link_url ORDER BY tweet.created_at DESC LIMIT 5
+Q: List all users who follow 'neo4j'.
+MATCH (u:User)-[:FOLLOWS]->(:Me {{screen_name: 'neo4j'}}) RETURN u
 
----
+Q: List the top 3 users with the lowest number of followers who follow 'Neo4j'.
+MATCH (u:User)-[:FOLLOWS]->(m:Me {{screen_name: 'neo4j'}}) RETURN u ORDER BY u.followers ASC LIMIT 3
+
+### Hashtag queries ###
+Q: List the first 3 hashtags used in tweets mentioning 'Neo4j'.
+MATCH (t:Tweet)-[:MENTIONS]->(u:User {{name: 'Neo4j'}}) MATCH (t)-[:TAGS]->(h:Hashtag) RETURN h.name AS hashtag LIMIT 3
+
+Q: List the first 3 tweets containing a hashtag named 'education'.
+MATCH (t:Tweet)-[:TAGS]->(h:Hashtag {{name: 'education'}}) RETURN t LIMIT 3
+
+Q: What are the names of all hashtags used in tweets from 'Neo4j'?
+MATCH (u:User {{screen_name: 'neo4j'}})-[:POSTS]->(t:Tweet)-[:TAGS]->(h:Hashtag) RETURN h.name AS hashtag
 
 {question}
 """
