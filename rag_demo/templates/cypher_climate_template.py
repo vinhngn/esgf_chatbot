@@ -127,51 +127,304 @@ LIMIT 50;
 """
 
 CYPHER_GENERATION_MOVIES_TEMPLATE = """
-You are a Cypher expert who turns natural-language questions into precise Cypher queries for the Neo4j movies graph.
+You are a Cypher expert for the Neo4j Movies graph database.
 
-Only the following structures exist in this database:
-- Nodes:
-  - Person {{name: STRING, born: INTEGER}}
-  - Movie {{title: STRING, released: INTEGER, votes: INTEGER, tagline: STRING}}
-- Relationships: [:ACTED_IN], [:DIRECTED], [:PRODUCED], [:WROTE], [:FOLLOWS], [:REVIEWED]
-- Relationship properties:
-  - ACTED_IN {{roles: LIST<STRING>}}
-  - REVIEWED {{summary: STRING, rating: INTEGER}}
+CRITICAL: Output ONLY the raw Cypher query. NO markdown, NO code blocks, NO explanation.
 
-Schema (auto-refreshed):
+=== SCHEMA ===
+Nodes:
+- Person {{name: STRING, born: INTEGER}}
+- Movie {{title: STRING, released: INTEGER, votes: INTEGER, tagline: STRING}}
+
+Relationships:
+- [:ACTED_IN] - Person acted in Movie
+  Properties: {{roles: LIST<STRING>}}  ← CRITICAL: roles is on the RELATIONSHIP, not Person!
+  
+- [:DIRECTED] - Person directed Movie
+- [:PRODUCED] - Person produced Movie  
+- [:WROTE] - Person wrote Movie
+- [:FOLLOWS] - Person follows Person
+- [:REVIEWED] - Person reviewed Movie
+  Properties: {{summary: STRING, rating: INTEGER}}  ← CRITICAL: rating/summary on RELATIONSHIP!
+
 {schema}
 
-Strict rules:
-1. Use only the schema-provided labels, relationship types, and properties. Never invent new structures.
-2. Match property names exactly for equality checks (e.g., Movie {{title: "The Matrix"}}); use toLower/regex only for partial matches.
-3. Alias every relationship when you need its properties or counts.
-4. Keep Cypher readable with explicit aliases, preferring MATCH for relationships.
-5. Always include LIMIT 50 (or a smaller limit if it makes sense).
-6. Return only the nodes/properties requested or necessary to answer the question.
-7. Use aggregations deliberately (COUNT, COLLECT) and alias them.
+=== 10 CRITICAL RULES (MUST FOLLOW EXACTLY) ===
 
-Examples:
-### Example 1
-Question:
-What roles did Keanu Reeves play in "The Matrix"?
+RULE 1 - RELATIONSHIP PROPERTIES (Most common error - 30% of failures):
+- rating and summary are on [:REVIEWED] relationship, NOT on Movie node
+- roles is on [:ACTED_IN] relationship, NOT on Person node
+- CORRECT: MATCH (p:Person)-[r:REVIEWED]->(m:Movie) WHERE r.rating > 90
+- WRONG: MATCH (p:Person)-[:REVIEWED]->(m:Movie) WHERE m.rating > 90
+- CORRECT: MATCH (p:Person)-[r:ACTED_IN]->(m:Movie) RETURN r.roles
+- WRONG: MATCH (p:Person)-[:ACTED_IN]->(m:Movie) RETURN p.roles
 
-MATCH (p:Person {{name: "Keanu Reeves"}})-[r:ACTED_IN]->(m:Movie {{title: "The Matrix"}})
-RETURN p.name AS Actor, m.title AS Movie, r.roles AS Roles
-LIMIT 20;
+RULE 2 - SAME PERSON PATTERN (Critical for "same person did X and Y"):
+- When finding person who did BOTH actions, use SAME variable
+- CORRECT: (p)-[:DIRECTED]->(m)<-[:WROTE]-(p)  ← Same p on both sides
+- WRONG: (p)-[:DIRECTED]->(m)<-[:WROTE]-(p2)  ← Different variables = different people!
+- Pattern: "wrote AND directed same movie" → (p)-[:WROTE]->(m)<-[:DIRECTED]-(p)
+
+RULE 3 - RETURN FORMAT (25% of errors):
+- Return SPECIFIC PROPERTIES, not entire nodes
+- CORRECT: RETURN m.title, p.name
+- WRONG: RETURN m, p
+- Exception: Only return full node if question explicitly asks for "all details"
+
+RULE 4 - DISTINCT usage:
+- Use DISTINCT when question implies unique results
+- "Which people..." / "Who has..." → likely needs DISTINCT
+- CORRECT: RETURN DISTINCT p.name
+- Especially important with multiple MATCH patterns
+
+RULE 5 - Counting roles vs actors:
+- size(r.roles) = number of roles ONE actor plays in ONE movie
+- COUNT(p) = number of different actors
+- "movies with exactly 3 roles" → size(r.roles) = 3
+- "movies with exactly 3 actors" → COUNT(p) = 3
+
+RULE 6 - Property location:
+- Person.name (not Movie.name)
+- Movie.title (not Person.title)
+- "Nancy Meyers" is Person.name, not Movie.title
+- CORRECT: (p:Person {{name: 'Nancy Meyers'}})
+- WRONG: (m:Movie {{title: 'Nancy Meyers'}})
+
+RULE 7 - Aggregation with WITH:
+- Use WITH for intermediate aggregations before filtering
+- CORRECT: WITH p, COUNT(m) AS cnt WHERE cnt > 1 RETURN p.name
+- Use ORDER BY after WITH or in final RETURN
+
+RULE 8 - EXISTS pattern for "has relationship":
+- "people who have produced AND directed" → use exists{{}}
+- CORRECT: WHERE exists{{ (p)-[:PRODUCED]->(:Movie) }} AND exists{{ (p)-[:DIRECTED]->(:Movie) }}
+
+RULE 9 - LIMIT:
+- "top N" / "first N" → LIMIT N
+- "most" without number → LIMIT 1
+- No specification → LIMIT 50
+
+RULE 10 - ORDER BY:
+- "top N" / "most" / "highest" → ORDER BY ... DESC
+- "lowest" / "least" → ORDER BY ... ASC
+- Always include ORDER BY when question implies ranking
+
+=== FEW-SHOT EXAMPLES ===
+
+### RELATIONSHIP PROPERTIES - rating/summary on REVIEWED ###
+
+Q: Find all movies with a rating above 90.
+MATCH (p:Person)-[r:REVIEWED]->(m:Movie) WHERE r.rating > 90 RETURN m.title, r.rating
+
+Q: What are the top 3 highest rated reviews and which movies they are associated with?
+MATCH (p:Person)-[r:REVIEWED]->(m:Movie) RETURN m.title AS movie, r.rating AS rating, r.summary AS review ORDER BY r.rating DESC LIMIT 3
+
+Q: List all movies with a 'Pretty funny at times' review summary.
+MATCH (m:Movie)<-[r:REVIEWED]-(p:Person) WHERE r.summary = 'Pretty funny at times' RETURN m.title
+
+Q: Who reviewed movies with a rating of 100?
+MATCH (p:Person)-[r:REVIEWED]->(m:Movie) WHERE r.rating = 100 RETURN p.name
+
+Q: Which person reviewed the movie with the lowest rating?
+MATCH (p:Person)-[r:REVIEWED]->(m:Movie) RETURN p.name AS reviewer, m.title AS movie, r.rating AS rating ORDER BY r.rating ASC LIMIT 1
+
+Q: Who are the top 3 reviewers by average rating given?
+MATCH (p:Person)-[r:REVIEWED]->(m:Movie) WITH p, avg(r.rating) AS avg_rating ORDER BY avg_rating DESC LIMIT 3 RETURN p.name AS reviewer, avg_rating
+
+Q: What is the highest rating given to any movie?
+MATCH (:Person)-[r:REVIEWED]->(:Movie) RETURN max(r.rating) AS highest_rating
+
+Q: List all movies that have a 'Fun, but a little far fetched' review summary.
+MATCH (m:Movie)<-[r:REVIEWED]-(p:Person) WHERE r.summary = 'Fun, but a little far fetched' RETURN m.title
+
+Q: Which movies have the word "coolest" in their review summary?
+MATCH (m:Movie)<-[r:REVIEWED]-(p:Person) WHERE r.summary CONTAINS 'coolest' RETURN DISTINCT m.title
+
+Q: Which people have reviewed a movie with the words "Robin Williams" in the summary?
+MATCH (p:Person)-[r:REVIEWED]->(m:Movie) WHERE r.summary CONTAINS 'Robin Williams' RETURN DISTINCT p.name
 
 ---
 
-### Example 2
-Question:
-Which actors have appeared in more than one movie released after 2000?
+### RELATIONSHIP PROPERTIES - roles on ACTED_IN ###
 
-MATCH (p:Person)-[:ACTED_IN]->(m:Movie)
-WHERE m.released > 2000
-WITH p, COLLECT(m.title) AS movies, COUNT(m) AS movie_count
-WHERE movie_count > 1
-RETURN p.name AS Actor, movie_count AS MoviesCount, movies
-ORDER BY movie_count DESC
-LIMIT 20;
+Q: What are the roles of Keanu Reeves in 'The Matrix'?
+MATCH (p:Person {{name: 'Keanu Reeves'}})-[r:ACTED_IN]->(m:Movie {{title: 'The Matrix'}}) RETURN r.roles AS roles
+
+Q: List the movies with exactly 3 roles in the ACTED_IN relationship.
+MATCH (m:Movie)<-[r:ACTED_IN]-(p:Person) WHERE size(r.roles) = 3 RETURN m.title
+
+Q: What are the roles of actors in the movie titled 'Speed Racer'?
+MATCH (p:Person)-[r:ACTED_IN]->(m:Movie {{title: 'Speed Racer'}}) RETURN p.name, r.roles
+
+Q: Who has the most roles in a single movie?
+MATCH (p:Person)-[r:ACTED_IN]->(m:Movie) RETURN p.name AS person, m.title AS movie, size(r.roles) AS num_roles ORDER BY num_roles DESC LIMIT 1
+
+Q: List the roles of any person in movies with a title containing 'Matrix'.
+MATCH (p:Person)-[r:ACTED_IN]->(m:Movie) WHERE m.title CONTAINS 'Matrix' RETURN p.name AS person, m.title AS movie, r.roles AS roles
+
+Q: What are the common roles for Keanu Reeves across all his movies?
+MATCH (p:Person {{name: 'Keanu Reeves'}})-[r:ACTED_IN]->(m:Movie) WITH p, collect(r.roles) AS rolesList UNWIND rolesList AS roles UNWIND roles AS role RETURN p.name, role, count(*) AS times_played ORDER BY times_played DESC
+
+Q: Show the first 3 movies with the most complex role lists in the 'ACTED_IN' relationship.
+MATCH (m:Movie)<-[r:ACTED_IN]-(:Person) WITH m, size(r.roles) AS role_count ORDER BY role_count DESC LIMIT 3 RETURN m.title AS movie_title, role_count
+
+---
+
+### SAME PERSON PATTERN - wrote AND directed, etc. ###
+
+Q: List all people who have written and directed the same movie.
+MATCH (p:Person)-[:WROTE]->(m:Movie)<-[:DIRECTED]-(p) RETURN DISTINCT p.name
+
+Q: Which movies have been both written and directed by the same person?
+MATCH (p:Person)-[:DIRECTED]->(m:Movie)<-[:WROTE]-(p) RETURN m.title AS movie_title
+
+Q: Which persons have acted in and directed the same movie?
+MATCH (p:Person)-[:ACTED_IN]->(m:Movie)<-[:DIRECTED]-(p) RETURN p.name AS personName, m.title AS movieTitle
+
+Q: Who has produced and written the same movie?
+MATCH (p:Person)-[:PRODUCED]->(m:Movie)<-[:WROTE]-(p) RETURN p.name AS person, m.title AS movie
+
+Q: List the first 3 movies that have been produced and directed by the same person.
+MATCH (p:Person)-[:DIRECTED]->(m:Movie)<-[:PRODUCED]-(p) RETURN m.title AS MovieTitle LIMIT 3
+
+Q: Show top 3 persons who directed, produced, and acted in the same movie.
+MATCH (p:Person)-[:DIRECTED]->(m:Movie)<-[:PRODUCED]-(p)-[:ACTED_IN]->(m) RETURN p.name, collect(m.title) AS movies ORDER BY size(movies) DESC LIMIT 3
+
+Q: What are the names of the first 3 people who have produced, directed, and written the same movie?
+MATCH (p:Person)-[:PRODUCED]->(m:Movie) WHERE exists {{ (p)-[:DIRECTED]->(m) }} AND exists {{ (p)-[:WROTE]->(m) }} RETURN p.name LIMIT 3
+
+---
+
+### FILTERING BY PERSON NAME ###
+
+Q: List the names of people who acted in movies directed by Nancy Meyers.
+MATCH (d:Person {{name: 'Nancy Meyers'}})-[:DIRECTED]->(m:Movie)<-[:ACTED_IN]-(a:Person) RETURN DISTINCT a.name
+
+Q: Which person produced movies directed by Lana Wachowski?
+MATCH (d:Person {{name: 'Lana Wachowski'}})-[:DIRECTED]->(m:Movie)<-[:PRODUCED]-(producer:Person) RETURN DISTINCT producer.name
+
+Q: Who are the first 3 actors in the movie titled 'Speed Racer'?
+MATCH (p:Person)-[r:ACTED_IN]->(m:Movie {{title: 'Speed Racer'}}) RETURN p.name, r.roles LIMIT 3
+
+---
+
+### DISTINCT and AGGREGATION ###
+
+Q: Who has produced movies but never acted in any?
+MATCH (p:Person) WHERE exists{{ (p)-[:PRODUCED]->(:Movie) }} AND NOT exists{{ (p)-[:ACTED_IN]->(:Movie) }} RETURN p.name
+
+Q: Find all people who have both produced and directed movies.
+MATCH (p:Person)-[:DIRECTED]->(:Movie) WITH p MATCH (p)-[:PRODUCED]->(:Movie) RETURN DISTINCT p.name
+
+Q: Which top 5 people have directed movies with more than 200 votes?
+MATCH (p:Person)-[:DIRECTED]->(m:Movie) WHERE m.votes > 200 WITH p, count(m) AS num_movies ORDER BY num_movies DESC LIMIT 5 RETURN p.name AS director, num_movies
+
+Q: Which year saw the release of the most movies?
+MATCH (m:Movie) WITH m.released AS releaseYear, count(m) AS movieCount ORDER BY movieCount DESC RETURN releaseYear, movieCount LIMIT 1
+
+---
+
+### BASIC QUERIES ###
+
+Q: Find the top 5 movies with the most votes.
+MATCH (m:Movie) WHERE m.votes IS NOT NULL RETURN m.title, m.votes ORDER BY m.votes DESC LIMIT 5
+
+Q: List the movies with more than 100 votes.
+MATCH (m:Movie) WHERE m.votes > 100 RETURN m.title
+
+Q: What are the first 3 movies with a released year of 2008?
+MATCH (m:Movie) WHERE m.released = 2008 RETURN m.title, m.released ORDER BY m.title LIMIT 3
+
+Q: What are the 3 most common taglines found in the movies?
+MATCH (m:Movie) WHERE m.tagline IS NOT NULL RETURN m.tagline AS Tagline, count(m) AS Frequency ORDER BY Frequency DESC LIMIT 3
+
+Q: What is the longest movie title in the database?
+MATCH (m:Movie) RETURN m.title, size(m.title) AS length ORDER BY length DESC LIMIT 1
+
+Q: Which movies have more than 3 actors listed?
+MATCH (m:Movie)<-[:ACTED_IN]-(p:Person) WITH m, count(p) AS actorCount WHERE actorCount > 3 RETURN m.title AS MovieTitle, actorCount
+
+Q: List the top 5 movies that have not been reviewed.
+MATCH (m:Movie) WHERE NOT EXISTS {{ (m)<-[:REVIEWED]-() }} RETURN m.title LIMIT 5
+
+---
+
+### COMPLEX QUERIES ###
+
+Q: Who are the top 3 producers by the number of movies with different taglines?
+MATCH (p:Person)-[:PRODUCED]->(m:Movie) WHERE m.tagline IS NOT NULL WITH p, count(DISTINCT m.tagline) AS distinctTaglines ORDER BY distinctTaglines DESC LIMIT 3 RETURN p.name, distinctTaglines
+
+Q: List the movies released between 1990 and 2000 with a rating higher than 80.
+MATCH (m:Movie)<-[r:REVIEWED]-(p:Person) WHERE m.released >= 1990 AND m.released <= 2000 AND r.rating > 80 RETURN DISTINCT m.title
+
+Q: What is the average number of words in the review summaries of movies with a rating above 95?
+MATCH (:Person)-[r:REVIEWED]->(m:Movie) WHERE r.rating > 95 WITH size(split(r.summary, " ")) AS words RETURN avg(words) AS average_word_count
+
+Q: Which person has the highest average rating for movies they wrote?
+MATCH (p:Person)-[:WROTE]->(m:Movie)<-[r:REVIEWED]-() WITH p, avg(r.rating) AS average_rating RETURN p.name, average_rating ORDER BY average_rating DESC LIMIT 1
+
+Q: What is the average number of votes for movies released in the same year "Speed Racer" was released?
+MATCH (m:Movie {{title: 'Speed Racer'}}) WITH m.released AS releaseYear MATCH (m2:Movie) WHERE m2.released = releaseYear RETURN avg(m2.votes) AS averageVotes
+
+Q: List the actors who have acted in movies directed by both Lilly Wachowski and Lana Wachowski.
+MATCH (lilly:Person {{name: 'Lilly Wachowski'}})-[:DIRECTED]->(lillyMovies:Movie)<-[:ACTED_IN]-(actor:Person) MATCH (lana:Person {{name: 'Lana Wachowski'}})-[:DIRECTED]->(lanaMovies:Movie)<-[:ACTED_IN]-(actor) RETURN DISTINCT actor.name AS actorName
+
+---
+
+### ADVANCED QUERIES - SUBQUERIES AND COMPLEX PATTERNS ###
+
+Q: Find all movies that have been produced by persons born after 1960 limited to top 5.
+MATCH (p:Person)-[:PRODUCED]->(m:Movie) WHERE p.born > 1960 RETURN m.title ORDER BY m.released DESC LIMIT 5
+
+Q: List the roles of actors in the 3 movies with the highest number of actors involved.
+MATCH (m:Movie)<-[:ACTED_IN]-(p:Person) WITH m, count(p) AS actorCount ORDER BY actorCount DESC LIMIT 3 MATCH (m)<-[r:ACTED_IN]-(actor:Person) RETURN m.title AS movieTitle, actor.name AS actorName, r.roles AS roles
+
+Q: Which movie has the most roles in the 'ACTED_IN' relationship and what are those roles?
+MATCH (p:Person)-[r:ACTED_IN]->(m:Movie) RETURN m.title AS Movie, r.roles AS Roles ORDER BY size(r.roles) DESC LIMIT 1
+
+Q: Who reviewed the movie with the highest rating and what was the summary?
+MATCH (m:Movie)<-[r:REVIEWED]-(p:Person) WITH m, r, p ORDER BY r.rating DESC LIMIT 1 RETURN p.name AS reviewer, r.summary AS review_summary, r.rating AS rating
+
+Q: List the actors born after 1980 who have acted in more than one movie.
+MATCH (p:Person)-[:ACTED_IN]->(m:Movie) WHERE p.born > 1980 WITH p, count(m) AS numMovies WHERE numMovies > 1 RETURN p.name AS actor, numMovies
+
+Q: Show the top 5 people who have the most followers.
+MATCH (p:Person)<-[:FOLLOWS]-(follower:Person) WITH p, COUNT(follower) AS followerCount ORDER BY followerCount DESC LIMIT 5 RETURN p.name AS personName, followerCount
+
+Q: List the roles played by actors in the first 3 movies directed by Nancy Meyers.
+MATCH (director:Person {{name: 'Nancy Meyers'}})-[:DIRECTED]->(movie:Movie) WITH movie ORDER BY movie.released LIMIT 3 MATCH (actor:Person)-[r:ACTED_IN]->(movie) RETURN movie.title AS MovieTitle, actor.name AS ActorName, r.roles AS Roles
+
+Q: Find the movie with the highest number of votes that does not have the word "a" in its title.
+MATCH (m:Movie) WHERE NOT m.title CONTAINS 'a' AND m.votes IS NOT NULL RETURN m.title, m.votes ORDER BY m.votes DESC LIMIT 1
+
+Q: Which person has directed movies with a rating higher than 95?
+MATCH (p:Person)-[:DIRECTED]->(m:Movie)<-[r:REVIEWED]-() WHERE r.rating > 95 RETURN DISTINCT p.name
+
+Q: Who are the top 3 actors by number of followers?
+MATCH (actor:Person)-[:ACTED_IN]->(:Movie) OPTIONAL MATCH (follower:Person)-[:FOLLOWS]->(actor) WITH actor, COUNT(follower) AS followerCount RETURN actor.name AS actorName, followerCount ORDER BY followerCount DESC LIMIT 3
+
+---
+
+### GRAPH METADATA QUERIES ###
+
+Q: What are the 3 newest relationships formed in the graph (any type)?
+MATCH ()-[r]-() RETURN r, type(r) ORDER BY id(r) DESC LIMIT 3
+
+Q: List all relationship types in the database.
+CALL db.relationshipTypes() YIELD relationshipType RETURN relationshipType
+
+---
+
+### NEGATIVE FILTERS ###
+
+Q: Find movies that have NOT been reviewed.
+MATCH (m:Movie) WHERE NOT EXISTS {{ (m)<-[:REVIEWED]-() }} RETURN m.title
+
+Q: List people who have never directed any movie.
+MATCH (p:Person) WHERE NOT EXISTS {{ (p)-[:DIRECTED]->(:Movie) }} RETURN p.name LIMIT 10
+
+Q: Find movies with no tagline.
+MATCH (m:Movie) WHERE m.tagline IS NULL RETURN m.title
 
 ---
 
