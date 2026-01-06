@@ -453,22 +453,188 @@ LIMIT 20;
 """
 
 CYPHER_GENERATION_NORTHWIND_TEMPLATE = """
-You are a Cypher expert who writes precise Cypher queries for the Neo4j Northwind graph.
+You are a Cypher expert for the Neo4j Northwind graph database.
 
-Schema (auto-refreshed):
+CRITICAL: Output ONLY the raw Cypher query. NO markdown, NO code blocks, NO explanation.
+
 {schema}
 
-Examples:
-### Example 1
-Question:
-Which supplier supplies the most products?
+=== 6 MEGA-RULES (Follow in order) ===
 
-MATCH (s:Supplier)-[:SUPPLIES]->(p:Product)
-RETURN s.companyName AS Supplier, COUNT(p) AS NumberOfProductsSupplied
-ORDER BY NumberOfProductsSupplied DESC
-LIMIT 1;
+RULE 1 - RETURN FORMAT DECISION (Most Critical - 44% of errors):
 
----
+| Question Pattern | Keywords | Return Format |
+|------------------|----------|---------------|
+| Simple Retrieval | "first N", "List the N" | RETURN x (full node), NO ORDER BY |
+| Ranking | "top N", "most", "highest" | RETURN x.prop, metric ORDER BY DESC |
+| Specific Query | "Which X" + context | RETURN relevant properties from both entities |
+| Filtered List | "all X that", "Find X where" | RETURN x.prop (single property) |
+
+CRITICAL EXAMPLES:
+- "List the first 3 orders shipped to France" → RETURN o (full node, no ORDER BY)
+- "What are the top 5 products by reorder level?" → RETURN p.productName, p.reorderLevel ORDER BY DESC
+- "Which supplier supplies product with highest unitPrice?" → RETURN s.supplierID, p.productName, p.unitPrice
+- "Find all suppliers that supply discontinued products" → RETURN s.companyName
+
+RULE 2 - DISTINCT DECISION:
+- "first N X" → NO DISTINCT (LIMIT handles uniqueness)
+- "all X that..." with single path → NO DISTINCT  
+- "all X that..." with multiple JOINs → DISTINCT
+- "Which N X" with multiple paths → DISTINCT
+
+RULE 3 - SEMANTIC CLARIFICATION:
+- "ordered by [entity]" (e.g., "ordered by customers") → Customer relationship
+- "ordered by [property]" (e.g., "ordered by price") → ORDER BY clause
+- "units on order" → p.unitsOnOrder (Product property, NOT relationship)
+- "least/fewest X" → WHERE X > 0 ORDER BY ASC (minimum positive, NOT = 0!)
+- "never ordered" → NOT EXISTS pattern
+
+RULE 4 - RELATIONSHIP DIRECTION (Critical - NEVER reverse):
+CORRECT:
+  (o:Order)-[:ORDERS]->(p:Product) - Order contains Product
+  (o:Order)-[r:ORDERS]->(p:Product) - r.unitPrice, r.quantity, r.discount
+  (c:Customer)-[:PURCHASED]->(o:Order)
+  (s:Supplier)-[:SUPPLIES]->(p:Product)
+  (p:Product)-[:PART_OF]->(c:Category)
+
+WRONG (common mistakes):
+  (p:Product)-[:ORDERS]->(o:Order) ❌
+  (p:Product)-[o:ORDERS]->(:Order) ❌
+
+RULE 5 - TYPE CONVERSION & AGGREGATION:
+- freight, ORDERS.unitPrice, ORDERS.discount → toFloat() for math
+- Simple: RETURN count(*), avg(toFloat(x))
+- With filter: WITH x, count(*) AS cnt WHERE cnt > N RETURN x
+- Find max: WITH max(x) AS maxX MATCH ... WHERE x = maxX
+
+RULE 6 - PROPERTY NAMES:
+- Category: c.categoryName (not c.name), c.description
+- Customer: c.customerID, c.companyName
+- Use exact property names from schema
+
+=== EXAMPLES ===
+
+### "first N" vs "top N" - CRITICAL DIFFERENCE ###
+Q: List the first 3 orders shipped to France.
+MATCH (o:Order) WHERE o.shipCountry = 'France' RETURN o LIMIT 3
+
+Q: What are the top 3 orders by freight to France?
+MATCH (o:Order) WHERE o.shipCountry = 'France' RETURN o.orderID, o.freight ORDER BY toFloat(o.freight) DESC LIMIT 3
+
+Q: What are the first 3 products with a reorder level above 20?
+MATCH (p:Product) WHERE p.reorderLevel > 20 RETURN p LIMIT 3
+
+Q: What are the top 5 products with a reorder level above 20?
+MATCH (p:Product) WHERE p.reorderLevel > 20 RETURN p.productName, p.reorderLevel ORDER BY p.reorderLevel DESC LIMIT 5
+
+Q: List the first 3 orders with a freight cost greater than $100.
+MATCH (o:Order) WHERE toFloat(o.freight) > 100 RETURN o LIMIT 3
+
+### RANKING queries - MUST return metric ###
+Q: Which customer has placed the most orders?
+MATCH (c:Customer)-[:PURCHASED]->(o:Order) WITH c, count(*) AS orderCount ORDER BY orderCount DESC LIMIT 1 RETURN c.companyName, orderCount
+
+Q: Which 3 suppliers supply the most products?
+MATCH (s:Supplier)-[:SUPPLIES]->(p:Product) WITH s, COUNT(p) AS productCount ORDER BY productCount DESC LIMIT 3 RETURN s.companyName AS supplierName, productCount
+
+Q: List the top 3 customers who have placed the most orders.
+MATCH (c:Customer)-[:PURCHASED]->(o:Order) WITH c, count(o) AS orderCount ORDER BY orderCount DESC LIMIT 3 RETURN c.customerID, orderCount
+
+Q: List the top 5 categories with the most products.
+MATCH (p:Product)-[:PART_OF]->(c:Category) WITH c, count(p) AS productCount ORDER BY productCount DESC LIMIT 5 RETURN c.categoryName, productCount
+
+Q: Find the top 5 most frequently ordered products.
+MATCH (:Order)-[o:ORDERS]->(p:Product) WITH p, COUNT(o) AS orderCount ORDER BY orderCount DESC LIMIT 5 RETURN p.productName, orderCount
+
+### SIMPLE RETRIEVAL - full node ###
+Q: List the products with unitsOnOrder greater than 30.
+MATCH (p:Product) WHERE p.unitsOnOrder > 30 RETURN p
+
+Q: Which suppliers supply products with a unitsInStock value above 80?
+MATCH (s:Supplier)-[:SUPPLIES]->(p:Product) WHERE p.unitsInStock > 80 RETURN s
+
+Q: Find all suppliers who do not have a homepage listed.
+MATCH (s:Supplier) WHERE s.homePage IS NULL RETURN s
+
+Q: List all categories that have products with units in stock less than 10.
+MATCH (p:Product)-[:PART_OF]->(c:Category) WHERE p.unitsInStock < 10 RETURN DISTINCT c
+
+Q: List the first 5 products that were part of an order with a 'freight' cost over $250.
+MATCH (o:Order)-[:ORDERS]->(p:Product) WHERE toFloat(o.freight) > 250 RETURN p LIMIT 5
+
+### SPECIFIC COLUMNS - return what's asked ###
+Q: Which supplier (`supplierID`) supplies the product with the highest `unitPrice`?
+MATCH (p:Product)-[:SUPPLIES]-(s:Supplier) RETURN s.supplierID, p.productName, p.unitPrice ORDER BY p.unitPrice DESC LIMIT 1
+
+Q: Identify the 5 suppliers with the highest average unit price of products supplied.
+MATCH (s:Supplier)-[:SUPPLIES]->(p:Product) WITH s, avg(p.unitPrice) AS avgUnitPrice ORDER BY avgUnitPrice DESC LIMIT 5 RETURN s.companyName AS Supplier, avgUnitPrice AS AverageUnitPrice
+
+Q: What are the first 3 customers who have purchased orders shipped to France?
+MATCH (c:Customer)-[:PURCHASED]->(o:Order) WHERE o.shipCountry = 'France' RETURN c.customerID, c.companyName, c.contactName LIMIT 3
+
+Q: What are the contact details for suppliers in the 'UK'?
+MATCH (s:Supplier) WHERE s.country = 'UK' RETURN s.companyName, s.contactName, s.contactTitle, s.phone, s.fax, s.address, s.city, s.postalCode, s.region, s.homePage
+
+### FILTERED LIST - single property, NO extra DISTINCT ###
+Q: Find all suppliers that supply discontinued products.
+MATCH (s:Supplier)-[:SUPPLIES]->(p:Product) WHERE p.discontinued = true RETURN s.companyName
+
+Q: List all suppliers that provide products to the 'Dairy Products' category.
+MATCH (s:Supplier)-[:SUPPLIES]->(p:Product)-[:PART_OF]->(c:Category {{categoryName: 'Dairy Products'}}) RETURN s.companyName
+
+Q: List all suppliers that supply products in the 'Beverages' category.
+MATCH (s:Supplier)-[:SUPPLIES]->(p:Product)-[:PART_OF]->(c:Category {{categoryName: 'Beverages'}}) RETURN s.companyName
+
+### "least/fewest" - WHERE > 0 then ORDER BY ASC ###
+Q: Which category has the least number of products on order?
+MATCH (c:Category)<-[:PART_OF]-(p:Product) WHERE p.unitsOnOrder > 0 RETURN c.categoryName, COUNT(p) AS productCount ORDER BY productCount ASC LIMIT 1
+
+Q: Which 3 categories have the fewest products with units on order?
+MATCH (p:Product)-[:PART_OF]->(c:Category) WHERE p.unitsOnOrder > 0 WITH c.categoryName AS category, COUNT(p) AS productCount ORDER BY productCount ASC LIMIT 3 RETURN category, productCount
+
+### RELATIONSHIP PROPERTIES ###
+Q: What is the average unitPrice of products ordered in quantities greater than 10?
+MATCH (o:Order)-[rel:ORDERS]->(p:Product) WHERE rel.quantity > 10 WITH avg(toFloat(rel.unitPrice)) AS avgPrice RETURN avgPrice
+
+Q: What is the total revenue generated by orders shipped in 1996?
+MATCH (o:Order)-[r:ORDERS]->(p:Product) WHERE o.shippedDate STARTS WITH '1996' RETURN sum(toFloat(r.unitPrice) * r.quantity) AS totalRevenue
+
+Q: What is the average discount given across all orders?
+MATCH (o:Order)-[r:ORDERS]->(p:Product) RETURN avg(toFloat(r.discount)) AS averageDiscount
+
+Q: Which 3 products have the highest average discount in orders?
+MATCH (o:Order)-[r:ORDERS]->(p:Product) WITH p, AVG(toFloat(r.discount)) AS avgDiscount ORDER BY avgDiscount DESC LIMIT 3 RETURN p.productName, avgDiscount
+
+### DISTINCT with multiple JOINs ###
+Q: Which 3 suppliers provide products in the 'Beverages' category?
+MATCH (c:Category {{categoryName: 'Beverages'}})<-[:PART_OF]-(p:Product)<-[:SUPPLIES]-(s:Supplier) RETURN DISTINCT s.companyName LIMIT 3
+
+Q: Which categories have products with a unit price less than $10?
+MATCH (p:Product)-[:PART_OF]->(c:Category) WHERE p.unitPrice < 10 RETURN DISTINCT c.categoryName
+
+### NULL/ZERO handling ###
+Q: Find the orders that have a shipRegion value of 'NULL'.
+MATCH (o:Order) WHERE o.shipRegion = 'NULL' RETURN o.orderID
+
+Q: Which 3 categories contain products with no units on order?
+MATCH (p:Product)-[:PART_OF]->(c:Category) WHERE p.unitsOnOrder = 0 RETURN DISTINCT c.categoryName LIMIT 3
+
+### SUBQUERY patterns ###
+Q: Which suppliers supply the product with the highest unitPrice?
+MATCH (p:Product) WITH max(p.unitPrice) AS maxPrice MATCH (p:Product {{unitPrice: maxPrice}}) MATCH (s:Supplier)-[:SUPPLIES]->(p) RETURN s.companyName
+
+Q: List the products that have a reorder level greater than the average reorder level of products in the same category.
+MATCH (p:Product)-[:PART_OF]->(c:Category) WITH c, avg(p.reorderLevel) AS avgReorderLevel MATCH (p:Product)-[:PART_OF]->(c) WHERE p.reorderLevel > avgReorderLevel RETURN p.productName
+
+Q: What are the names of products with a reorder level greater than the average reorder level of all products?
+MATCH (p:Product) WITH AVG(p.reorderLevel) AS avgReorderLevel MATCH (p2:Product) WHERE p2.reorderLevel > avgReorderLevel RETURN p2.productName AS ProductName
+
+### Category queries ###
+Q: Which 3 customers have ordered the most products in the 'Seafood' category?
+MATCH (c:Customer)-[:PURCHASED]->(o:Order)-[:ORDERS]->(p:Product)-[:PART_OF]->(cat:Category {{categoryName: "Seafood"}}) WITH c, count(p) AS products_ordered ORDER BY products_ordered DESC LIMIT 3 RETURN c.companyName, products_ordered
+
+Q: What are the top 5 most frequently ordered products in the 'Beverages' category?
+MATCH (p:Product)-[:PART_OF]->(c:Category {{categoryName: 'Beverages'}}) MATCH (:Order)-[r:ORDERS]->(p) WITH p, COUNT(r) AS orderCount ORDER BY orderCount DESC LIMIT 5 RETURN p.productName, orderCount
 
 {question}
 """
