@@ -432,22 +432,835 @@ MATCH (m:Movie) WHERE m.tagline IS NULL RETURN m.title
 """
 
 CYPHER_GENERATION_RECOMMENDATIONS_TEMPLATE = """
-You are a Cypher expert who translates natural language questions into Cypher queries for a Neo4j movie recommendation graph database.
+You are a Cypher expert for the Neo4j Movie Recommendations graph database.
 
-Schema:
+CRITICAL: Output ONLY the raw Cypher query. NO markdown, NO code blocks, NO "cypher" prefix, NO explanation.
+
 {schema}
 
-Examples:
-### Example 1
-Natural Language Question:
-Which users rated the movie "Inception" and what were their ratings?
+=== 24 CRITICAL RULES (Follow in order) ===
 
-MATCH (u:User)-[r:RATED]->(m:Movie {{title: "Inception"}})
-RETURN u.name AS User, r.rating AS Rating
-ORDER BY r.rating DESC
-LIMIT 20;
+RULE 1 - YEAR vs RELEASED:
+- m.year = INTEGER (1990, 2000) → year comparisons: WHERE m.year < 2000
+- m.released = STRING DATE ('1990-01-01') → specific dates: WHERE m.released ENDS WITH '-12-25'
+- "released before 2000" → WHERE m.year < 2000 (NOT m.released < '2000')
 
----
+RULE 2 - GENRE NAMES (CRITICAL - use exact names):
+- Common genres: 'Sci-Fi', 'Science Fiction', 'Comedy', 'Drama', 'Action', 'Adventure', 'Thriller', 'Romance', 'Horror'
+- NOTE: Some databases use 'Sci-Fi', others use 'Science Fiction' - match the question's wording
+- If question says "Sci-Fi" → use 'Sci-Fi'
+- If question says "Science Fiction" → use 'Science Fiction'
+- ALWAYS use single quotes and exact spelling
+
+RULE 3 - RELATIONSHIP DIRECTION (NEVER reverse):
+- (Actor)-[:ACTED_IN]->(Movie)
+- (Director)-[:DIRECTED]->(Movie)
+- (User)-[:RATED]->(Movie)
+- (Movie)-[:IN_GENRE]->(Genre)
+
+RULE 4 - NULL CHECKS for ranking:
+- "top N by X" → WHERE X IS NOT NULL ORDER BY X DESC
+
+RULE 5 - RETURN FORMAT (CRITICAL - match question intent):
+| Question Pattern | Return Format |
+|------------------|---------------|
+| "What are the X of Y" | RETURN y.property, y.X (include context) |
+| "List movies..." / "Find movies..." | RETURN m.title |
+| "top N by X" + aggregation | RETURN x.name, metric |
+| "What are the titles..." | RETURN m.title |
+| "Which actors have..." (simple list) | RETURN a.name |
+| "Which X have Y" with context | RETURN x.name, y (include both) |
+| "Which movies have both X and Y" | RETURN m.title, X, Y (include context) |
+| "List the first N X" without specific property | RETURN x (full node) |
+| "List the top N X by Y" | RETURN x.property, Y |
+| Question asks for multiple attributes | RETURN all asked attributes |
+| "What are the first N X with Y" | RETURN x.property, y (include filter context) |
+| "movies with runtime > N" | RETURN m.title AS MovieTitle, m.runtime AS Runtime |
+| "movies with budget > N" | RETURN m.title, m.budget |
+| "directors who died after X" | RETURN d.name, d.died |
+| "actors born before/after X" | RETURN a.name, a.born |
+| "movies with revenue > N and rating > X" | RETURN m.title, m.revenue, m.imdbRating |
+
+RULE 6 - "first N" ORDERING RULES:
+- "first N" with TIME context ("first N released", "first N born") → ORDER BY date/year ASC
+- "first N" with RANKING context ("first N with most/highest") → ORDER BY metric DESC
+- "first N" simple retrieval (no order implied) → NO ORDER BY, just LIMIT
+- ALWAYS include ORDER BY when question implies chronological order
+
+RULE 7 - "Which N X have more than Y" pattern:
+- MUST include ORDER BY DESC before LIMIT
+- MUST include the metric in RETURN
+- Example: "Which 3 directors have more than 5 movies" → ORDER BY count DESC LIMIT 3 RETURN d.name, count
+
+RULE 8 - DISTINCT RULES (CRITICAL):
+- "List names of all X" → RETURN DISTINCT x.name
+- "Who are the X" / "Which X have" with JOINs → DISTINCT
+- "first N X" / "top N X" → NO DISTINCT
+- "Find X who have Y" with multiple paths → DISTINCT
+- IMPORTANT: When JOIN creates duplicates (1 director → many movies), use DISTINCT
+
+RULE 9 - DATE for born/died:
+- WHERE d.born < date('1950-01-01') (NOT d.born < 1950)
+
+RULE 10 - WITH FOR AGGREGATION:
+- Aggregation + filter → WITH x, COUNT(*) AS cnt WHERE cnt > N
+- Aggregation + ORDER → WITH x, COUNT(*) AS cnt ORDER BY cnt DESC
+
+RULE 11 - SAME PERSON PATTERN (CRITICAL):
+- "directed by actors" / "acted AND directed same movie" → (p)-[:ACTED_IN]->(m)<-[:DIRECTED]-(p)
+- SAME variable p on BOTH sides = same person did both actions
+- "movies directed by actors" = movies where the director also acted in it
+- WRONG: (a:Actor)-[:DIRECTED]->(m) ← Actor label doesn't have DIRECTED relationship!
+
+RULE 12 - exists{{}} PATTERN:
+- "actors who have also directed" → WHERE exists{{ (a)-[:DIRECTED]->(:Movie) }}
+- "movies with actors who also directed" → MATCH (a)-[:ACTED_IN]->(m) WHERE exists{{ (a)-[:DIRECTED]->(:Movie) }}
+- Use exists{{}} when checking IF a relationship exists, not traversing it
+
+RULE 13 - LIST PROPERTIES (countries, languages):
+- Count elements: size(m.languages)
+- First element: m.languages[0]
+- Check membership: 'English' IN m.languages
+- NOT in list: NOT 'English' IN m.languages
+- "most countries" for single movie → size(m.countries)
+- "which country has most movies" → UNWIND m.countries AS country
+
+RULE 14 - UNWIND vs size() (CRITICAL):
+- Count list elements PER ROW: size(m.countries) - NO UNWIND needed
+- Aggregate ACROSS rows by list element: UNWIND m.countries AS country
+- "movies with most countries" → ORDER BY size(m.countries) DESC
+- "which country appears in most movies" → UNWIND m.countries AS country WITH country, COUNT(m)
+
+RULE 15 - RETURN METRIC with aggregation:
+- When question asks "most/highest/largest" → RETURN both entity AND metric
+- "largest number of actors" → RETURN m.title, count(a) AS actorCount
+- "lowest average rating" → RETURN g.name, avgRating
+
+RULE 16 - RATED RELATIONSHIP PROPERTIES (CRITICAL):
+- r.rating = User's rating (on [:RATED] relationship) - INTEGER 1-5
+- r.timestamp = When user rated (on [:RATED] relationship) - UNIX timestamp
+- m.imdbRating = IMDb rating (on Movie node) - FLOAT 0-10
+- "rated after 2015" → r.timestamp > 1451606400 (Unix timestamp)
+- "rating under 5" with User context → r.rating < 5
+- "imdbRating under 5" → m.imdbRating < 5
+
+RULE 17 - USER RATING QUERIES:
+- MATCH (u:User)-[r:RATED]->(m:Movie) - r has rating, timestamp
+- "highest average ratings given by users" → AVG(r.rating)
+- "movies rated by user X" → MATCH (u:User {{name: "X"}})-[r:RATED]->(m)
+
+RULE 18 - COMPLEX PATTERNS - SAME USER/DIFFERENT RATINGS:
+- "users who rated same movie with different ratings" = IMPOSSIBLE (1 user, 1 movie = 1 rating)
+- "users who rated same movie differently" = 2 different users rated same movie
+- Pattern: (u1:User)-[r1:RATED]->(m)<-[r2:RATED]-(u2:User) WHERE u1 <> u2 AND r1.rating <> r2.rating
+
+RULE 19 - DIVISION AND RATIO:
+- Always check denominator IS NOT NULL AND > 0
+- "budget to revenue ratio" → WHERE m.revenue > 0 RETURN toFloat(m.budget) / m.revenue
+
+RULE 20 - ACTOR vs PERSON LABELS:
+- Actor label: has [:ACTED_IN] relationship
+- Director label: has [:DIRECTED] relationship  
+- Person label: may have both relationships
+- "directed by actors" → use Person: (p:Person)-[:ACTED_IN]->(m)<-[:DIRECTED]-(p)
+
+RULE 21 - count{{}} SUBQUERY PATTERN (CRITICAL):
+- "movies rated exactly N times" → WHERE count{{(u:User)-[:RATED]->(m)}} = N
+- "actors with exactly N movies" → WHERE count{{(a)-[:ACTED_IN]->(:Movie)}} = N
+- Syntax: count{{(pattern)}} returns integer count
+- Use for counting relationships without aggregation
+
+RULE 22 - DATE COMPARISON (CRITICAL):
+- "born after 1980" → WHERE d.born > date("1980-01-01")
+- "born before 1950" → WHERE d.born < date("1950-01-01")
+- ALWAYS use date() function for date comparisons with born/died properties
+- Format: date("YYYY-MM-DD")
+
+RULE 23 - RETURN FORMAT FOR "Which X..." QUERIES:
+- "Which directors were born in X" → RETURN d.name, d.born, d.died, d.url, d.imdbId, d.tmdbId (all properties)
+- "Which actors have acted in..." (simple list) → RETURN a.name
+- "Which movies have..." → RETURN m.title
+- When question asks about entity properties, return relevant properties
+
+RULE 24 - SUBQUERY WITH AVERAGE/MAX PATTERN:
+- "movies with runtime longer than average" → 
+  MATCH (m:Movie) WITH avg(m.runtime) AS avg_val 
+  MATCH (d:Director)-[:DIRECTED]->(m:Movie) WHERE m.runtime > avg_val RETURN ...
+- First MATCH calculates aggregate, second MATCH filters
+- Use separate MATCH clauses, NOT same MATCH with WITH
+
+RULE 25 - RETURN FULL NODE vs PROPERTIES (CRITICAL):
+- "RETURN m" = full node with all properties
+- "RETURN m.title" = only title property
+- RETURN FULL NODE when:
+  * "List all X" / "Identify X" / "Find X" → RETURN x (full node)
+  * "List the first N X" without specific property → RETURN x (full node)
+  * "List the top N X with lowest/highest Y" → RETURN x (full node) ORDER BY Y
+  * "What are the top N X" → RETURN x (full node)
+  * Question implies "show details" or "show all" → RETURN full node
+- RETURN PROPERTIES when:
+  * Question explicitly asks for specific properties
+  * "What are the titles of X" → RETURN x.title
+  * "List the names of X" → RETURN x.name
+
+RULE 26 - DECADE PATTERNS:
+- "released in the '90s" → WHERE m.released STARTS WITH '199'
+- "released in the 2000s" → WHERE m.year >= 2000 AND m.year < 2010
+- "released in the 80s" → WHERE m.released STARTS WITH '198'
+
+RULE 27 - exists() vs EXISTS{{}} PATTERN:
+- Check if relationship exists: WHERE exists((m)<-[:RATED]-())
+- Alternative: WHERE EXISTS {{ (m)<-[:RATED]-() }}
+- Use for "movies that have been rated" type queries
+
+RULE 28 - DIFFERENT USERS/ENTITIES PATTERN:
+- "users who rated same movie differently" → u1 <> u2 AND r1.rating <> r2.rating
+- Pattern: (u1:User)-[r1:RATED]->(m:Movie)<-[r2:RATED]-(u2:User) WHERE u1 <> u2
+- Use <> to ensure different entities
+
+RULE 29 - NULL CHECK RULES (CRITICAL):
+- ADD IS NOT NULL when:
+  * Using size() on list property: WHERE m.countries IS NOT NULL (before size())
+  * ORDER BY with potential nulls: "top 5 released most recently" → WHERE m.released IS NOT NULL
+  * Question says "movies that have X" or "with X"
+- DO NOT add IS NOT NULL when:
+  * Simple comparison already handles null: WHERE m.budget > 100000000
+  * "top 5 highest-grossing" → ORDER BY m.revenue DESC (no null check needed)
+- Examples:
+  * "top 5 with most countries" → WHERE m.countries IS NOT NULL RETURN m.title, size(m.countries)
+  * "top 5 highest-grossing of 2014" → WHERE m.year = 2014 RETURN m.title, m.revenue ORDER BY m.revenue DESC
+  * "Find top 5 released most recently" → WHERE m.released IS NOT NULL RETURN m ORDER BY m.released DESC
+
+RULE 35 - "first N" WITHOUT ORDER BY (CRITICAL):
+- "first N movies with plot mentioning X" → NO ORDER BY, just LIMIT N
+- "first N actors who have acted in X" → NO ORDER BY, just LIMIT N
+- "List 3 movies released in 1995" → NO ORDER BY, just LIMIT 3
+- ONLY add ORDER BY when question explicitly asks for ordering (top, highest, lowest, most recent)
+
+RULE 36 - RETURN FULL NODE FOR "List/Show/Find" PATTERNS (CRITICAL):
+- "What are the top N longest movies" → RETURN m ORDER BY m.runtime DESC
+- "Show the top N movies that..." → RETURN m
+- "Find movies where..." → RETURN m
+- "List 3 movies released in X" → RETURN m.title (or m)
+- DO NOT add extra columns unless question asks for them
+
+RULE 37 - DISTINCT FOR JOIN QUERIES (CRITICAL):
+- "Identify the first N directors who..." with JOIN → RETURN DISTINCT d.name
+- "List names of all X that..." → RETURN DISTINCT x.name
+- "Which users have rated..." → RETURN DISTINCT u
+- When 1 entity maps to many (1 actor → many movies), use DISTINCT
+- "first N X" / "top N X" → NO DISTINCT (LIMIT handles uniqueness)
+
+RULE 38 - "released after X" DATE PATTERNS:
+- "released after 2010" → WHERE m.released >= '2011-01-01' (NOT '2010')
+- "released after 2000" → WHERE m.released > '2000-12-31' OR m.year > 2000
+- "released before 1990" → WHERE m.released < '1990-01-01' OR m.year < 1990
+
+RULE 39 - SIMPLE QUERIES - NO EMPTY GENERATION:
+- "List all directors" → MATCH (d:Director) RETURN DISTINCT d.name
+- "Name the genres of movies with X" → MATCH (m:Movie)-[:IN_GENRE]->(g:Genre) WHERE ... RETURN DISTINCT g.name
+- "What are the top N genres with X" → MATCH ... WITH g.name AS genre, COUNT(m) AS cnt ORDER BY cnt DESC RETURN genre, cnt LIMIT N
+- ALWAYS generate a query, never return empty (NO null check)
+
+RULE 30 - CENTURY PATTERNS:
+- "21st century" → WHERE m.year >= 2001 (NOT 2000!)
+- "20th century" → WHERE m.year >= 1901 AND m.year <= 2000
+- "19th century" → WHERE m.year >= 1801 AND m.year <= 1900
+
+RULE 31 - RETURN FORMAT WITH MENTIONED PROPERTIES:
+- When question mentions a property, include it in RETURN:
+  * "movies with plot containing X" → RETURN m (full node) or RETURN m.title, m.plot
+  * "movies where language is X" → RETURN m.title, m.languages
+  * "movies with runtime > N" → RETURN m.title, m.runtime
+  * "actors born in X" → RETURN a.name, a.bornIn
+- When question asks "show" or "list" without specific property → RETURN full node or title
+
+RULE 32 - DEFAULT ORDER BY FOR "top N":
+- "top N movies" without explicit metric → ORDER BY m.imdbRating DESC
+- "top N actors" without explicit metric → ORDER BY count DESC (if aggregation)
+- "top N directors" without explicit metric → ORDER BY count DESC (if aggregation)
+
+RULE 33 - "first N with condition" ORDER BY:
+- "first N movies with X" → ORDER BY m.released LIMIT N (chronological order)
+- "first N movies with revenue > budget" → ORDER BY m.released LIMIT N
+- "first N actors with X" → LIMIT N (no specific order unless mentioned)
+
+RULE 34 - USER RATING vs IMDB RATING (CRITICAL):
+- "average rating by users" / "user ratings" → avg(r.rating) where r is [:RATED] relationship
+- "IMDb rating" / "imdbRating" / "highest rated" → m.imdbRating
+- "average rating for movies in genre X" with user context → avg(r.rating)
+- Pattern: MATCH (u:User)-[r:RATED]->(m:Movie) ... avg(r.rating)
+- "released in the '80s" → WHERE m.released STARTS WITH '198'
+
+RULE 27 - exists() vs EXISTS{{}} PATTERN:
+- Check if relationship exists: WHERE exists((m)<-[:RATED]-())
+- Subquery pattern: WHERE EXISTS {{ MATCH (m)<-[:RATED]-() }}
+- "movies that have been rated" → WHERE exists((m)<-[:RATED]-())
+- "movies with at least one rating" → WHERE exists((m)<-[:RATED]-())
+
+RULE 28 - size(collect(DISTINCT x)) PATTERN:
+- Count distinct arrays: size(collect(DISTINCT m.countries))
+- This counts number of DIFFERENT country arrays, not total countries
+- "directors with movies in different countries" → size(collect(DISTINCT m.countries))
+- To count individual countries across movies → UNWIND then COUNT(DISTINCT)
+
+=== EXAMPLES ===
+
+### Decade patterns ###
+Q: List the top 5 movies that were released in the '90s.
+MATCH (m:Movie) WHERE m.released STARTS WITH '199' RETURN m.title, m.released, m.imdbRating ORDER BY m.imdbRating DESC LIMIT 5
+
+Q: What are the top 3 movies released in the 80s?
+MATCH (m:Movie) WHERE m.released STARTS WITH '198' RETURN m.title, m.released ORDER BY m.imdbRating DESC LIMIT 3
+
+Q: What is the total revenue generated by movies released in the 1990s?
+MATCH (m:Movie) WHERE m.year >= 1990 AND m.year <= 1999 WITH sum(m.revenue) AS totalRevenue RETURN totalRevenue
+
+Q: What is the total revenue of movies released in the 21st century?
+MATCH (m:Movie) WHERE m.year >= 2001 RETURN sum(m.revenue) AS totalRevenue
+
+Q: What are the top 5 movies released in the 1990s by revenue?
+MATCH (m:Movie) WHERE m.released >= '1990-01-01' AND m.released < '2000-01-01' AND m.revenue IS NOT NULL RETURN m ORDER BY m.revenue DESC LIMIT 5
+
+### exists() pattern for rated movies ###
+Q: List the top 3 movies with the most revenue that have a runtime under 90 minutes.
+MATCH (m:Movie) WHERE m.runtime < 90 AND exists((m)<-[:RATED]-()) RETURN m.title AS movie, m.revenue AS revenue ORDER BY revenue DESC LIMIT 3
+
+Q: Find movies that have been rated by at least one user.
+MATCH (m:Movie) WHERE exists((m)<-[:RATED]-()) RETURN m.title
+
+### Different users pattern ###
+Q: List all users who have rated the same movie with different ratings.
+MATCH (u1:User)-[r1:RATED]->(m:Movie)<-[r2:RATED]-(u2:User) WHERE u1 <> u2 AND r1.rating <> r2.rating RETURN u1, u2, m
+
+Q: Find pairs of users who rated the same movie differently.
+MATCH (u1:User)-[r1:RATED]->(m:Movie)<-[r2:RATED]-(u2:User) WHERE u1 <> u2 AND r1.rating <> r2.rating RETURN u1.name, u2.name, m.title, r1.rating, r2.rating
+
+### RETURN with property context ###
+Q: Which movies have a runtime longer than 180 minutes?
+MATCH (m:Movie) WHERE m.runtime > 180 RETURN m.title AS MovieTitle, m.runtime AS Runtime
+
+Q: Which movies have both high revenue (over 500 million USD) and high imdbRating (above 8.0)?
+MATCH (m:Movie) WHERE m.revenue > 500000000 AND m.imdbRating > 8.0 RETURN m.title AS MovieTitle, m.revenue AS Revenue, m.imdbRating AS IMDbRating
+
+Q: List the first 3 directors who died after 2000.
+MATCH (d:Director) WHERE d.died > date('2000-01-01') RETURN d.name, d.died ORDER BY d.died LIMIT 3
+
+Q: Which directors have a poster URL that includes 'w440_and_h660_face'?
+MATCH (d:Director) WHERE d.poster CONTAINS 'w440_and_h660_face' RETURN d.name, d.poster
+
+Q: List all movies that have an IMDb rating and were released in the year 2000.
+MATCH (m:Movie) WHERE m.imdbRating IS NOT NULL AND m.year = 2000 RETURN m.title AS title, m.imdbRating AS imdbRating, m.released AS released
+
+Q: Which movies have a plot that includes the word 'love'?
+MATCH (m:Movie) WHERE m.plot CONTAINS 'love' RETURN m.title AS MovieTitle, m.plot AS Plot
+
+Q: List the movies where the primary language is English and have a runtime of exactly 96 minutes.
+MATCH (m:Movie) WHERE "English" IN m.languages AND m.runtime = 96 RETURN m.title AS MovieTitle, m.runtime AS Runtime, m.languages AS Languages
+
+Q: What movies have a runtime longer than 120 minutes and were released after 2000?
+MATCH (m:Movie) WHERE m.runtime > 120 AND m.released > '2000-01-01' RETURN m.title, m.released, m.runtime
+
+### size(collect(distinct)) for counting unique arrays ###
+Q: List the top 3 directors based on the number of different countries their movies have been released in.
+MATCH (d:Director)-[:DIRECTED]->(m:Movie) WITH d, size(collect(distinct m.countries)) AS numCountries ORDER BY numCountries DESC LIMIT 3 RETURN d.name AS director, numCountries AS numberOfCountries
+
+Q: Which 5 directors have directed movies in more than three different countries?
+MATCH (d:Director)-[:DIRECTED]->(m:Movie) WITH d, count(DISTINCT m.countries) AS numCountries WHERE numCountries > 3 RETURN d.name, numCountries ORDER BY numCountries DESC LIMIT 5
+
+### RETURN full node ###
+Q: List the top 3 movies with the lowest imdbVotes released after 2000.
+MATCH (m:Movie) WHERE m.year > 2000 AND m.imdbVotes IS NOT NULL RETURN m ORDER BY m.imdbVotes ASC LIMIT 3
+
+Q: List all directors who have directed a movie in the 'Sci-Fi' genre.
+MATCH (d:Director)-[:DIRECTED]->(m:Movie)-[:IN_GENRE]->(g:Genre {{name: 'Sci-Fi'}}) RETURN d
+
+Q: Show the top 5 movies with a budget greater than 100 million USD.
+MATCH (m:Movie) WHERE m.budget > 100000000 RETURN m ORDER BY m.budget DESC LIMIT 5
+
+Q: What are the top 3 oldest movies in the database?
+MATCH (m:Movie) RETURN m ORDER BY m.year ASC LIMIT 3
+
+Q: What are the top 5 movies with the most budget and were released after 2010?
+MATCH (m:Movie) WHERE m.released >= '2011-01-01' AND m.budget IS NOT NULL RETURN m ORDER BY m.budget DESC LIMIT 5
+
+Q: List all movies that have been released on Christmas Day.
+MATCH (m:Movie) WHERE m.released ENDS WITH "-12-25" RETURN m
+
+Q: Identify the first 5 actors who have acted in movies with a budget less than 50 million dollars.
+MATCH (a:Actor)-[:ACTED_IN]->(m:Movie) WHERE m.budget < 50000000 RETURN a LIMIT 5
+
+Q: What are the first 3 movies with a plot mentioning 'family'?
+MATCH (m:Movie) WHERE m.plot CONTAINS 'family' RETURN m LIMIT 3
+
+Q: List the top 5 shortest movies with an imdbRating above 6.0.
+MATCH (m:Movie) WHERE m.imdbRating > 6.0 AND m.runtime IS NOT NULL RETURN m ORDER BY m.runtime ASC LIMIT 5
+
+Q: List the top 5 movies with the highest IMDb rating.
+MATCH (m:Movie) WHERE m.imdbRating IS NOT NULL RETURN m ORDER BY m.imdbRating DESC LIMIT 5
+
+Q: What are the top 5 movies with the highest revenue in the Adventure genre?
+MATCH (m:Movie)-[:IN_GENRE]->(g:Genre {{name: "Adventure"}}) WHERE m.revenue IS NOT NULL RETURN m ORDER BY m.revenue DESC LIMIT 5
+
+### No NULL check for simple filters ###
+Q: What are the top 5 movies with the highest budgets?
+MATCH (m:Movie) RETURN m.title, m.budget ORDER BY m.budget DESC LIMIT 5
+
+Q: What are the top 5 highest-grossing movies of 2014?
+MATCH (m:Movie) WHERE m.year = 2014 RETURN m.title AS title, m.revenue AS revenue ORDER BY m.revenue DESC LIMIT 5
+
+Q: List the top 5 movies with the most IMDb votes.
+MATCH (m:Movie) RETURN m.title, m.imdbVotes ORDER BY m.imdbVotes DESC LIMIT 5
+
+Q: List the first 3 actors who have acted in a movie with a budget over 50 million USD.
+MATCH (a:Actor)-[:ACTED_IN]->(m:Movie) WHERE m.budget > 50000000 RETURN a.name AS actorName, m.title AS movieTitle, m.budget AS movieBudget LIMIT 3
+
+### NULL check needed for size() and ORDER BY ###
+Q: Find the top 5 movies released most recently.
+MATCH (m:Movie) WHERE m.released IS NOT NULL RETURN m ORDER BY m.released DESC LIMIT 5
+
+Q: What are the top 5 movies with the most distinct countries of origin?
+MATCH (m:Movie) WHERE m.countries IS NOT NULL RETURN m.title, size(m.countries) AS numCountries ORDER BY numCountries DESC LIMIT 5
+
+Q: What are the top 3 longest movies by runtime?
+MATCH (m:Movie) WHERE m.runtime IS NOT NULL RETURN m ORDER BY m.runtime DESC LIMIT 3
+
+### "first N with condition" - NO ORDER BY ###
+Q: What are the first 3 movies with plots that involve a natural disaster?
+MATCH (m:Movie) WHERE m.plot CONTAINS 'natural disaster' RETURN m.title, m.plot LIMIT 3
+
+Q: List 3 movies that were released in the 1990s and have an IMDB rating above 7.
+MATCH (m:Movie) WHERE m.year >= 1990 AND m.year < 2000 AND m.imdbRating > 7 RETURN m.title, m.year, m.imdbRating LIMIT 3
+
+Q: List 3 movies released in 1995.
+MATCH (m:Movie) WHERE m.released STARTS WITH '1995' RETURN m.title LIMIT 3
+
+Q: Show the top 5 movies that have been rated exactly three times.
+MATCH (m:Movie) WHERE count{{(u:User)-[:RATED]->(m)}} = 3 RETURN m LIMIT 5
+
+### RETURN full node patterns ###
+Q: Find movies where the sum of the revenue and budget is more than 1 billion dollars.
+MATCH (m:Movie) WHERE (m.revenue + m.budget) > 1000000000 RETURN m
+
+Q: What are the first 3 movies with a revenue greater than their budget?
+MATCH (m:Movie) WHERE m.revenue > m.budget RETURN m.title, m.revenue, m.budget ORDER BY m.released LIMIT 3
+
+### DISTINCT for JOIN queries ###
+Q: Identify the first 3 directors who have directed a movie with an IMDb rating lower than 4.0.
+MATCH (d:Director)-[:DIRECTED]->(m:Movie) WHERE m.imdbRating < 4.0 RETURN DISTINCT d.name ORDER BY d.name LIMIT 3
+
+Q: Find all actors who have acted in a movie directed by a director born in the same country as them.
+MATCH (actor:Actor)-[:ACTED_IN]->(movie:Movie)<-[:DIRECTED]-(director:Director) WHERE actor.bornIn = director.bornIn RETURN actor.name AS ActorName, movie.title AS MovieTitle, director.name AS DirectorName
+
+### User rating vs IMDb rating ###
+Q: What is the name of the actor who has the highest average rating for their movies in the "Comedy" genre?
+MATCH (m:Movie)-[:IN_GENRE]->(:Genre {{name: 'Comedy'}}) WITH m MATCH (a:Actor)-[:ACTED_IN]->(m)<-[r:RATED]-(:User) WITH a, avg(r.rating) AS average_rating ORDER BY average_rating DESC RETURN a.name AS actor_name, average_rating LIMIT 1
+
+Q: What are the top 5 highest-rated movies by users, based on the average user rating?
+MATCH (m:Movie)<-[r:RATED]-(u:User) WITH m, avg(r.rating) AS avgRating ORDER BY avgRating DESC LIMIT 5 RETURN m.title AS movie, avgRating
+
+Q: Which users have given the highest average ratings?
+MATCH (u:User)-[r:RATED]->(m:Movie) WITH u, avg(r.rating) AS avgRating ORDER BY avgRating DESC LIMIT 5 RETURN u.name, avgRating
+
+### Complex subquery patterns ###
+Q: Find the movies that have been released in the same year as the movie with the lowest IMDb rating.
+MATCH (m:Movie) WITH m ORDER BY m.imdbRating ASC LIMIT 1 WITH m.year AS lowestRatedYear MATCH (movie:Movie {{year: lowestRatedYear}}) RETURN movie.title
+
+Q: List the movies released in the same year as the movie with the highest IMDb rating.
+MATCH (m:Movie) WITH max(m.imdbRating) AS maxRating MATCH (highestRated:Movie {{ imdbRating: maxRating }}) WITH highestRated.year AS releaseYear MATCH (movie:Movie {{ year: releaseYear }}) RETURN movie.title
+
+Q: Which genre has the most movies with a budget greater than 200 million?
+MATCH (movie:Movie)-[:IN_GENRE]->(genre:Genre) WHERE movie.budget > 200000000 WITH genre.name AS genreName, count(DISTINCT movie) AS movieCount ORDER BY movieCount DESC RETURN genreName, movieCount LIMIT 1
+
+Q: List the first 3 genres that have more than 50 movies associated with them.
+MATCH (m:Movie)-[:IN_GENRE]->(g:Genre) WITH g, count(m) AS movieCount WHERE movieCount > 50 RETURN g.name AS Genre, movieCount ORDER BY movieCount DESC LIMIT 3
+
+### "first N" with ORDER BY context ###
+Q: What are the first 3 movies that were released in the USA?
+MATCH (m:Movie) WHERE 'USA' IN m.countries RETURN m.title, m.released ORDER BY m.released LIMIT 3
+
+Q: List the first 3 directors born before 1950.
+MATCH (d:Director) WHERE d.born < date('1950-01-01') RETURN d ORDER BY d.born LIMIT 3
+
+Q: What are the first 3 movies with an actor born before 1900?
+MATCH (a:Actor)-[:ACTED_IN]->(m:Movie) WHERE a.born < date("1900-01-01") RETURN m.title AS MovieTitle, m.year AS ReleaseYear ORDER BY m.year ASC LIMIT 3
+
+Q: List the first 3 movies with a budget over 100 million dollars.
+MATCH (m:Movie) WHERE m.budget > 100000000 RETURN m.title, m.budget ORDER BY m.budget DESC LIMIT 3
+
+Q: List the first 3 actors who have acted in movies with a revenue of over 500 million USD.
+MATCH (a:Actor)-[:ACTED_IN]->(m:Movie) WHERE m.revenue > 500000000 RETURN a.name LIMIT 3
+
+### DISTINCT with JOINs ###
+Q: List the first 5 directors who have directed a movie with an imdbRating of 9 or higher.
+MATCH (d:Director)-[:DIRECTED]->(m:Movie) WHERE m.imdbRating >= 9 RETURN DISTINCT d.name LIMIT 5
+
+Q: Find the actors who have starred in movies with a release date before their birth.
+MATCH (a:Actor)-[:ACTED_IN]->(m:Movie) WHERE date(m.released) < a.born RETURN DISTINCT a.name
+
+Q: What are the first 3 movies with an actor born before 1900?
+MATCH (a:Actor)-[:ACTED_IN]->(m:Movie) WHERE a.born < date("1900-01-01") RETURN m.title AS MovieTitle, m.year AS ReleaseYear ORDER BY m.year ASC LIMIT 3
+
+Q: List the first 3 directors who died after 2000.
+MATCH (d:Director) WHERE d.died > date('2000-01-01') RETURN d.name, d.died ORDER BY d.died LIMIT 3
+
+Q: Which actors have acted in movies from at least three different countries?
+MATCH (a:Actor)-[:ACTED_IN]->(m:Movie) WITH a, collect(DISTINCT m.countries) AS countries WHERE size(countries) >= 3 RETURN a.name, countries
+
+Q: Which 3 directors have directed movies in more than three genres?
+MATCH (d:Director)-[:DIRECTED]->(m:Movie)-[:IN_GENRE]->(g:Genre) WITH d, count(DISTINCT g) AS genreCount WHERE genreCount > 3 RETURN d.name AS Director, genreCount ORDER BY genreCount DESC LIMIT 3
+
+### SAME PERSON PATTERN - directed by actors ###
+Q: List the first 3 movies that have been directed by actors.
+MATCH (p:Person)-[:ACTED_IN]->(m:Movie)<-[:DIRECTED]-(p) RETURN m.title LIMIT 3
+
+Q: Which movies have been both acted in and directed by the same person?
+MATCH (p:Person)-[:ACTED_IN]->(m:Movie)<-[:DIRECTED]-(p) RETURN DISTINCT m.title
+
+Q: Identify all movies that have been directed by actors.
+MATCH (p:Person)-[:ACTED_IN]->(m:Movie)<-[:DIRECTED]-(p) RETURN m.title AS movie, p.name AS person
+
+Q: List 3 actors born in France who have directed a movie.
+MATCH (p:Person) WHERE p.bornIn = 'France' AND exists{{ (p)-[:DIRECTED]->(:Movie) }} RETURN p.name LIMIT 3
+
+### exists{{}} pattern - actors who also directed ###
+Q: Which movies have actors who have also directed a movie?
+MATCH (actor:Actor)-[:ACTED_IN]->(movie:Movie) WHERE exists{{ (actor)-[:DIRECTED]->(:Movie) }} RETURN DISTINCT movie
+
+Q: Find actors who have also directed at least one movie.
+MATCH (a:Actor) WHERE exists{{ (a)-[:DIRECTED]->(:Movie) }} RETURN a.name
+
+Q: Which directors have directed both a comedy and a drama movie?
+MATCH (d:Director)-[:DIRECTED]->(m:Movie)-[:IN_GENRE]->(g:Genre) WHERE g.name = 'Comedy' WITH d, collect(m) AS comedyMovies WHERE exists {{     MATCH (d)-[:DIRECTED]->(m2:Movie)-[:IN_GENRE]->(g2:Genre)     WHERE g2.name = 'Drama' }} RETURN d, comedyMovies
+
+### RATED relationship properties ###
+Q: List the top 5 movies that have been rated after 2015.
+MATCH (u:User)-[r:RATED]->(m:Movie) WHERE r.timestamp > 1451606400 RETURN m.title, m.year, r.rating ORDER BY r.timestamp DESC LIMIT 5
+
+Q: List the first 3 movies released in the year 2000 or later with a rating under 5.
+MATCH (m:Movie)<-[r:RATED]-() WHERE m.year >= 2000 AND r.rating < 5 RETURN m ORDER BY m.released LIMIT 3
+
+Q: List the top 5 users who have given the highest average ratings to movies.
+MATCH (u:User)-[r:RATED]->(m:Movie) WITH u, AVG(r.rating) AS avgRating ORDER BY avgRating DESC LIMIT 5 RETURN u.userId, u.name, avgRating
+
+### Complex user rating patterns ###
+Q: List all users who have rated the same movie with different ratings.
+MATCH (u1:User)-[r1:RATED]->(m:Movie)<-[r2:RATED]-(u2:User) WHERE u1 <> u2 AND r1.rating <> r2.rating RETURN u1, u2, m
+
+Q: Which three movies have been rated by the youngest users on average?
+MATCH (u:User)-[r:RATED]->(m:Movie) WITH m, avg(toInteger(u.userId)) AS avgUserId ORDER BY avgUserId ASC LIMIT 3 RETURN m.title AS MovieTitle, avgUserId AS AverageUserId
+
+Q: Which 3 users have given the highest average rating to movies they've rated?
+MATCH (u:User)-[r:RATED]->(m:Movie) WITH u, avg(r.rating) AS avgRating ORDER BY avgRating DESC LIMIT 3 RETURN u.name AS userName, avgRating
+
+### Return format - include context ###
+Q: What are the IMDb ratings of movies that have a plot mentioning 'evil exterminator'?
+MATCH (m:Movie) WHERE m.plot CONTAINS 'evil exterminator' RETURN m.title, m.imdbRating
+
+Q: What are the first 5 movies with the most distinct genres associated with them?
+MATCH (m:Movie)-[:IN_GENRE]->(g:Genre) WITH m, count(DISTINCT g) AS genreCount ORDER BY genreCount DESC LIMIT 5 RETURN m.title AS movieTitle, genreCount
+
+Q: What are the first 3 movies with the most number of associated actors?
+MATCH (m:Movie)<-[:ACTED_IN]-(a:Actor) WITH m, COUNT(a) AS actorCount ORDER BY actorCount DESC LIMIT 3 RETURN m.title AS movieTitle, actorCount
+
+Q: List the top 5 movies with the most countries available in their languages list.
+MATCH (m:Movie) WHERE m.languages IS NOT NULL RETURN m.title, size(m.languages) AS languageCount ORDER BY languageCount DESC LIMIT 5
+
+Q: Which top 5 movies have the most diverse range of spoken languages?
+MATCH (m:Movie) RETURN m.title, m.languages, size(m.languages) AS num_languages ORDER BY num_languages DESC LIMIT 5
+
+Q: List the top 5 actors with the most roles in movies released before 1980.
+MATCH (a:Actor)-[r:ACTED_IN]->(m:Movie) WHERE m.year < 1980 WITH a, count(r) AS numRoles ORDER BY numRoles DESC LIMIT 5 RETURN a.name AS actor, numRoles
+
+Q: Which three movies have the highest difference in revenue and budget?
+MATCH (m:Movie) WHERE m.revenue IS NOT NULL AND m.budget IS NOT NULL RETURN m.title, m.revenue, m.budget, (m.revenue - m.budget) AS profit ORDER BY profit DESC LIMIT 3
+
+Q: What is the most common genre among movies released in 2014?
+MATCH (m:Movie {{year: 2014}})-[:IN_GENRE]->(g:Genre) WITH g.name AS genre, count(*) AS movieCount ORDER BY movieCount DESC RETURN genre LIMIT 1
+
+### size() vs UNWIND - count list elements ###
+Q: What are the top 5 movies with the most countries listed in their production?
+MATCH (m:Movie) RETURN m.title AS title, size(m.countries) AS countryCount ORDER BY countryCount DESC LIMIT 5
+
+### Return only asked columns ###
+Q: Which actors have acted in movies from at least three different countries?
+MATCH (a:Actor)-[:ACTED_IN]->(m:Movie) WITH a, collect(DISTINCT m.countries) AS countries WHERE size(countries) >= 3 RETURN a.name AS actorName
+
+Q: Name the top 5 movies that have been rated by users named 'Omar Huffman'.
+MATCH (u:User {{name: 'Omar Huffman'}})-[:RATED]->(m:Movie) RETURN m.title AS MovieTitle, m.imdbRating AS IMDbRating ORDER BY m.imdbRating DESC LIMIT 5
+
+Q: What are the names of the top 5 movies with a budget over 100 million dollars?
+MATCH (m:Movie) WHERE m.budget > 100000000 RETURN m.title ORDER BY m.imdbRating DESC LIMIT 5
+
+Q: What are the top 5 movies directed by directors born in Nebraska?
+MATCH (d:Director)-[:DIRECTED]->(m:Movie) WHERE d.bornIn CONTAINS "Nebraska" RETURN m.title AS MovieTitle, m.imdbRating AS Rating ORDER BY Rating DESC LIMIT 5
+
+### Division with null check ###
+Q: List the top 3 movies with the highest budget to revenue ratio.
+MATCH (m:Movie) WHERE m.budget IS NOT NULL AND m.revenue IS NOT NULL AND m.revenue > 0 RETURN m.title, m.budget, m.revenue, (toFloat(m.budget) / m.revenue) AS budgetToRevenueRatio ORDER BY budgetToRevenueRatio DESC LIMIT 3
+
+### Year vs Released ###
+Q: List movies released before 2000.
+MATCH (m:Movie) WHERE m.year < 2000 RETURN m.title
+
+Q: List the top 5 movies released in the 2000s.
+MATCH (m:Movie) WHERE m.year >= 2000 AND m.year < 2010 RETURN m.title, m.year ORDER BY m.imdbRating DESC LIMIT 5
+
+Q: List the top 5 movies that were released in the '90s.
+MATCH (m:Movie) WHERE m.released STARTS WITH '199' RETURN m.title, m.released, m.imdbRating ORDER BY m.imdbRating DESC LIMIT 5
+
+Q: List movies released in the '80s.
+MATCH (m:Movie) WHERE m.released STARTS WITH '198' RETURN m.title, m.released
+
+### exists() pattern for rated movies ###
+Q: List the top 3 movies with the most revenue that have a runtime under 90 minutes.
+MATCH (m:Movie) WHERE m.runtime < 90 AND exists((m)<-[:RATED]-()) RETURN m.title AS movie, m.revenue AS revenue ORDER BY revenue DESC LIMIT 3
+
+Q: Find movies that have been rated at least once.
+MATCH (m:Movie) WHERE exists((m)<-[:RATED]-()) RETURN m.title
+
+### size(collect(DISTINCT x)) pattern ###
+Q: List the top 3 directors based on the number of different countries their movies have been released in.
+MATCH (d:Director)-[:DIRECTED]->(m:Movie) WITH d, size(collect(DISTINCT m.countries)) AS numCountries ORDER BY numCountries DESC LIMIT 3 RETURN d.name AS director, numCountries AS numberOfCountries
+
+### RETURN full node vs properties ###
+Q: List the top 3 movies with the lowest imdbVotes released after 2000.
+MATCH (m:Movie) WHERE m.year > 2000 AND m.imdbVotes IS NOT NULL RETURN m ORDER BY m.imdbVotes ASC LIMIT 3
+
+Q: List all directors who have directed a movie in the 'Sci-Fi' genre.
+MATCH (d:Director)-[:DIRECTED]->(m:Movie)-[:IN_GENRE]->(g:Genre {{name: 'Sci-Fi'}}) RETURN d
+
+Q: Which movies have a runtime longer than 180 minutes?
+MATCH (m:Movie) WHERE m.runtime > 180 RETURN m.title AS MovieTitle, m.runtime AS Runtime
+
+Q: Which movies have both high revenue (over 500 million USD) and high imdbRating (above 8.0)?
+MATCH (m:Movie) WHERE m.revenue > 500000000 AND m.imdbRating > 8.0 RETURN m.title AS MovieTitle, m.revenue AS Revenue, m.imdbRating AS IMDbRating
+
+Q: List all movies that have an IMDb rating and were released in the year 2000.
+MATCH (m:Movie) WHERE m.imdbRating IS NOT NULL AND m.year = 2000 RETURN m.title AS title, m.imdbRating AS imdbRating, m.released AS released
+
+Q: Which directors have a poster URL that includes 'w440_and_h660_face'?
+MATCH (d:Director) WHERE d.poster CONTAINS 'w440_and_h660_face' RETURN d.name, d.poster
+
+### UNWIND for list aggregation ###
+Q: Which country has produced the most movies?
+MATCH (m:Movie) UNWIND m.countries AS country WITH country, COUNT(m) AS cnt ORDER BY cnt DESC RETURN country, cnt LIMIT 1
+
+Q: List the top 3 directors based on the number of different countries their movies have been released in.
+MATCH (d:Director)-[:DIRECTED]->(m:Movie) UNWIND m.countries AS country WITH d, COUNT(DISTINCT country) AS countryCount RETURN d.name AS directorName, countryCount ORDER BY countryCount DESC LIMIT 3
+
+Q: Which 5 directors have directed movies in more than three different countries?
+MATCH (d:Director)-[:DIRECTED]->(m:Movie) WITH d, count(DISTINCT m.countries) AS numCountries WHERE numCountries > 3 RETURN d.name, numCountries ORDER BY numCountries DESC LIMIT 5
+
+Q: Which country has produced the most movies in the database?
+MATCH (m:Movie) UNWIND m.countries AS country WITH country, COUNT(DISTINCT m) AS movieCount ORDER BY movieCount DESC RETURN country, movieCount LIMIT 1
+
+### "Which N have more than Y" - MUST have ORDER BY + metric in RETURN ###
+Q: Which 3 directors have directed more than 5 movies?
+MATCH (d:Director)-[:DIRECTED]->(m:Movie) WITH d, count(m) AS cnt WHERE cnt > 5 ORDER BY cnt DESC LIMIT 3 RETURN d.name, cnt
+
+Q: Which 5 directors have directed movies in more than three different countries?
+MATCH (d:Director)-[:DIRECTED]->(m:Movie) WITH d, count(DISTINCT m.countries) AS numCountries WHERE numCountries > 3 RETURN d.name, numCountries ORDER BY numCountries DESC LIMIT 5
+
+Q: Which 3 directors have directed movies in more than three different genres?
+MATCH (d:Director)-[:DIRECTED]->(m:Movie)-[:IN_GENRE]->(g:Genre) WITH d, count(DISTINCT g) AS num_genres WHERE num_genres > 3 RETURN d.name AS director, num_genres ORDER BY num_genres DESC LIMIT 3
+
+Q: Which three actors have acted in movies in more than 3 different languages?
+MATCH (a:Actor)-[:ACTED_IN]->(m:Movie) WITH a, count(DISTINCT m.languages) AS numLanguages WHERE numLanguages > 3 RETURN a.name, numLanguages ORDER BY numLanguages DESC LIMIT 3
+
+### Return metric with aggregation ###
+Q: Which movie has the most actors?
+MATCH (m:Movie)<-[:ACTED_IN]-(a:Actor) RETURN m.title, count(a) AS actorCount ORDER BY actorCount DESC LIMIT 1
+
+Q: Which movie had the largest number of actors participating?
+MATCH (a:Actor)-[:ACTED_IN]->(m:Movie) RETURN m.title AS Movie, count(a) AS NumberOfActors ORDER BY NumberOfActors DESC LIMIT 1
+
+Q: Which three genres have the lowest average IMDb rating?
+MATCH (m:Movie)-[:IN_GENRE]->(g:Genre) WHERE m.imdbRating IS NOT NULL WITH g.name AS genre, avg(m.imdbRating) AS avgRating RETURN genre, avgRating ORDER BY avgRating ASC LIMIT 3
+
+Q: Which genres have the most movies with a runtime over 120 minutes?
+MATCH (m:Movie)-[:IN_GENRE]->(g:Genre) WHERE m.runtime > 120 RETURN g.name AS Genre, count(m) AS MovieCount ORDER BY MovieCount DESC
+
+Q: Which movie has the highest revenue in the "Action" genre?
+MATCH (m:Movie)-[:IN_GENRE]->(g:Genre {{name: 'Action'}}) WITH m ORDER BY m.revenue DESC LIMIT 1 RETURN m.title
+
+Q: Which movie has the highest imdbRating in the "Comedy" genre?
+MATCH (m:Movie)-[:IN_GENRE]->(g:Genre {{name: 'Comedy'}}) WITH m ORDER BY m.imdbRating DESC LIMIT 1 RETURN m.title
+
+Q: Which genre has the most movies?
+MATCH (:Movie)-[:IN_GENRE]->(genre:Genre) WITH genre, count(*) AS movieCount ORDER BY movieCount DESC LIMIT 1 RETURN genre.name
+
+Q: Which 3 movies have the highest number of actors involved?
+MATCH (m:Movie)<-[:ACTED_IN]-(a:Actor) WITH m, COUNT(a) AS actorCount ORDER BY actorCount DESC LIMIT 3 RETURN m.title AS MovieTitle, actorCount
+
+Q: Which 5 users have the most ratings in the 'Comedy' genre?
+MATCH (u:User)-[r:RATED]->(m:Movie)-[:IN_GENRE]->(g:Genre {{name: 'Comedy'}}) RETURN u.name AS user, count(r) AS comedyRatings ORDER BY comedyRatings DESC LIMIT 5
+
+Q: Which director has the highest average IMDB rating for movies with a budget greater than 200 million dollars?
+MATCH (m:Movie)<-[:DIRECTED]-(d:Director) WHERE m.budget > 200000000 WITH d, avg(m.imdbRating) AS averageRating RETURN d.name AS directorName, averageRating ORDER BY averageRating DESC LIMIT 1
+
+Q: List the first 3 movies that were shot in more than five different locations.
+MATCH (m:Movie) WHERE size(m.countries) > 5 RETURN m LIMIT 3
+
+Q: List the top 3 movies with the lowest imdbVotes released after 2000.
+MATCH (m:Movie) WHERE m.year > 2000 AND m.imdbVotes IS NOT NULL RETURN m ORDER BY m.imdbVotes ASC LIMIT 3
+
+Q: List the first 3 movies with the highest box office revenue of all time.
+MATCH (m:Movie) WITH m ORDER BY m.revenue DESC LIMIT 3 RETURN m.title, m.revenue
+
+Q: List the first 3 movies with a budget over 100 million dollars.
+MATCH (m:Movie) WHERE m.budget > 100000000 RETURN m.title, m.budget ORDER BY m.budget DESC LIMIT 3
+
+Q: Which top 5 movies have the most diverse range of spoken languages?
+MATCH (m:Movie) RETURN m.title, m.languages, size(m.languages) AS num_languages ORDER BY num_languages DESC LIMIT 5
+
+### NOT IN list ###
+Q: Movies in languages other than English?
+MATCH (m:Movie) WHERE NOT 'English' IN m.languages RETURN m.title
+
+Q: What are the top 5 movies by revenue that were released in languages other than English?
+MATCH (m:Movie) WHERE NOT 'English' IN m.languages RETURN m.title, m.revenue ORDER BY m.revenue DESC LIMIT 5
+
+### bornIn property ###
+Q: Directors born in USA?
+MATCH (d:Director) WHERE d.bornIn = 'USA' RETURN d.name
+
+Q: What are the first 5 movies directed by directors born in the USA?
+MATCH (d:Director {{bornIn: 'USA'}})-[:DIRECTED]->(m:Movie) RETURN m.title LIMIT 5
+
+Q: What are the top 5 movies directed by directors born in Nebraska?
+MATCH (d:Director)-[:DIRECTED]->(m:Movie) WHERE d.bornIn CONTAINS "Nebraska" RETURN m.title AS MovieTitle, m.imdbRating AS Rating ORDER BY Rating DESC LIMIT 5
+
+### WITH ORDER BY pattern ###
+Q: Which movie has the highest revenue in the "Action" genre?
+MATCH (m:Movie)-[:IN_GENRE]->(g:Genre {{name: 'Action'}}) WITH m ORDER BY m.revenue DESC LIMIT 1 RETURN m.title
+
+Q: Which movie has the highest imdbRating in the "Comedy" genre?
+MATCH (m:Movie)-[:IN_GENRE]->(g:Genre {{name: 'Comedy'}}) WITH m ORDER BY m.imdbRating DESC LIMIT 1 RETURN m.title, m.imdbRating
+
+### Return format - full node vs properties ###
+Q: List the top 5 movies with the largest budgets released before 2000.
+MATCH (m:Movie) WHERE m.year < 2000 RETURN m.title AS title, m.budget AS budget ORDER BY m.budget DESC LIMIT 5
+
+Q: Which directors were born in the USA?
+MATCH (d:Director) WHERE d.bornIn = "USA" RETURN d.name, d.born, d.died, d.url, d.imdbId, d.tmdbId
+
+Q: Which movies have actors who were born in the USA and have acted in a comedy genre?
+MATCH (a:Actor)-[:ACTED_IN]->(m:Movie)-[:IN_GENRE]->(g:Genre) WHERE a.bornIn = "USA" AND g.name = "Comedy" RETURN m.title AS MovieTitle, a.name AS ActorName
+
+### Sci-Fi genre queries ###
+Q: What are the top 5 movies with the most revenue that are in the 'Sci-Fi' genre?
+MATCH (m:Movie)-[:IN_GENRE]->(g:Genre {{name: 'Sci-Fi'}}) WHERE m.revenue IS NOT NULL RETURN m.title, m.revenue ORDER BY m.revenue DESC LIMIT 5
+
+Q: List all directors who have directed a movie in the 'Sci-Fi' genre.
+MATCH (d:Director)-[:DIRECTED]->(m:Movie)-[:IN_GENRE]->(g:Genre {{name: 'Sci-Fi'}}) RETURN d
+
+Q: Which actors have acted in Sci-Fi movies?
+MATCH (a:Actor)-[:ACTED_IN]->(m:Movie)-[:IN_GENRE]->(g:Genre {{name: 'Sci-Fi'}}) RETURN DISTINCT a.name
+
+Q: What is the average budget for movies in the "Science Fiction" genre?
+MATCH (m:Movie)-[:IN_GENRE]->(g:Genre {{name: 'Science Fiction'}}) RETURN avg(m.budget)
+
+Q: List movies in the Science Fiction genre with budget over 100 million.
+MATCH (m:Movie)-[:IN_GENRE]->(g:Genre {{name: 'Science Fiction'}}) WHERE m.budget > 100000000 RETURN m.title, m.budget
+
+### count{{}} subquery pattern ###
+Q: Find all movies that have been rated exactly 5 times.
+MATCH (m:Movie) WHERE count{{(u:User)-[:RATED]->(m)}} = 5 RETURN m
+
+Q: Which 3 movies have been rated exactly 5 times by users?
+MATCH (m:Movie) WHERE count{{(u:User)-[:RATED]->(m)}} = 5 RETURN m.title AS MovieTitle LIMIT 3
+
+Q: Find actors who have acted in exactly 3 movies.
+MATCH (a:Actor) WHERE count{{(a)-[:ACTED_IN]->(:Movie)}} = 3 RETURN a.name
+
+### DATE comparison ###
+Q: What are the first 3 genres of movies that have been directed by directors born after 1980?
+MATCH (d:Director)-[:DIRECTED]->(m:Movie)-[:IN_GENRE]->(g:Genre) WHERE d.born > date("1980-01-01") RETURN DISTINCT g.name ORDER BY g.name LIMIT 3
+
+Q: List directors born before 1950.
+MATCH (d:Director) WHERE d.born < date("1950-01-01") RETURN d.name, d.born ORDER BY d.born
+
+Q: Which actors were born after 1990?
+MATCH (a:Actor) WHERE a.born > date("1990-01-01") RETURN a.name, a.born
+
+### Subquery with average pattern ###
+Q: List the directors who have directed movies with a runtime longer than the average runtime of all movies.
+MATCH (m:Movie) WITH avg(m.runtime) AS average_runtime MATCH (d:Director)-[:DIRECTED]->(m:Movie) WHERE m.runtime > average_runtime RETURN DISTINCT d.name
+
+Q: Which movies have a budget higher than the average budget?
+MATCH (m:Movie) WHERE m.budget IS NOT NULL WITH avg(m.budget) AS avgBudget MATCH (m2:Movie) WHERE m2.budget > avgBudget RETURN m2.title, m2.budget ORDER BY m2.budget DESC
+
+### collect for list properties ###
+Q: Which three directors have directed movies in more than one language?
+MATCH (d:Director)-[:DIRECTED]->(m:Movie) WITH d, collect(DISTINCT m.languages) AS languages WHERE size(languages) > 1 RETURN d.name, languages ORDER BY size(languages) DESC LIMIT 3
+
+Q: Which actors have acted in movies from at least three different countries?
+MATCH (a:Actor)-[:ACTED_IN]->(m:Movie) WITH a, collect(DISTINCT m.countries) AS countries WHERE size(countries) >= 3 RETURN a.name, countries
+
+### "first N" with ORDER BY - CRITICAL ###
+Q: List the first 5 actors who were born before 1900.
+MATCH (a:Actor) WHERE a.born < date('1900-01-01') RETURN a.name, a.born ORDER BY a.born LIMIT 5
+
+Q: What are the first 3 movies that have a plot mentioning 'war'?
+MATCH (m:Movie) WHERE m.plot CONTAINS 'war' RETURN m.title, m.plot ORDER BY m.released LIMIT 3
+
+Q: List the first 3 movies directed by a director born in France.
+MATCH (d:Director)-[:DIRECTED]->(m:Movie) WHERE d.bornIn = "France" RETURN m.title AS MovieTitle, m.year AS ReleaseYear ORDER BY m.year LIMIT 3
+
+Q: Which 5 actors were born in the USA and have acted in at least two movies?
+MATCH (a:Actor)-[:ACTED_IN]->(m:Movie) WHERE a.bornIn = 'USA' WITH a, count(m) AS numMovies WHERE numMovies >= 2 RETURN a.name, a.bornIn, numMovies ORDER BY numMovies DESC LIMIT 5
+
+### RETURN full node - CRITICAL ###
+Q: Find all movies where the main language is English and have a budget over 50 million dollars.
+MATCH (m:Movie) WHERE 'English' IN m.languages AND m.budget > 50000000 RETURN m
+
+Q: What are the top 3 movies with the highest IMDb ratings that were released before 1990?
+MATCH (m:Movie) WHERE m.released < "1990-01-01" AND m.imdbRating IS NOT NULL RETURN m ORDER BY m.imdbRating DESC LIMIT 3
+
+Q: Which movies have actors who have also directed a movie?
+MATCH (a:Actor)-[:ACTED_IN]->(m:Movie) WHERE exists {{     MATCH (a)-[:DIRECTED]->(:Movie) }} RETURN DISTINCT m
+
+Q: What are the top 5 movies with the most budget and were released after 2010?
+MATCH (m:Movie) WHERE m.released >= '2010' RETURN m.title, m.budget ORDER BY m.budget DESC LIMIT 5
+
+### DISTINCT for JOIN queries ###
+Q: Name the actors who have acted in movies with a budget less than 50 million dollars.
+MATCH (a:Actor)-[:ACTED_IN]->(m:Movie) WHERE m.budget < 50000000 RETURN DISTINCT a.name
+
+Q: Which three users have rated the most number of actors?
+MATCH (u:User)-[:RATED]->(m:Movie)<-[:ACTED_IN]-(a:Actor) WITH u, count(distinct a) AS numActors ORDER BY numActors DESC LIMIT 3 RETURN u.name AS user, numActors
+
+Q: Which genre has the most movies with a budget greater than 200 million?
+MATCH (movie:Movie)-[:IN_GENRE]->(genre:Genre) WHERE movie.budget > 200000000 WITH genre.name AS genreName, count(DISTINCT movie) AS movieCount ORDER BY movieCount DESC RETURN genreName, movieCount LIMIT 1
+
+### Simple queries - NEVER empty generation ###
+Q: List the names of all directors in the database.
+MATCH (d:Director) RETURN DISTINCT d.name
+
+Q: Name the genres of movies that have a plot mentioning 'army'.
+MATCH (m:Movie)-[:IN_GENRE]->(g:Genre) WHERE m.plot CONTAINS 'army' RETURN DISTINCT g.name AS genre
+
+Q: What are the top 3 genres in which movies with an imdbRating above 8.0 fall?
+MATCH (m:Movie)-[:IN_GENRE]->(g:Genre) WHERE m.imdbRating > 8.0 RETURN g.name AS genre, COUNT(m) AS movieCount ORDER BY movieCount DESC LIMIT 3
+
+### WITH clause for aggregation + filter ###
+Q: Which 5 movies have been rated exactly 5 times by users?
+MATCH (m:Movie)<-[:RATED]-(u:User) WITH m, COUNT(u) AS ratingCount WHERE ratingCount = 5 RETURN m.title AS movieTitle LIMIT 5
+
+Q: Which movie has the highest difference between its budget and revenue?
+MATCH (m:Movie) WITH m, (m.revenue - m.budget) AS profit ORDER BY profit DESC RETURN m.title, profit LIMIT 1
+
+### exists{{}} pattern for "both X and Y" ###
+Q: Which three movies feature both American and Japanese actors?
+MATCH (m:Movie) WHERE exists {{   (m)<-[:ACTED_IN]-(a1:Actor {{bornIn: 'USA'}}) }} AND exists {{   (m)<-[:ACTED_IN]-(a2:Actor {{bornIn: 'Japan'}}) }} RETURN m.title AS MovieTitle LIMIT 3
+
+Q: Which directors have directed both a comedy and a drama movie?
+MATCH (d:Director)-[:DIRECTED]->(m:Movie)-[:IN_GENRE]->(g:Genre) WHERE g.name = 'Comedy' WITH d, collect(m) AS comedyMovies WHERE exists {{     MATCH (d)-[:DIRECTED]->(m2:Movie)-[:IN_GENRE]->(g2:Genre)     WHERE g2.name = 'Drama' }} RETURN d, comedyMovies
+
+### Users who rated movies - RETURN full node ###
+Q: Which users have rated movies directed by directors born after 1960?
+MATCH (u:User)-[:RATED]->(m:Movie)<-[:DIRECTED]-(d:Director) WHERE d.born > date('1960-01-01') RETURN DISTINCT u
 
 {question}
 """
