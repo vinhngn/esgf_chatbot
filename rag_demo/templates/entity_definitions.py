@@ -90,9 +90,17 @@ Relationships:
 """.strip()
 
 import tomllib
+import os
 
-with open(".streamlit/secrets.toml", "rb") as f:
-    db = tomllib.load(f)["NEO4J_DATABASE"].lower()
+# Get the directory where this script is located
+_script_dir = os.path.dirname(os.path.abspath(__file__))
+_secrets_path = os.path.join(_script_dir, "..", ".streamlit", "secrets.toml")
+
+try:
+    with open(_secrets_path, "rb") as f:
+        db = tomllib.load(f)["NEO4J_DATABASE"].lower()
+except (FileNotFoundError, KeyError):
+    db = "climate"  # Default fallback
 
 
 
