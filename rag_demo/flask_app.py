@@ -79,9 +79,15 @@ interpreter_llm = ChatOpenAI(
 )
 
 # Create prompt template
+# Escape curly braces in template (except {schema} and {question})
+# LangChain treats {word} as variables, but our templates have Cypher syntax like {name: "value"}
+_escaped_template = CYPHER_GENERATION_TEMPLATE.replace("{schema}", "<<SCHEMA>>").replace("{question}", "<<QUESTION>>")
+_escaped_template = _escaped_template.replace("{", "{{").replace("}", "}}")
+_escaped_template = _escaped_template.replace("<<SCHEMA>>", "{schema}").replace("<<QUESTION>>", "{question}")
+
 CYPHER_GENERATION_PROMPT = PromptTemplate(
     input_variables=["schema", "question"],
-    template=CYPHER_GENERATION_TEMPLATE,
+    template=_escaped_template,
 )
 
 # Initialize GraphCypherQAChain
