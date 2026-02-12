@@ -1,3 +1,11 @@
+"""
+Cypher generation templates for all supported databases.
+Template selection is done via get_cypher_template(db_name).
+"""
+from __future__ import annotations
+
+from config import get_settings
+
 # =============================================================================
 # CYPHER GENERATION TEMPLATES - OPTIMIZED FOR TEXT-TO-CYPHER EVALUATION
 # =============================================================================
@@ -15,7 +23,7 @@ You are a Cypher expert for a Neo4j Climate Science graph database.
 CRITICAL: Output ONLY the raw Cypher query. NO markdown, NO code blocks, NO explanation.
 
 === SCHEMA ===
-{schema}
+{{schema}}
 
 === 12 CRITICAL RULES (Follow in order of priority) ===
 
@@ -35,7 +43,7 @@ RULE 2 - RETURN FORMAT (30% of errors):
 
 RULE 3 - NODE LABEL SELECTION:
 - "regional climate models" / "RCMs" → (r:RCM)
-- "global climate models" / "GCMs" → (s:Source)-[:IS_OF_TYPE]->(t:SourceType {name: "AOGCM"})
+- "global climate models" / "GCMs" → (s:Source)-[:IS_OF_TYPE]->(t:SourceType {{name: "AOGCM"}})
 - "climate models" / "models" → (s:Source)
 - "variables" → (v:Variable)
 - "experiments" → (e:Experiment)
@@ -50,15 +58,15 @@ RULE 4 - RELATIONSHIP DIRECTION (NEVER reverse):
 - (r:RCM)-[:COVERS_REGION]->(region)
 
 RULE 5 - VARIABLE MAPPING:
-- "temperature" → Variable {name: "tas"}
-- "precipitation" / "rainfall" → Variable {name: "pr"}
-- "pressure" → Variable {name: "ps"}
-- Use exact name matching: {name: "pr"} NOT CONTAINS
+- "temperature" → Variable {{name: "tas"}}
+- "precipitation" / "rainfall" → Variable {{name: "pr"}}
+- "pressure" → Variable {{name: "ps"}}
+- Use exact name matching: {{name: "pr"}} NOT CONTAINS
 
 RULE 6 - REGION HIERARCHY:
-- Country: (c:Country {name: "USA"})
-- State/Province: (cs:Country_Subdivision {name: "Florida", code: "US.FL"})
-- Continent: (cont:Continent {name: "North America"})
+- Country: (c:Country {{name: "USA"}})
+- State/Province: (cs:Country_Subdivision {{name: "Florida", code: "US.FL"}})
+- Continent: (cont:Continent {{name: "North America"}})
 
 RULE 7 - DISTINCT USAGE:
 - "Which models..." with JOINs → RETURN DISTINCT
@@ -92,44 +100,44 @@ RULE 12 - SHARED COMPONENTS PATTERN:
 
 ### Basic Retrieval ###
 Q: Show all climate models that include the variable 'pr'.
-MATCH (s:Source)-[:PRODUCES_VARIABLE]->(v:Variable {name: "pr"})
+MATCH (s:Source)-[:PRODUCES_VARIABLE]->(v:Variable {{name: "pr"}})
 RETURN s
 LIMIT 50
 
 Q: List all variables produced by the model ACCESS-CM2.
-MATCH (s:Source {name: "ACCESS-CM2"})-[:PRODUCES_VARIABLE]->(v:Variable)
+MATCH (s:Source {{name: "ACCESS-CM2"}})-[:PRODUCES_VARIABLE]->(v:Variable)
 RETURN v.name, v.cf_standard_name
 LIMIT 50
 
 ### Regional Models ###
 Q: Show regional climate models that predict precipitation over Florida.
 MATCH (r:RCM)-[:DRIVEN_BY_SOURCE]->(s:Source)
-MATCH (s)-[:PRODUCES_VARIABLE]->(v:Variable {name: "pr"})
-MATCH (r)-[:COVERS_REGION]->(c:Country_Subdivision {name: "Florida"})
+MATCH (s)-[:PRODUCES_VARIABLE]->(v:Variable {{name: "pr"}})
+MATCH (r)-[:COVERS_REGION]->(c:Country_Subdivision {{name: "Florida"}})
 RETURN r
 LIMIT 50
 
 Q: Which RCMs cover regions in the USA?
-MATCH (r:RCM)-[:COVERS_REGION]->(cs:Country_Subdivision)-[:PART_OF]->(c:Country {name: "USA"})
+MATCH (r:RCM)-[:COVERS_REGION]->(cs:Country_Subdivision)-[:PART_OF]->(c:Country {{name: "USA"}})
 RETURN DISTINCT r.name
 LIMIT 50
 
 ### Experiments ###
 Q: Which variables are associated with the experiment historical?
-MATCH (e:Experiment {name: "historical"})<-[:USED_IN_EXPERIMENT]-(s:Source)
+MATCH (e:Experiment {{name: "historical"}})<-[:USED_IN_EXPERIMENT]-(s:Source)
 MATCH (s)-[:PRODUCES_VARIABLE]->(v:Variable)
 RETURN DISTINCT v.name, v.cf_standard_name
 LIMIT 50
 
 Q: Show all models used in the experiment ssp585.
-MATCH (s:Source)-[:USED_IN_EXPERIMENT]->(e:Experiment {name: "ssp585"})
+MATCH (s:Source)-[:USED_IN_EXPERIMENT]->(e:Experiment {{name: "ssp585"}})
 RETURN s.name
 LIMIT 50
 
 ### Shared Components ###
 Q: Which component does ACCESS-CM2 share with ACCESS-ESM1-5?
-MATCH (s1:Source {name: "ACCESS-CM2"})-[:HAS_SOURCE_COMPONENT]->(sc:SourceComponent)
-MATCH (s2:Source {name: "ACCESS-ESM1-5"})-[:HAS_SOURCE_COMPONENT]->(sc)
+MATCH (s1:Source {{name: "ACCESS-CM2"}})-[:HAS_SOURCE_COMPONENT]->(sc:SourceComponent)
+MATCH (s2:Source {{name: "ACCESS-ESM1-5"}})-[:HAS_SOURCE_COMPONENT]->(sc)
 WHERE s1 <> s2
 RETURN sc
 LIMIT 50
@@ -145,25 +153,25 @@ LIMIT 50
 
 ### Model Types ###
 Q: Which realms are targeted by AOGCM models?
-MATCH (s:Source)-[:IS_OF_TYPE]->(type:SourceType {name: "AOGCM"})
+MATCH (s:Source)-[:IS_OF_TYPE]->(type:SourceType {{name: "AOGCM"}})
 MATCH (s)-[:APPLIES_TO_REALM]->(r:Realm)
 RETURN DISTINCT r.name
 LIMIT 50
 
 Q: List all global climate models.
-MATCH (s:Source)-[:IS_OF_TYPE]->(type:SourceType {name: "AOGCM"})
+MATCH (s:Source)-[:IS_OF_TYPE]->(type:SourceType {{name: "AOGCM"}})
 RETURN s.name
 LIMIT 50
 
 ### Properties ###
 Q: What is the cf_standard_name of variables produced by models in the historical experiment?
-MATCH (e:Experiment {name: "historical"})<-[:USED_IN_EXPERIMENT]-(s:Source)
+MATCH (e:Experiment {{name: "historical"}})<-[:USED_IN_EXPERIMENT]-(s:Source)
 MATCH (s)-[:PRODUCES_VARIABLE]->(v:Variable)
 RETURN DISTINCT v.cf_standard_name
 LIMIT 50
 
 Q: Show the frequency and resolution for model NorESM2-LM.
-MATCH (s:Source {name: "NorESM2-LM"})
+MATCH (s:Source {{name: "NorESM2-LM"}})
 OPTIONAL MATCH (s)-[:HAS_FREQUENCY]->(f:Frequency)
 OPTIONAL MATCH (s)-[:HAS_RESOLUTION]->(r:Resolution)
 RETURN s.name, f.name AS frequency, r.name AS resolution
@@ -172,13 +180,13 @@ LIMIT 50
 ### Driving Models ###
 Q: Which driving models are linked to RCMs that predict precipitation?
 MATCH (r:RCM)-[:DRIVEN_BY_SOURCE]->(s:Source)
-MATCH (s)-[:PRODUCES_VARIABLE]->(v:Variable {name: "pr"})
+MATCH (s)-[:PRODUCES_VARIABLE]->(v:Variable {{name: "pr"}})
 RETURN DISTINCT s.name AS driving_model
 LIMIT 50
 
 ### Aggregation ###
 Q: How many models are used in the historical experiment?
-MATCH (s:Source)-[:USED_IN_EXPERIMENT]->(e:Experiment {name: "historical"})
+MATCH (s:Source)-[:USED_IN_EXPERIMENT]->(e:Experiment {{name: "historical"}})
 RETURN COUNT(DISTINCT s) AS model_count
 
 Q: Which institute has produced the most climate models?
@@ -188,7 +196,7 @@ ORDER BY model_count DESC
 LIMIT 1
 RETURN i.name, model_count
 
-{question}
+{{question}}
 """
 
 CYPHER_GENERATION_MOVIES_TEMPLATE = """
@@ -198,20 +206,20 @@ CRITICAL: Output ONLY the raw Cypher query. NO markdown, NO code blocks, NO expl
 
 === SCHEMA ===
 Nodes (IMPORTANT - Movie does NOT have budget, revenue, or imdbRating):
-- Person {name: STRING, born: INTEGER}
-- Movie {title: STRING, released: INTEGER, votes: INTEGER, tagline: STRING}
+- Person {{name: STRING, born: INTEGER}}
+- Movie {{title: STRING, released: INTEGER, votes: INTEGER, tagline: STRING}}
 
 Relationships:
 - [:ACTED_IN] - Person acted in Movie
-  Properties: {roles: LIST<STRING>}  ← CRITICAL: roles is on RELATIONSHIP!
+  Properties: {{roles: LIST<STRING>}}  ← CRITICAL: roles is on RELATIONSHIP!
 - [:DIRECTED] - Person directed Movie
 - [:PRODUCED] - Person produced Movie  
 - [:WROTE] - Person wrote Movie
 - [:FOLLOWS] - Person follows Person
 - [:REVIEWED] - Person reviewed Movie
-  Properties: {summary: STRING, rating: INTEGER}  ← CRITICAL: rating on RELATIONSHIP!
+  Properties: {{summary: STRING, rating: INTEGER}}  ← CRITICAL: rating on RELATIONSHIP!
 
-{schema}
+{{schema}}
 
 === 18 CRITICAL RULES (Follow in order of priority) ===
 
@@ -265,7 +273,7 @@ RULE 7 - PROPERTY LOCATION:
 - Person: name, born
 - Movie: title, released, votes, tagline
 - Movie does NOT have: budget, revenue, imdbRating
-- "Nancy Meyers" → Person {name: 'Nancy Meyers'}
+- "Nancy Meyers" → Person {{name: 'Nancy Meyers'}}
 
 RULE 8 - AGGREGATION WITH WITH:
 - WITH p, COUNT(m) AS cnt WHERE cnt > 1 RETURN p.name
@@ -273,7 +281,7 @@ RULE 8 - AGGREGATION WITH WITH:
 
 RULE 9 - EXISTS PATTERN:
 - "people who have produced AND directed" →
-  WHERE exists{(p)-[:PRODUCED]->(:Movie)} AND exists{(p)-[:DIRECTED]->(:Movie)}
+  WHERE exists{{(p)-[:PRODUCED]->(:Movie)}} AND exists{{(p)-[:DIRECTED]->(:Movie)}}
 
 RULE 10 - LIMIT:
 - "top N" / "first N" → LIMIT N
@@ -294,8 +302,8 @@ RULE 13 - "first N" vs "top N":
 - "top N" (ranking) → ORDER BY metric DESC
 
 RULE 14 - NOT EXISTS:
-- "movies NOT reviewed" → WHERE NOT EXISTS {(m)<-[:REVIEWED]-()}
-- "people who never directed" → WHERE NOT EXISTS {(p)-[:DIRECTED]->()}
+- "movies NOT reviewed" → WHERE NOT EXISTS {{(m)<-[:REVIEWED]-()}}
+- "people who never directed" → WHERE NOT EXISTS {{(p)-[:DIRECTED]->()}}
 
 RULE 15 - YEAR FILTERING:
 - "released in 2008" → WHERE m.released = 2008
@@ -321,7 +329,7 @@ Q: Find the top 5 movies with the most votes.
 MATCH (m:Movie) WHERE m.votes IS NOT NULL RETURN m ORDER BY m.votes DESC LIMIT 5
 
 Q: Find all people born in 1949 who have directed a movie.
-MATCH (p:Person) WHERE p.born = 1949 AND exists{(p)-[:DIRECTED]->(:Movie)} RETURN p
+MATCH (p:Person) WHERE p.born = 1949 AND exists{{(p)-[:DIRECTED]->(:Movie)}} RETURN p
 
 Q: Find all movies that have been produced by persons born after 1960 limited to top 5.
 MATCH (p:Person)-[:PRODUCED]->(m:Movie) WHERE p.born > 1960 RETURN m LIMIT 5
@@ -331,7 +339,7 @@ MATCH (m:Movie) WHERE m.released < 1980 RETURN m ORDER BY m.released DESC LIMIT 
 
 ### RETURN PROPERTIES (when specific info requested) ###
 Q: List the first 3 actors in the movie titled 'Speed Racer'.
-MATCH (p:Person)-[r:ACTED_IN]->(m:Movie {title: 'Speed Racer'}) RETURN p.name, r.roles LIMIT 3
+MATCH (p:Person)-[r:ACTED_IN]->(m:Movie {{title: 'Speed Racer'}}) RETURN p.name, r.roles LIMIT 3
 
 Q: List the top 5 youngest people who have written a movie.
 MATCH (p:Person)-[:WROTE]->(:Movie) RETURN p.name, p.born ORDER BY p.born DESC LIMIT 5
@@ -351,7 +359,7 @@ MATCH (p:Person)-[r:REVIEWED]->(m:Movie) WHERE r.rating = 100 RETURN p.name
 
 ### RELATIONSHIP PROPERTIES - roles ###
 Q: What are the roles of Keanu Reeves in 'The Matrix'?
-MATCH (p:Person {name: 'Keanu Reeves'})-[r:ACTED_IN]->(m:Movie {title: 'The Matrix'}) RETURN r.roles AS roles
+MATCH (p:Person {{name: 'Keanu Reeves'}})-[r:ACTED_IN]->(m:Movie {{title: 'The Matrix'}}) RETURN r.roles AS roles
 
 Q: List the movies with exactly 3 roles in the ACTED_IN relationship.
 MATCH (m:Movie)<-[r:ACTED_IN]-(p:Person) WHERE size(r.roles) = 3 RETURN m.title
@@ -374,7 +382,7 @@ MATCH (p:Person)-[:ACTED_IN]->(m:Movie)<-[:DIRECTED]-(p) RETURN p.name AS person
 
 ### FILTERING BY PERSON ###
 Q: List the names of people who acted in movies directed by Nancy Meyers.
-MATCH (d:Person {name: 'Nancy Meyers'})-[:DIRECTED]->(m:Movie)<-[:ACTED_IN]-(a:Person) RETURN DISTINCT a.name
+MATCH (d:Person {{name: 'Nancy Meyers'}})-[:DIRECTED]->(m:Movie)<-[:ACTED_IN]-(a:Person) RETURN DISTINCT a.name
 
 Q: Which top 5 people have directed movies with more than 200 votes?
 MATCH (p:Person)-[:DIRECTED]->(m:Movie) WHERE m.votes > 200 WITH p, count(m) AS num_movies ORDER BY num_movies DESC LIMIT 5 RETURN p.name AS director, num_movies
@@ -398,10 +406,10 @@ MATCH (m:Movie) WITH m.released AS releaseYear, count(m) AS movieCount ORDER BY 
 
 ### EXISTS PATTERN ###
 Q: Who has produced movies but never acted in any?
-MATCH (p:Person) WHERE exists{(p)-[:PRODUCED]->(:Movie)} AND NOT exists{(p)-[:ACTED_IN]->(:Movie)} RETURN p.name
+MATCH (p:Person) WHERE exists{{(p)-[:PRODUCED]->(:Movie)}} AND NOT exists{{(p)-[:ACTED_IN]->(:Movie)}} RETURN p.name
 
 Q: Find movies that have NOT been reviewed.
-MATCH (m:Movie) WHERE NOT EXISTS {(m)<-[:REVIEWED]-()} RETURN m.title
+MATCH (m:Movie) WHERE NOT EXISTS {{(m)<-[:REVIEWED]-()}} RETURN m.title
 
 ### RELATIONSHIP QUERIES ###
 Q: What are the 3 newest relationships formed in the graph (any type)?
@@ -414,7 +422,7 @@ MATCH (p:Person)-[:PRODUCED]->(m:Movie) WHERE m.tagline IS NOT NULL WITH p, coun
 Q: What is the average number of words in review summaries with rating above 95?
 MATCH (:Person)-[r:REVIEWED]->(m:Movie) WHERE r.rating > 95 WITH size(split(r.summary, " ")) AS words RETURN avg(words) AS average_word_count
 
-{question}
+{{question}}
 """
 
 CYPHER_GENERATION_RECOMMENDATIONS_TEMPLATE = """
@@ -423,7 +431,7 @@ You are a Cypher expert for the Neo4j Movie Recommendations graph database.
 CRITICAL: Output ONLY the raw Cypher query. NO markdown, NO code blocks, NO explanation.
 
 === SCHEMA ===
-{schema}
+{{schema}}
 
 === 25 CRITICAL RULES (Follow in order of priority) ===
 
@@ -553,14 +561,14 @@ RULE 13 - NULL CHECKS:
 - ADD IS NOT NULL only when: ORDER BY nullable property, or AVG/SUM needs clean data
 - AVOID over-filtering with unnecessary NULL checks
 
-RULE 16 - exists{} PATTERN (CRITICAL for "also" questions):
-- "actors who have also directed" → WHERE exists{(a)-[:DIRECTED]->(:Movie)}
+RULE 16 - exists{{}} PATTERN (CRITICAL for "also" questions):
+- "actors who have also directed" → WHERE exists{{(a)-[:DIRECTED]->(:Movie)}}
 - "movies with actors who have also directed" → RETURN movie.title, actor.name (include BOTH)
 - DO NOT use same path pattern like (a)-[:ACTED_IN]->(m)<-[:DIRECTED]-(a) for "also directed A movie"
-- Use exists{} when asking if person has EVER done something, not necessarily same movie
+- Use exists{{}} when asking if person has EVER done something, not necessarily same movie
 
-RULE 17 - count{} SUBQUERY:
-- "movies rated exactly N times" → WHERE count{(u:User)-[:RATED]->(m)} = N
+RULE 17 - count{{}} SUBQUERY:
+- "movies rated exactly N times" → WHERE count{{(u:User)-[:RATED]->(m)}} = N
 
 RULE 18 - AGGREGATION WITH WITH:
 - WITH x, COUNT(*) AS cnt WHERE cnt > N
@@ -595,10 +603,10 @@ RULE 23 - SUBQUERY FOR MAX/MIN (CRITICAL - NO SQL SYNTAX):
     MATCH (movie)<-[:DIRECTED]-(d:Director) RETURN d.name
 - For "same X as Y" pattern:
   Example: "movies with same release year as 'Toy Story'" →
-    MATCH (ref:Movie {title: 'Toy Story'}) WITH ref.year AS refYear
+    MATCH (ref:Movie {{title: 'Toy Story'}}) WITH ref.year AS refYear
     MATCH (m:Movie) WHERE m.year = refYear RETURN m.title
 - For "average of movies by same director as X" →
-    MATCH (ref:Movie {title: 'X'})<-[:DIRECTED]-(d:Director)
+    MATCH (ref:Movie {{title: 'X'}})<-[:DIRECTED]-(d:Director)
     MATCH (d)-[:DIRECTED]->(m:Movie) RETURN avg(m.runtime) AS averageRuntime
 
 RULE 24 - CENTURY/DATE SEMANTICS (CRITICAL):
@@ -630,7 +638,7 @@ MATCH (m:Movie) WHERE m.imdbRating IS NOT NULL RETURN m ORDER BY m.imdbRating DE
 
 ### DIRECTOR QUERIES ###
 Q: List all directors who have directed a movie in the 'Sci-Fi' genre.
-MATCH (d:Director)-[:DIRECTED]->(m:Movie)-[:IN_GENRE]->(g:Genre {name: 'Sci-Fi'}) RETURN d
+MATCH (d:Director)-[:DIRECTED]->(m:Movie)-[:IN_GENRE]->(g:Genre {{name: 'Sci-Fi'}}) RETURN d
 
 Q: Which three directors have directed movies in more than one language?
 MATCH (d:Director)-[:DIRECTED]->(m:Movie) WITH d, collect(DISTINCT m.languages) AS languages WHERE size(languages) > 1 RETURN d.name, languages ORDER BY size(languages) DESC LIMIT 3
@@ -667,7 +675,7 @@ Q: Which movies have been both acted in and directed by the same person?
 MATCH (p:Person)-[:ACTED_IN]->(m:Movie)<-[:DIRECTED]-(p) RETURN DISTINCT m.title
 
 Q: Find actors who have also directed at least one movie.
-MATCH (a:Actor) WHERE exists{(a)-[:DIRECTED]->(:Movie)} RETURN a.name
+MATCH (a:Actor) WHERE exists{{(a)-[:DIRECTED]->(:Movie)}} RETURN a.name
 
 ### AGGREGATION ###
 Q: Which genre has the most movies?
@@ -677,21 +685,21 @@ Q: Which 3 directors have directed more than 5 movies?
 MATCH (d:Director)-[:DIRECTED]->(m:Movie) WITH d, count(m) AS cnt WHERE cnt > 5 ORDER BY cnt DESC LIMIT 3 RETURN d.name, cnt
 
 Q: Which movie has the most actors?
-MATCH (m:Movie)<-[:ACTED_IN]-(a:Actor) RETURN m.title, count(a) AS actorCount ORDER BY actorCount DESC LIMIT 1
+MATCH (a:Actor)-[:ACTED_IN]->(m:Movie) RETURN m.title AS Movie, count(a) AS NumberOfActors ORDER BY NumberOfActors DESC LIMIT 1
 
-### count{} SUBQUERY ###
+### count{{}} SUBQUERY ###
 Q: Find all movies that have been rated exactly 5 times.
-MATCH (m:Movie) WHERE count{(u:User)-[:RATED]->(m)} = 5 RETURN m
+MATCH (m:Movie) WHERE count{{(u:User)-[:RATED]->(m)}} = 5 RETURN m
 
 ### GENRE QUERIES ###
 Q: What are the top 5 movies in the 'Sci-Fi' genre by revenue?
-MATCH (m:Movie)-[:IN_GENRE]->(g:Genre {name: 'Sci-Fi'}) WHERE m.revenue IS NOT NULL RETURN m.title, m.revenue ORDER BY m.revenue DESC LIMIT 5
+MATCH (m:Movie)-[:IN_GENRE]->(g:Genre {{name: 'Sci-Fi'}}) WHERE m.revenue IS NOT NULL RETURN m.title, m.revenue ORDER BY m.revenue DESC LIMIT 5
 
 Q: What is the average budget for movies in the "Science Fiction" genre?
-MATCH (m:Movie)-[:IN_GENRE]->(g:Genre {name: 'Science Fiction'}) WHERE m.budget IS NOT NULL RETURN avg(m.budget) AS avgBudget
+MATCH (m:Movie)-[:IN_GENRE]->(g:Genre {{name: 'Science Fiction'}}) WHERE m.budget IS NOT NULL RETURN avg(m.budget) AS avgBudget
 
 Q: List all directors who have directed a movie in the 'Sci-Fi' genre.
-MATCH (d:Director)-[:DIRECTED]->(m:Movie)-[:IN_GENRE]->(g:Genre {name: 'Sci-Fi'}) RETURN d
+MATCH (d:Director)-[:DIRECTED]->(m:Movie)-[:IN_GENRE]->(g:Genre {{name: 'Sci-Fi'}}) RETURN d
 
 ### MOVIE PROPERTIES ###
 Q: List the top 3 movies with the most revenue that have a runtime under 90 minutes.
@@ -706,7 +714,7 @@ MATCH (m:Movie) WHERE m.plot CONTAINS 'evil exterminator' RETURN m.title, m.imdb
 
 ### USER BIRTH YEAR WORKAROUND (User has NO born property) ###
 Q: List the movies released in the year the user "Omar Huffman" was born.
-MATCH (u:User {name: "Omar Huffman"})-[:RATED]->(m:Movie) WITH u, substring(m.released, 0, 4) AS userBirthYear MATCH (movie:Movie) WHERE substring(movie.released, 0, 4) = userBirthYear RETURN DISTINCT movie.title
+MATCH (u:User {{name: "Omar Huffman"}})-[:RATED]->(m:Movie) WITH u, substring(m.released, 0, 4) AS userBirthYear MATCH (movie:Movie) WHERE substring(movie.released, 0, 4) = userBirthYear RETURN DISTINCT movie.title
 
 ### DIRECTORS WITH MULTI-LANGUAGE MOVIES (return languages column) ###
 Q: Which three directors have directed movies in more than one language?
@@ -740,7 +748,7 @@ Q: What are the first 3 movies with the most number of associated actors?
 MATCH (m:Movie)<-[:ACTED_IN]-(a:Actor) WITH m, COUNT(a) AS actorCount ORDER BY actorCount DESC LIMIT 3 RETURN m.title AS movieTitle, actorCount
 
 Q: What are the first 5 movies directed by directors born in the USA?
-MATCH (d:Director {bornIn: 'USA'})-[:DIRECTED]->(m:Movie) RETURN m.title LIMIT 5
+MATCH (d:Director {{bornIn: 'USA'}})-[:DIRECTED]->(m:Movie) RETURN m.title LIMIT 5
 
 Q: Which three genres have the lowest average IMDb rating?
 MATCH (m:Movie)-[:IN_GENRE]->(g:Genre) WHERE m.imdbRating IS NOT NULL WITH g.name AS genre, avg(m.imdbRating) AS avgRating RETURN genre, avgRating ORDER BY avgRating ASC LIMIT 3
@@ -825,10 +833,10 @@ MATCH (d:Director)-[:DIRECTED]->(m:Movie) WITH d, size(collect(distinct m.countr
 
 ### EXISTS PATTERN FOR "ALSO" QUESTIONS ###
 Q: Which movies have actors who have also directed a movie?
-MATCH (actor:Actor)-[:ACTED_IN]->(movie:Movie) WHERE exists{ (actor)-[:DIRECTED]->(:Movie) } RETURN movie.title, actor.name
+MATCH (actor:Actor)-[:ACTED_IN]->(movie:Movie) WHERE exists{{ (actor)-[:DIRECTED]->(:Movie) }} RETURN movie.title, actor.name
 
 Q: Which actors have played in a movie and also directed a movie?
-MATCH (a:Actor)-[:ACTED_IN]->(m:Movie) WHERE exists { MATCH (a)-[:DIRECTED]->(m2:Movie) } RETURN DISTINCT a.name
+MATCH (a:Actor)-[:ACTED_IN]->(m:Movie) WHERE exists {{ MATCH (a)-[:DIRECTED]->(m2:Movie) }} RETURN DISTINCT a.name
 
 ### SUBQUERY FOR MAX/MIN (NO SQL SYNTAX) ###
 Q: What is the name of the director who directed the movie with the highest revenue?
@@ -898,7 +906,7 @@ MATCH (m:Movie) WHERE m.languages[0] <> 'English' AND m.imdbRating > 7 RETURN m.
 
 ### ACTORS IN MULTIPLE GENRES ###
 Q: List the top 3 actors who have acted in both 'Action' and 'Romance' genres.
-MATCH (a:Actor)-[:ACTED_IN]->(m1:Movie)-[:IN_GENRE]->(g1:Genre {name: 'Action'}), (a)-[:ACTED_IN]->(m2:Movie)-[:IN_GENRE]->(g2:Genre {name: 'Romance'}) WITH a, COUNT(DISTINCT m1) + COUNT(DISTINCT m2) AS movieCount ORDER BY movieCount DESC LIMIT 3 RETURN a.name AS actorName, movieCount
+MATCH (a:Actor)-[:ACTED_IN]->(m1:Movie)-[:IN_GENRE]->(g1:Genre {{name: 'Action'}}), (a)-[:ACTED_IN]->(m2:Movie)-[:IN_GENRE]->(g2:Genre {{name: 'Romance'}}) WITH a, COUNT(DISTINCT m1) + COUNT(DISTINCT m2) AS movieCount ORDER BY movieCount DESC LIMIT 3 RETURN a.name AS actorName, movieCount
 
 ### GENRES WITH USER RATINGS ###
 Q: What are the first 3 genres associated with movies that have been rated by at least 5 different users?
@@ -906,7 +914,7 @@ MATCH (g:Genre)<-[:IN_GENRE]-(m:Movie)<-[r:RATED]-(u:User) WITH g, m, count(DIST
 
 ### NAME TOP N MOVIES BY USER ###
 Q: Name the top 5 movies that have been rated by users named 'Omar Huffman'.
-MATCH (u:User {name: 'Omar Huffman'})-[:RATED]->(m:Movie) RETURN m.title AS MovieTitle, m.imdbRating AS IMDbRating ORDER BY m.imdbRating DESC LIMIT 5
+MATCH (u:User {{name: 'Omar Huffman'}})-[:RATED]->(m:Movie) RETURN m.title AS MovieTitle, m.imdbRating AS IMDbRating ORDER BY m.imdbRating DESC LIMIT 5
 
 ### ACTORS IN LANGUAGES (COUNT vs COLLECT) ###
 Q: Which three actors have acted in movies in more than 3 different languages?
@@ -962,10 +970,10 @@ Q: What are the first 3 genres of movies that have been directed by directors bo
 MATCH (d:Director)-[:DIRECTED]->(m:Movie)-[:IN_GENRE]->(g:Genre) WHERE d.born > date("1980-01-01") RETURN DISTINCT g.name ORDER BY g.name LIMIT 3
 
 Q: Find all movies that have the same release year as 'Toy Story' and list their titles and genres.
-MATCH (toyStory:Movie {title: 'Toy Story'}) WITH toyStory.year AS toyStoryYear MATCH (otherMovies:Movie) WHERE otherMovies.year = toyStoryYear MATCH (otherMovies)-[:IN_GENRE]->(genres:Genre) WITH otherMovies, toyStoryYear, collect(genres.name) AS genreList RETURN otherMovies.title AS movieTitle, genreList AS genres, toyStoryYear
+MATCH (toyStory:Movie {{title: 'Toy Story'}}) WITH toyStory.year AS toyStoryYear MATCH (otherMovies:Movie) WHERE otherMovies.year = toyStoryYear MATCH (otherMovies)-[:IN_GENRE]->(genres:Genre) WITH otherMovies, toyStoryYear, collect(genres.name) AS genreList RETURN otherMovies.title AS movieTitle, genreList AS genres, toyStoryYear
 
 Q: What is the average runtime of movies directed by the same director as "Open Season"?
-MATCH (m:Movie {title: 'Open Season'})<-[:DIRECTED]-(d:Director) WITH d MATCH (d)-[:DIRECTED]->(otherMovies:Movie) WITH avg(otherMovies.runtime) AS averageRuntime RETURN averageRuntime
+MATCH (m:Movie {{title: 'Open Season'}})<-[:DIRECTED]-(d:Director) WITH d MATCH (d)-[:DIRECTED]->(otherMovies:Movie) WITH avg(otherMovies.runtime) AS averageRuntime RETURN averageRuntime
 
 ### CRITICAL: LOGIC FIXES (Row 59, 79, 84, 94 semantic errors) ###
 Q: What is the average IMDb rating of movies based on Shakespearean plays?
@@ -1024,13 +1032,13 @@ MATCH (m:Movie) RETURN m.title, m.released ORDER BY m.released DESC LIMIT 3
 
 ### CRITICAL: FIRST N movies with filter - return title only (Row 14 error) ###
 Q: What are the first 5 movies directed by directors born in the USA?
-MATCH (d:Director {bornIn: 'USA'})-[:DIRECTED]->(m:Movie) RETURN m.title LIMIT 5
+MATCH (d:Director {{bornIn: 'USA'}})-[:DIRECTED]->(m:Movie) RETURN m.title LIMIT 5
 
 ### CRITICAL: FIRST N with budget filter - return title + budget (Row 41 error) ###
 Q: List the first 3 movies with a budget over 100 million dollars.
 MATCH (m:Movie) WHERE m.budget > 100000000 RETURN m.title, m.budget ORDER BY m.budget DESC LIMIT 3
 
-{question}
+{{question}}
 """
 
 CYPHER_GENERATION_NORTHWIND_TEMPLATE = """
@@ -1039,7 +1047,7 @@ You are a Cypher expert for the Neo4j Northwind graph database.
 CRITICAL: Output ONLY the raw Cypher query. NO markdown, NO code blocks, NO explanation.
 
 === SCHEMA ===
-{schema}
+{{schema}}
 
 === 10 CRITICAL RULES (Follow in order of priority) ===
 
@@ -1129,7 +1137,7 @@ Q: Find all suppliers that supply discontinued products.
 MATCH (s:Supplier)-[:SUPPLIES]->(p:Product) WHERE p.discontinued = true RETURN s.companyName
 
 Q: List all suppliers that provide products to the 'Dairy Products' category.
-MATCH (s:Supplier)-[:SUPPLIES]->(p:Product)-[:PART_OF]->(c:Category {categoryName: 'Dairy Products'}) RETURN s.companyName
+MATCH (s:Supplier)-[:SUPPLIES]->(p:Product)-[:PART_OF]->(c:Category {{categoryName: 'Dairy Products'}}) RETURN s.companyName
 
 ### RELATIONSHIP PROPERTIES ###
 Q: What is the average unitPrice of products ordered in quantities greater than 10?
@@ -1147,16 +1155,16 @@ MATCH (c:Category)<-[:PART_OF]-(p:Product) WHERE p.unitsOnOrder > 0 RETURN c.cat
 
 ### SUBQUERY ###
 Q: Which suppliers supply the product with the highest unitPrice?
-MATCH (p:Product) WITH max(p.unitPrice) AS maxPrice MATCH (p:Product {unitPrice: maxPrice}) MATCH (s:Supplier)-[:SUPPLIES]->(p) RETURN s.companyName
+MATCH (p:Product) WITH max(p.unitPrice) AS maxPrice MATCH (p:Product {{unitPrice: maxPrice}}) MATCH (s:Supplier)-[:SUPPLIES]->(p) RETURN s.companyName
 
 Q: List products with reorder level greater than average.
 MATCH (p:Product) WITH AVG(p.reorderLevel) AS avgReorderLevel MATCH (p2:Product) WHERE p2.reorderLevel > avgReorderLevel RETURN p2.productName
 
 ### CATEGORY QUERIES ###
 Q: Which 3 customers have ordered the most products in the 'Seafood' category?
-MATCH (c:Customer)-[:PURCHASED]->(o:Order)-[:ORDERS]->(p:Product)-[:PART_OF]->(cat:Category {categoryName: "Seafood"}) WITH c, count(p) AS products_ordered ORDER BY products_ordered DESC LIMIT 3 RETURN c.companyName, products_ordered
+MATCH (c:Customer)-[:PURCHASED]->(o:Order)-[:ORDERS]->(p:Product)-[:PART_OF]->(cat:Category {{categoryName: "Seafood"}}) WITH c, count(p) AS products_ordered ORDER BY products_ordered DESC LIMIT 3 RETURN c.companyName, products_ordered
 
-{question}
+{{question}}
 """
 
 CYPHER_GENERATION_TWITTER_TEMPLATE = """
@@ -1172,7 +1180,7 @@ Nodes: User, Me (neo4j account), Tweet, Hashtag, Link, Source
 
 Relationships: FOLLOWS, POSTS, MENTIONS, RETWEETS, TAGS, CONTAINS, USING, AMPLIFIES, INTERACTS_WITH, REPLY_TO, SIMILAR_TO, RT_MENTIONS
 
-{schema}
+{{schema}}
 
 === 20 CRITICAL RULES (Follow in order of priority) ===
 
@@ -1231,9 +1239,9 @@ RULE 8 - ORDER BY:
 RULE 9 - AGGREGATION:
 - "most frequently" → WITH entity, COUNT(*) AS count ORDER BY count DESC LIMIT 1
 
-RULE 10 - count{} vs PROPERTY (CRITICAL - 15% of errors):
-- "number of people they are following" → count{(u)-[:FOLLOWS]->(:User)} AS followingCount
-- "number of followers" → count{(u)<-[:FOLLOWS]-(:User)} AS followerCount
+RULE 10 - count{{}} vs PROPERTY (CRITICAL - 15% of errors):
+- "number of people they are following" → count{{(u)-[:FOLLOWS]->(:User)}} AS followingCount
+- "number of followers" → count{{(u)<-[:FOLLOWS]-(:User)}} AS followerCount
 - NEVER use u.following or u.followers property for counting relationships!
 - This is Neo4j 5.x subquery count syntax - MUST use for counting relationships
 
@@ -1243,7 +1251,7 @@ RULE 11 - RELATIONSHIP DIRECTION:
 - (Tweet)-[:RETWEETS]->(Tweet) = first is retweet of second
 
 RULE 12 - HASHTAG MATCHING:
-- Use {name: 'education'} NOT {name: '#education'}
+- Use {{name: 'education'}} NOT {{name: '#education'}}
 - Hashtag names stored WITHOUT # symbol
 
 RULE 13 - DISTINCT:
@@ -1259,7 +1267,7 @@ RULE 15 - ALIAS MATCHING:
 
 RULE 16 - 'Me' WITHOUT PROPERTY:
 - "Which users are amplified by 'Me'" → MATCH (me:Me)-[:AMPLIFIES]->(user:User) (no screen_name filter)
-- Only add {screen_name: 'neo4j'} when question explicitly says 'neo4j'
+- Only add {{screen_name: 'neo4j'}} when question explicitly says 'neo4j'
 
 RULE 17 - BETWEENNESS CENTRALITY:
 - betweenness is a PROPERTY on User/Me nodes, NOT a relationship
@@ -1269,7 +1277,7 @@ RULE 17 - BETWEENNESS CENTRALITY:
 RULE 18 - FILTERING WITH PROPERTIES:
 - "users with more than X followers" → WHERE u.followers > X (use property)
 - "users with more than X statuses" → WHERE u.statuses > X (use property)
-- "users who follow more than X people" → WHERE count{(u)-[:FOLLOWS]->(:User)} > X (count relationships)
+- "users who follow more than X people" → WHERE count{{(u)-[:FOLLOWS]->(:User)}} > X (count relationships)
 
 RULE 19 - TWEET MENTIONS COUNT (CRITICAL):
 - "tweets with most mentions" → MUST include t.id_str in RETURN
@@ -1287,79 +1295,79 @@ Q: Which users are amplified by 'Me' according to the AMPLIFIES relationship?
 MATCH (me:Me)-[:AMPLIFIES]->(user:User) RETURN user.screen_name AS AmplifiedUser
 
 Q: Who are the top 3 users that 'Neo4j' has amplified?
-MATCH (me:Me {name: 'Neo4j'})-[:AMPLIFIES]->(user:User) RETURN user.screen_name, COUNT(*) AS amplification_count ORDER BY amplification_count DESC LIMIT 3
+MATCH (me:Me {{name: 'Neo4j'}})-[:AMPLIFIES]->(user:User) RETURN user.screen_name, COUNT(*) AS amplification_count ORDER BY amplification_count DESC LIMIT 3
 
 ### FOLLOWS - FULL USER PROPERTIES ###
 Q: List the 5 most recent users who started following 'Neo4j'.
-MATCH (neo4j:Me {screen_name: 'neo4j'})<-[:FOLLOWS]-(user:User) RETURN user.screen_name, user.name, user.followers, user.following, user.profile_image_url, user.url, user.location, user.statuses ORDER BY user.followers DESC LIMIT 5
+MATCH (neo4j:Me {{screen_name: 'neo4j'}})<-[:FOLLOWS]-(user:User) RETURN user.screen_name, user.name, user.followers, user.following, user.profile_image_url, user.url, user.location, user.statuses ORDER BY user.followers DESC LIMIT 5
 
 Q: Who are the top 5 users that a specific user named 'Neo4j' follows?
-MATCH (me:Me {name: 'Neo4j'})-[:FOLLOWS]->(user:User) RETURN user.name, user.screen_name, user.followers, user.following ORDER BY user.followers DESC LIMIT 5
+MATCH (me:Me {{name: 'Neo4j'}})-[:FOLLOWS]->(user:User) RETURN user.name, user.screen_name, user.followers, user.following ORDER BY user.followers DESC LIMIT 5
 
 Q: Which users follow 'neo4j' and have more than 10000 followers?
-MATCH (me:Me {screen_name: 'neo4j'})<-[:FOLLOWS]-(user:User) WHERE user.followers > 10000 RETURN user.screen_name, user.name, user.followers
+MATCH (me:Me {{screen_name: 'neo4j'}})<-[:FOLLOWS]-(user:User) WHERE user.followers > 10000 RETURN user.screen_name, user.name, user.followers
 
-### count{} SYNTAX - CRITICAL (NOT property!) ###
+### count{{}} SYNTAX - CRITICAL (NOT property!) ###
 Q: Identify the top 3 users by the number of people they are following.
-MATCH (u:User) RETURN u.name, u.screen_name, count{(u)-[:FOLLOWS]->(:User)} AS followingCount ORDER BY followingCount DESC LIMIT 3
+MATCH (u:User) RETURN u.name, u.screen_name, count{{(u)-[:FOLLOWS]->(:User)}} AS followingCount ORDER BY followingCount DESC LIMIT 3
 
 Q: Which users have the most followers? Top 5.
-MATCH (u:User) RETURN u.name, u.screen_name, count{(u)<-[:FOLLOWS]-(:User)} AS followerCount ORDER BY followerCount DESC LIMIT 5
+MATCH (u:User) RETURN u.name, u.screen_name, count{{(u)<-[:FOLLOWS]-(:User)}} AS followerCount ORDER BY followerCount DESC LIMIT 5
 
 ### INTERACTS_WITH - LIMIT 1 for "most frequently" ###
 Q: Who does 'neo4j' interact with most frequently?
-MATCH (me:Me {screen_name: 'neo4j'})-[:INTERACTS_WITH]->(user:User) RETURN user.screen_name, COUNT(*) AS interaction_count ORDER BY interaction_count DESC LIMIT 1
+MATCH (me:Me {{screen_name: 'neo4j'}})-[:INTERACTS_WITH]->(user:User) RETURN user.screen_name, COUNT(*) AS interaction_count ORDER BY interaction_count DESC LIMIT 1
 
 ### POSTS - use :User ###
 Q: What are the top 5 tweets by 'Neo4j' based on favorites count?
-MATCH (u:User {name: 'Neo4j'})-[:POSTS]->(t:Tweet) RETURN t ORDER BY t.favorites DESC LIMIT 5
+MATCH (u:User {{name: 'Neo4j'}})-[:POSTS]->(t:Tweet) RETURN t ORDER BY t.favorites DESC LIMIT 5
 
 Q: List all tweets by 'neo4j' that have more than 200 favorites. First 5.
-MATCH (u:User {screen_name: 'neo4j'})-[:POSTS]->(t:Tweet) WHERE t.favorites > 200 RETURN t LIMIT 5
+MATCH (u:User {{screen_name: 'neo4j'}})-[:POSTS]->(t:Tweet) WHERE t.favorites > 200 RETURN t LIMIT 5
 
 ### POSTS with TAGS ###
 Q: Find all tweets posted by 'Neo4j' containing a hashtag.
-MATCH (u:User {name: 'Neo4j'})-[:POSTS]->(t:Tweet)-[:TAGS]->(h:Hashtag) RETURN t, h
+MATCH (u:User {{name: 'Neo4j'}})-[:POSTS]->(t:Tweet)-[:TAGS]->(h:Hashtag) RETURN t, h
 
 Q: Which tweets by 'neo4j' contain the hashtag 'education'?
-MATCH (u:User {screen_name: 'neo4j'})-[:POSTS]->(t:Tweet)-[:TAGS]->(h:Hashtag {name: 'education'}) RETURN t
+MATCH (u:User {{screen_name: 'neo4j'}})-[:POSTS]->(t:Tweet)-[:TAGS]->(h:Hashtag {{name: 'education'}}) RETURN t
 
 ### MENTIONS ###
 Q: Show the tweets where 'neo4j' is mentioned and the tweet has a favorite count over 100.
-MATCH (t:Tweet)-[:MENTIONS]->(u:User {screen_name: 'neo4j'}) WHERE t.favorites > 100 RETURN t.text AS tweet_text, t.favorites AS favorite_count, t.created_at AS created_at
+MATCH (t:Tweet)-[:MENTIONS]->(u:User {{screen_name: 'neo4j'}}) WHERE t.favorites > 100 RETURN t.text AS tweet_text, t.favorites AS favorite_count, t.created_at AS created_at
 
 Q: Who does 'neo4j' mention most frequently?
-MATCH (u:User {screen_name: 'neo4j'})-[:POSTS]->(t:Tweet)-[:MENTIONS]->(mentioned:User) RETURN mentioned.screen_name, count(t) AS mentions_count ORDER BY mentions_count DESC
+MATCH (u:User {{screen_name: 'neo4j'}})-[:POSTS]->(t:Tweet)-[:MENTIONS]->(mentioned:User) RETURN mentioned.screen_name, count(t) AS mentions_count ORDER BY mentions_count DESC
 
 Q: Who are the users that 'neo4j' mentions most frequently in their tweets?
-MATCH (u:User {screen_name: 'neo4j'})-[:POSTS]->(t:Tweet)-[:MENTIONS]->(mentioned:User) RETURN mentioned.screen_name, count(t) AS mentions_count ORDER BY mentions_count DESC
+MATCH (u:User {{screen_name: 'neo4j'}})-[:POSTS]->(t:Tweet)-[:MENTIONS]->(mentioned:User) RETURN mentioned.screen_name, count(t) AS mentions_count ORDER BY mentions_count DESC
 
 ### RETWEETS - MUST use POSTS->RETWEETS ###
 Q: Who are the top 5 users that 'neo4j' retweets the most?
-MATCH (me:Me {screen_name: 'neo4j'})-[:POSTS]->(tweet:Tweet)-[:RETWEETS]->(retweetedTweet:Tweet)<-[:POSTS]-(retweetedUser:User) RETURN retweetedUser.screen_name AS retweeted_user, count(*) AS retweet_count ORDER BY retweet_count DESC LIMIT 5
+MATCH (me:Me {{screen_name: 'neo4j'}})-[:POSTS]->(tweet:Tweet)-[:RETWEETS]->(retweetedTweet:Tweet)<-[:POSTS]-(retweetedUser:User) RETURN retweetedUser.screen_name AS retweeted_user, count(*) AS retweet_count ORDER BY retweet_count DESC LIMIT 5
 
 Q: Show the first 3 tweets that 'Me' has retweeted.
 MATCH (me:Me)-[:POSTS]->(retweet:Tweet)-[:RETWEETS]->(original:Tweet) RETURN original ORDER BY original.created_at ASC LIMIT 3
 
 Q: Identify the URLs of the top 5 tweets retweeted by 'Neo4j'.
-MATCH (me:Me {name: 'Neo4j'})-[:POSTS]->(retweet:Tweet)-[:RETWEETS]->(original:Tweet)-[:CONTAINS]->(link:Link) RETURN link.url ORDER BY original.favorites DESC LIMIT 5
+MATCH (me:Me {{name: 'Neo4j'}})-[:POSTS]->(retweet:Tweet)-[:RETWEETS]->(original:Tweet)-[:CONTAINS]->(link:Link) RETURN link.url ORDER BY original.favorites DESC LIMIT 5
 
 Q: Who are the users that have been retweeted by 'neo4j'?
-MATCH (me:Me {screen_name: 'neo4j'})-[:POSTS]->(tweet:Tweet)-[:RETWEETS]->(retweetedTweet:Tweet)<-[:POSTS]-(retweetedUser:User) RETURN DISTINCT retweetedUser.screen_name
+MATCH (me:Me {{screen_name: 'neo4j'}})-[:POSTS]->(tweet:Tweet)-[:RETWEETS]->(retweetedTweet:Tweet)<-[:POSTS]-(retweetedUser:User) RETURN DISTINCT retweetedUser.screen_name
 
 ### SIMILAR_TO - always :Me ###
 Q: Which 5 users are most similar to Neo4j?
-MATCH (me:Me {name: 'Neo4j'})<-[s:SIMILAR_TO]-(u:User) RETURN u.screen_name AS user, s.score AS similarity ORDER BY similarity DESC LIMIT 5
+MATCH (me:Me {{name: 'Neo4j'}})<-[s:SIMILAR_TO]-(u:User) RETURN u.screen_name AS user, s.score AS similarity ORDER BY similarity DESC LIMIT 5
 
 ### BETWEENNESS CENTRALITY ###
 Q: Which three users have the highest 'betweenness' metric in the network?
 MATCH (u:User) WHERE u.betweenness IS NOT NULL RETURN u.screen_name, u.name, u.betweenness ORDER BY u.betweenness DESC LIMIT 3
 
 Q: Who are the top 3 followers of 'Neo4j' based on betweenness centrality?
-MATCH (me:Me {name: 'Neo4j'})<-[:FOLLOWS]-(u:User) WHERE u.betweenness IS NOT NULL RETURN u.screen_name, u.name, u.betweenness ORDER BY u.betweenness DESC LIMIT 3
+MATCH (me:Me {{name: 'Neo4j'}})<-[:FOLLOWS]-(u:User) WHERE u.betweenness IS NOT NULL RETURN u.screen_name, u.name, u.betweenness ORDER BY u.betweenness DESC LIMIT 3
 
 Q: What is the average betweenness centrality of users who follow Neo4j?
-MATCH (me:Me {name: 'Neo4j'})<-[:FOLLOWS]-(u:User) WHERE u.betweenness IS NOT NULL RETURN avg(u.betweenness) AS average_betweenness
+MATCH (me:Me {{name: 'Neo4j'}})<-[:FOLLOWS]-(u:User) WHERE u.betweenness IS NOT NULL RETURN avg(u.betweenness) AS average_betweenness
 
 ### GENERAL QUERIES ###
 Q: List the first 5 tweets with the highest number of favorites.
@@ -1369,7 +1377,7 @@ Q: What are the top 5 most recent tweets?
 MATCH (t:Tweet) RETURN t ORDER BY t.created_at DESC LIMIT 5
 
 Q: List all users who follow 'neo4j'.
-MATCH (u:User)-[:FOLLOWS]->(:Me {screen_name: 'neo4j'}) RETURN u
+MATCH (u:User)-[:FOLLOWS]->(:Me {{screen_name: 'neo4j'}}) RETURN u
 
 Q: What are the top 5 users with the highest number of followers?
 MATCH (u:User) WHERE u.followers IS NOT NULL RETURN u.screen_name, u.name, u.followers ORDER BY u.followers DESC LIMIT 5
@@ -1379,21 +1387,21 @@ MATCH (u:User) WHERE u.followers > 10000 AND u.statuses < 15000 RETURN u.screen_
 
 ### HASHTAG QUERIES ###
 Q: List the first 3 hashtags used in tweets mentioning 'Neo4j'.
-MATCH (t:Tweet)-[:MENTIONS]->(u:User {name: 'Neo4j'}) MATCH (t)-[:TAGS]->(h:Hashtag) RETURN h.name AS hashtag LIMIT 3
+MATCH (t:Tweet)-[:MENTIONS]->(u:User {{name: 'Neo4j'}}) MATCH (t)-[:TAGS]->(h:Hashtag) RETURN h.name AS hashtag LIMIT 3
 
 Q: List the first 3 tweets containing hashtag 'education'.
-MATCH (t:Tweet)-[:TAGS]->(h:Hashtag {name: 'education'}) RETURN t LIMIT 3
+MATCH (t:Tweet)-[:TAGS]->(h:Hashtag {{name: 'education'}}) RETURN t LIMIT 3
 
 Q: Identify the top 3 hashtags used in tweets.
 MATCH (t:Tweet)-[:TAGS]->(h:Hashtag) RETURN h.name AS hashtag, COUNT(*) AS usage_count ORDER BY usage_count DESC LIMIT 3
 
 ### LOCATION QUERIES ###
 Q: List the top 3 tweets from users located in 'Graphs Are Everywhere'.
-MATCH (u:User {location: 'Graphs Are Everywhere'})-[:POSTS]->(t:Tweet) RETURN t ORDER BY t.favorites DESC LIMIT 3
+MATCH (u:User {{location: 'Graphs Are Everywhere'}})-[:POSTS]->(t:Tweet) RETURN t ORDER BY t.favorites DESC LIMIT 3
 
 ### FIRST N USERS WHO MENTIONED ###
 Q: Identify the first 3 users who mentioned 'Neo4j' in their tweets.
-MATCH (u:User)-[:POSTS]->(t:Tweet)-[:MENTIONS]->(mentioned:User {name: 'Neo4j'}) RETURN DISTINCT u.screen_name, u.name, t.created_at ORDER BY t.created_at ASC LIMIT 3
+MATCH (u:User)-[:POSTS]->(t:Tweet)-[:MENTIONS]->(mentioned:User {{name: 'Neo4j'}}) RETURN DISTINCT u.screen_name, u.name, t.created_at ORDER BY t.created_at ASC LIMIT 3
 
 ### TWEET MENTIONS COUNT - CRITICAL (include id_str!) ###
 Q: Which three tweets have the most mentions of other users?
@@ -1404,47 +1412,35 @@ MATCH (t:Tweet)-[:MENTIONS]->(u:User) WITH t, COUNT(u) AS mention_count ORDER BY
 
 ### INTERACTS_WITH - LIMIT 1 for "most frequently" ###
 Q: Who does 'neo4j' interact with most frequently?
-MATCH (me:Me {screen_name: 'neo4j'})-[:INTERACTS_WITH]->(user:User) RETURN user.screen_name, COUNT(*) AS interaction_count ORDER BY interaction_count DESC LIMIT 1
+MATCH (me:Me {{screen_name: 'neo4j'}})-[:INTERACTS_WITH]->(user:User) RETURN user.screen_name, COUNT(*) AS interaction_count ORDER BY interaction_count DESC LIMIT 1
 
 Q: Which user does 'Neo4j' interact with the most?
-MATCH (me:Me {name: 'Neo4j'})-[:INTERACTS_WITH]->(user:User) RETURN user.screen_name, COUNT(*) AS interaction_count ORDER BY interaction_count DESC LIMIT 1
+MATCH (me:Me {{name: 'Neo4j'}})-[:INTERACTS_WITH]->(user:User) RETURN user.screen_name, COUNT(*) AS interaction_count ORDER BY interaction_count DESC LIMIT 1
 
 ### TOP N USERS BY FOLLOWERS - exact column format ###
 Q: Who are the top 5 users that a specific user named 'Neo4j' follows?
-MATCH (me:Me {name: 'Neo4j'})-[:FOLLOWS]->(user:User) RETURN user.name, user.screen_name, user.followers, user.following ORDER BY user.followers DESC LIMIT 5
+MATCH (me:Me {{name: 'Neo4j'}})-[:FOLLOWS]->(user:User) RETURN user.name, user.screen_name, user.followers, user.following ORDER BY user.followers DESC LIMIT 5
 
 Q: List the top 3 users followed by 'neo4j' with the most followers.
-MATCH (me:Me {screen_name: 'neo4j'})-[:FOLLOWS]->(user:User) RETURN user.name, user.screen_name, user.followers, user.following ORDER BY user.followers DESC LIMIT 3
+MATCH (me:Me {{screen_name: 'neo4j'}})-[:FOLLOWS]->(user:User) RETURN user.name, user.screen_name, user.followers, user.following ORDER BY user.followers DESC LIMIT 3
 
-{question}
+{{question}}
 """
 
+
 # =============================================================================
-# TEMPLATE SELECTOR - Based on database configuration
+# TEMPLATE SELECTOR
 # =============================================================================
+_TEMPLATE_MAP = {
+    "climate": CYPHER_GENERATION_CLIMATE_TEMPLATE,
+    "movies": CYPHER_GENERATION_MOVIES_TEMPLATE,
+    "recommendations": CYPHER_GENERATION_RECOMMENDATIONS_TEMPLATE,
+    "northwind": CYPHER_GENERATION_NORTHWIND_TEMPLATE,
+    "twitter": CYPHER_GENERATION_TWITTER_TEMPLATE,
+}
 
-import tomllib
-import os
 
-# Get the directory where this script is located
-_script_dir = os.path.dirname(os.path.abspath(__file__))
-_secrets_path = os.path.join(_script_dir, "..", ".streamlit", "secrets.toml")
-
-try:
-    with open(_secrets_path, "rb") as f:
-        db = tomllib.load(f)["NEO4J_DATABASE"].lower()
-except (FileNotFoundError, KeyError):
-    db = "climate"  # Default fallback
-
-if db == "climate":
-    CYPHER_GENERATION_TEMPLATE = CYPHER_GENERATION_CLIMATE_TEMPLATE
-elif db == "movies":
-    CYPHER_GENERATION_TEMPLATE = CYPHER_GENERATION_MOVIES_TEMPLATE
-elif db == "recommendations":
-    CYPHER_GENERATION_TEMPLATE = CYPHER_GENERATION_RECOMMENDATIONS_TEMPLATE
-elif db == "northwind":
-    CYPHER_GENERATION_TEMPLATE = CYPHER_GENERATION_NORTHWIND_TEMPLATE
-elif db == "twitter":
-    CYPHER_GENERATION_TEMPLATE = CYPHER_GENERATION_TWITTER_TEMPLATE
-else:
-    CYPHER_GENERATION_TEMPLATE = CYPHER_GENERATION_CLIMATE_TEMPLATE
+def get_cypher_template(db_name: str | None = None) -> str:
+    """Get the Cypher generation template for the given database."""
+    db = db_name or get_settings().database_name
+    return _TEMPLATE_MAP.get(db, CYPHER_GENERATION_CLIMATE_TEMPLATE)

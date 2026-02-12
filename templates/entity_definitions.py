@@ -1,3 +1,9 @@
+"""
+Entity definitions per database type.
+FIX: Added default fallback so entity_definitions is always defined.
+"""
+from config import get_settings
+
 entity_climate_definitions = """
 The definitions of the entity types are given below:
 Activity: A coordinated modeling effort or scientific campaign.
@@ -89,28 +95,21 @@ Relationships:
 - REPLY_TO: Connects a Tweet to another Tweet it replies to.
 """.strip()
 
-import tomllib
-import os
 
-# Get the directory where this script is located
-_script_dir = os.path.dirname(os.path.abspath(__file__))
-_secrets_path = os.path.join(_script_dir, "..", ".streamlit", "secrets.toml")
-
-try:
-    with open(_secrets_path, "rb") as f:
-        db = tomllib.load(f)["NEO4J_DATABASE"].lower()
-except (FileNotFoundError, KeyError):
-    db = "climate"  # Default fallback
+_DEFINITIONS_MAP = {
+    "climate": entity_climate_definitions,
+    "movies": entity_movies_definitions,
+    "recommendations": entity_recommendations_definitions,
+    "northwind": entity_northwind_definitions,
+    "twitter": entity_twitter_definitions,
+}
 
 
+def get_entity_definitions(db_name: str | None = None) -> str:
+    """Get entity definitions for the given database (or current config)."""
+    db = db_name or get_settings().database_name
+    return _DEFINITIONS_MAP.get(db, entity_climate_definitions)
 
-if db == "climate":
-    entity_definitions = entity_climate_definitions
-elif db == "movies":
-    entity_definitions = entity_movies_definitions
-elif db == "recommendations":
-    entity_definitions = entity_recommendations_definitions
-elif db == "northwind":
-    entity_definitions = entity_northwind_definitions
-elif db == "twitter":
-    entity_definitions = entity_twitter_definitions
+
+# Module-level convenience (uses current config)
+entity_definitions = get_entity_definitions()

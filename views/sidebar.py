@@ -1,36 +1,25 @@
-from constants import SCHEMA_IMG_PATH, LANGCHAIN_IMG_PATH
-import streamlit as st
-import streamlit.components.v1 as components
+from __future__ import annotations
+
 import os
 
+import streamlit as st
+import streamlit.components.v1 as components
 
-def ChangeButtonColour(wgt_txt, wch_hex_colour="12px"):
-    htmlstr = f"""
-    <script>
-        var elements = window.parent.document.querySelectorAll('*'), i;
-        for (i = 0; i < elements.length; ++i) {{
-            if (elements[i].innerText == '{wgt_txt}') {{
-                elements[i].style.color = '{wch_hex_colour}';
-            }}
-        }}
-    </script>
-    """
-    components.html(htmlstr, height=0, width=0)
+from config import get_settings
+from constants import LANGCHAIN_IMG_PATH
 
 
 def sidebar():
     with st.sidebar:
-        # Base path for this script
-        base_path = os.path.dirname(os.path.abspath(__file__))
-
-        # Absolute path to local image
+        base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         gcmd_img_path = os.path.join(base_path, "images", "GCMD+.png")
 
-        # Images
         st.markdown(
-            "This is the GCMD+ taxonomy schema used to organize climate science concepts in our knowledge graph:"
+            "This is the GCMD+ taxonomy schema used to organize climate science "
+            "concepts in our knowledge graph:"
         )
-        st.image(gcmd_img_path, width=400)
+        if os.path.exists(gcmd_img_path):
+            st.image(gcmd_img_path, width=400)
 
         st.markdown(
             f"""This is how the Chatbot flow goes:<br>
@@ -38,25 +27,20 @@ def sidebar():
             unsafe_allow_html=True,
         )
 
-        # Section Title
         st.markdown("**Questions you can ask:**")
 
-        # Optional: robust CSS (not required if going vertical)
         st.markdown(
-            """
-            <style>
+            """<style>
                 button[kind="secondary"] {
                     white-space: normal !important;
                     word-wrap: break-word !important;
                 }
-            </style>
-        """,
+            </style>""",
             unsafe_allow_html=True,
         )
 
-        # Sample questions based on database type
-        database = st.secrets.get("NEO4J_DATABASE", "climate").lower()
-        
+        database = get_settings().database_name
+
         if database == "twitter":
             sample_questions = [
                 "Who are the top 5 users that Neo4j follows?",
@@ -69,7 +53,6 @@ def sidebar():
                 "What is the average number of followers for users who follow neo4j?"
             ]
         else:
-            # Climate database questions
             sample_questions = [
                 "Show regional climate models that predict precipitation over Florida, USA",
                 "Show the components, shared models, and realm for ACCESS models",
@@ -78,7 +61,7 @@ def sidebar():
                 "What is the frequency, resolution, and realm associated with the model 'NorESM2-LM'?",
                 "Which driving models are linked to regional climate models that predict variable pr?",
                 "Show me all variables related to the model 'HadGEM3-GC31-LL'",
-                "Which variables are associated with the experiment historical, and which models (sources) provide them?"
+                "Which variables are associated with the experiment historical, and which models (sources) provide them?",
             ]
 
         for question in sample_questions:

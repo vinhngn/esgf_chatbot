@@ -1,24 +1,9 @@
-# Virtual environment
+.env
+__pycache__/
+*.pyc
 venv/
 .venv/
-
-# Python
-__pycache__/
-*.py[cod]
-*.pyo
-.Python
-
-# Secrets
-.streamlit/secrets.toml
-
-# IDE
-.vscode/
-.idea/
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Logs
-*.log
-.streamlit
+*.egg-info/
+dist/
+build/
+.streamlit/
