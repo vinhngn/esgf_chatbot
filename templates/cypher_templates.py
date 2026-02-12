@@ -23,7 +23,7 @@ You are a Cypher expert for a Neo4j Climate Science graph database.
 CRITICAL: Output ONLY the raw Cypher query. NO markdown, NO code blocks, NO explanation.
 
 === SCHEMA ===
-{{schema}}
+{schema}
 
 === 12 CRITICAL RULES (Follow in order of priority) ===
 
@@ -196,7 +196,7 @@ ORDER BY model_count DESC
 LIMIT 1
 RETURN i.name, model_count
 
-{{question}}
+{question}
 """
 
 CYPHER_GENERATION_MOVIES_TEMPLATE = """
@@ -219,7 +219,7 @@ Relationships:
 - [:REVIEWED] - Person reviewed Movie
   Properties: {{summary: STRING, rating: INTEGER}}  ← CRITICAL: rating on RELATIONSHIP!
 
-{{schema}}
+{schema}
 
 === 18 CRITICAL RULES (Follow in order of priority) ===
 
@@ -420,9 +420,9 @@ Q: Who are the top 3 producers by the number of movies with different taglines?
 MATCH (p:Person)-[:PRODUCED]->(m:Movie) WHERE m.tagline IS NOT NULL WITH p, count(DISTINCT m.tagline) AS distinctTaglines ORDER BY distinctTaglines DESC LIMIT 3 RETURN p.name, distinctTaglines
 
 Q: What is the average number of words in review summaries with rating above 95?
-MATCH (:Person)-[r:REVIEWED]->(m:Movie) WHERE r.rating > 95 WITH size(split(r.summary, " ")) AS words RETURN avg(words) AS average_word_count
+MATCH (:Person)-[r:REVIEWED]->(m:Movie) WHERE r.rating > 95 With size(split(r.summary, " ")) AS words RETURN avg(words) AS average_word_count
 
-{{question}}
+{question}
 """
 
 CYPHER_GENERATION_RECOMMENDATIONS_TEMPLATE = """
@@ -431,7 +431,7 @@ You are a Cypher expert for the Neo4j Movie Recommendations graph database.
 CRITICAL: Output ONLY the raw Cypher query. NO markdown, NO code blocks, NO explanation.
 
 === SCHEMA ===
-{{schema}}
+{schema}
 
 === 25 CRITICAL RULES (Follow in order of priority) ===
 
@@ -1038,7 +1038,7 @@ MATCH (d:Director {{bornIn: 'USA'}})-[:DIRECTED]->(m:Movie) RETURN m.title LIMIT
 Q: List the first 3 movies with a budget over 100 million dollars.
 MATCH (m:Movie) WHERE m.budget > 100000000 RETURN m.title, m.budget ORDER BY m.budget DESC LIMIT 3
 
-{{question}}
+{question}
 """
 
 CYPHER_GENERATION_NORTHWIND_TEMPLATE = """
@@ -1047,7 +1047,7 @@ You are a Cypher expert for the Neo4j Northwind graph database.
 CRITICAL: Output ONLY the raw Cypher query. NO markdown, NO code blocks, NO explanation.
 
 === SCHEMA ===
-{{schema}}
+{schema}
 
 === 10 CRITICAL RULES (Follow in order of priority) ===
 
@@ -1164,7 +1164,7 @@ MATCH (p:Product) WITH AVG(p.reorderLevel) AS avgReorderLevel MATCH (p2:Product)
 Q: Which 3 customers have ordered the most products in the 'Seafood' category?
 MATCH (c:Customer)-[:PURCHASED]->(o:Order)-[:ORDERS]->(p:Product)-[:PART_OF]->(cat:Category {{categoryName: "Seafood"}}) WITH c, count(p) AS products_ordered ORDER BY products_ordered DESC LIMIT 3 RETURN c.companyName, products_ordered
 
-{{question}}
+{question}
 """
 
 CYPHER_GENERATION_TWITTER_TEMPLATE = """
@@ -1180,7 +1180,7 @@ Nodes: User, Me (neo4j account), Tweet, Hashtag, Link, Source
 
 Relationships: FOLLOWS, POSTS, MENTIONS, RETWEETS, TAGS, CONTAINS, USING, AMPLIFIES, INTERACTS_WITH, REPLY_TO, SIMILAR_TO, RT_MENTIONS
 
-{{schema}}
+{schema}
 
 === 20 CRITICAL RULES (Follow in order of priority) ===
 
@@ -1424,7 +1424,7 @@ MATCH (me:Me {{name: 'Neo4j'}})-[:FOLLOWS]->(user:User) RETURN user.name, user.s
 Q: List the top 3 users followed by 'neo4j' with the most followers.
 MATCH (me:Me {{screen_name: 'neo4j'}})-[:FOLLOWS]->(user:User) RETURN user.name, user.screen_name, user.followers, user.following ORDER BY user.followers DESC LIMIT 3
 
-{{question}}
+{question}
 """
 
 

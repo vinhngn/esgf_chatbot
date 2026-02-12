@@ -10,6 +10,9 @@ import os
 # Ensure project root is in path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+import logging
+import threading
+
 import streamlit as st
 from langchain_core.globals import set_llm_cache
 from langchain_community.cache import InMemoryCache
@@ -21,6 +24,32 @@ from controllers.chat_controller import handle_user_message, handle_feedback, ge
 from services.analytics_service import track
 from views.sidebar import sidebar
 
+logger = logging.getLogger(__name__)
+
+# --- Start Flask API in background thread (once per process) ---
+_flask_launched = False
+
+def _ensure_flask_started():
+    global _flask_launched
+    if _flask_launched:
+        return
+    _flask_launched = True
+
+    _settings = get_settings()
+    _port = _settings.FLASK_PORT
+    _host = _settings.FLASK_HOST
+
+    def _run_flask():
+        from views.flask_api import app
+        logger.info(f"Flask API starting on {_host}:{_port}")
+        app.run(host=_host, port=_port, debug=False, threaded=True)
+
+    flask_thread = threading.Thread(target=_run_flask, daemon=True)
+    flask_thread.start()
+    logger.info(f"Flask API thread launched on {_host}:{_port}")
+
+_ensure_flask_started()
+
 # LangChain caching
 set_llm_cache(InMemoryCache())
 
@@ -30,8 +59,15 @@ if "SESSION_ID" not in st.session_state:
     track("rag_demo", "appStarted", {}, session_id)
 
 # Page layout
+settings = get_settings()
 st.markdown(TITLE, unsafe_allow_html=True)
 sidebar()
+
+# Show Flask API info for debugging
+flask_url = f"{settings.SERVER_URL}:{settings.FLASK_PORT}"
+st.sidebar.markdown("---")
+st.sidebar.caption(f"🔌 Flask API: {flask_url}")
+
 placeholder = st.empty()
 emoji_feedback = st.empty()
 user_placeholder = st.empty()
@@ -56,7 +92,6 @@ with placeholder.container():
             st.markdown(message["content"], unsafe_allow_html=True)
 
 # Free questions check
-settings = get_settings()
 if "FREE_QUESTIONS_REMAINING" not in st.session_state:
     st.session_state["FREE_QUESTIONS_REMAINING"] = settings.FREE_QUESTIONS_PER_SESSION
 

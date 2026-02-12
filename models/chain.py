@@ -1,8 +1,6 @@
 """
 GraphCypherQAChain setup.
 No Streamlit dependency.
-
-FIX: Removed duplicate chain creation that existed in flask_app.py and graph_cypher_chain.py.
 """
 from __future__ import annotations
 
@@ -53,10 +51,7 @@ def get_chain() -> GraphCypherQAChain:
 
 
 def invoke_chain(question: str) -> dict | str:
-    """
-    Invoke the chain with a question. Returns the chain result dict.
-    Handles schema refresh and Cypher cleanup.
-    """
+    """Invoke the chain with a question. Returns chain result dict or error string."""
     maybe_refresh_schema()
     chain = get_chain()
 

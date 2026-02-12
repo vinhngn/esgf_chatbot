@@ -28,6 +28,9 @@ class Settings:
 
     # App
     FREE_QUESTIONS_PER_SESSION: int = int(os.getenv("FREE_QUESTIONS_PER_SESSION", "100"))
+    FLASK_PORT: int = int(os.getenv("FLASK_PORT", "8954"))
+    FLASK_HOST: str = os.getenv("FLASK_HOST", "0.0.0.0")
+    SERVER_URL: str = os.getenv("SERVER_URL", "http://localhost")
 
     # Analytics
     SEGMENT_WRITE_KEY: str = os.getenv("SEGMENT_WRITE_KEY", "")

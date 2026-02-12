@@ -13,7 +13,7 @@ from flask import Flask, jsonify, request
 from config import get_settings
 from controllers.webhook_controller import generate_cypher, get_available_databases
 from models.graph import get_schema_labels, get_schema_relationships
-from services.rag_service import get_results
+from services.rag_service import get_results, get_raw_results
 
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
@@ -21,28 +21,26 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
 @app.post("/api/text2cypher")
 def text2cypher():
-    """Generate Cypher query from natural language (simple webhook mode)."""
+    """Question → Cypher → raw DB results (no LLM formatting)."""
     payload = request.get_json(silent=True) or {}
     question = (payload.get("question") or "").strip()
-    schema = payload.get("schema", "")
-    database = payload.get("database")
 
     if not question:
-        return jsonify({"cypher_query": "", "result": [], "error": "question is required"}), 400
+        return jsonify({"error": "question is required"}), 400
 
-    cypher_query = generate_cypher(question, schema, database)
+    results = get_raw_results(question)
 
     return jsonify({
         "input_question": question,
-        "cypher_query": cypher_query,
-        "result": [],
-        "error": None,
+        "cypher_query": results.get("cypher_query"),
+        "result": results.get("result"),
+        "error": results.get("error"),
     })
 
 
 @app.post("/api/rag")
 def rag_endpoint():
-    """Full RAG pipeline endpoint (triple extraction + chain)."""
+    """Question → Cypher → LLM-formatted response."""
     payload = request.get_json(silent=True) or {}
     question = (payload.get("question") or "").strip()
 
@@ -55,8 +53,6 @@ def rag_endpoint():
         "input_question": question,
         "output": result["output"],
         "cypher_query": result.get("cypher_query", ""),
-        "verified_triples": result.get("verified_triples", []),
-        "instance_triples": result.get("instance_triples", []),
         "error": None,
     })
 
@@ -86,9 +82,11 @@ def health():
 
 if __name__ == "__main__":
     settings = get_settings()
+    port = settings.FLASK_PORT
+    host = settings.FLASK_HOST
     print(f"Text2Cypher Flask API | DB: {settings.database_name}")
-    print("http://127.0.0.1:8000")
-    print("  POST /api/text2cypher - Simple Cypher generation")
-    print("  POST /api/rag         - Full RAG pipeline")
+    print(f"http://{host}:{port}")
+    print("  POST /api/text2cypher - Raw results")
+    print("  POST /api/rag         - LLM formatted")
     print("  GET  /health          - Health check")
-    app.run(host="127.0.0.1", port=8000, debug=False, threaded=True)
+    app.run(host=host, port=port, debug=False, threaded=True)

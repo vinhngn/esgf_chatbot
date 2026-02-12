@@ -59,7 +59,7 @@ def interpret_question(
     system_prompt = (
         "You are a Neo4j graph assistant. Your job is to: \n"
         "1. Rewrite vague or unclear user questions into clear, formal English.\n"
-        "2. Extract **semantic triples** from the clarified question.\n\n"
+        "2. Extract **semantic triples** from the clarified question using Neo4j schema terms.\n\n"
         "Each triple must be in the format: (subject, predicate, object)\n"
         "- Use `?` for the variable being asked about.\n"
         "- Use `UNKNOWN` if an entity isn't specified explicitly.\n\n"
