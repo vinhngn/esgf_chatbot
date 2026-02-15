@@ -1,11 +1,24 @@
 from __future__ import annotations
 
+import json
 import re
 from datetime import date, datetime, time
 
 
+def _is_json_serializable(value) -> bool:
+    """Check if a value can be serialized by json.dumps."""
+    try:
+        json.dumps(value)
+        return True
+    except (TypeError, ValueError, OverflowError):
+        return False
+
+
 def normalize_value(value):
-    """Recursively normalize datetime values to ISO format strings."""
+    if value is None:
+        return value
+    if isinstance(value, (str, int, float, bool)):
+        return value
     if isinstance(value, (datetime, date, time)):
         return value.isoformat()
     if isinstance(value, dict):
@@ -14,6 +27,11 @@ def normalize_value(value):
         return [normalize_value(v) for v in value]
     if isinstance(value, tuple):
         return tuple(normalize_value(v) for v in value)
+    # Neo4j temporal types and any other non-serializable objects → str()
+    if hasattr(value, 'iso_format'):
+        return value.iso_format()
+    if not _is_json_serializable(value):
+        return str(value)
     return value
 
 
