@@ -1,5 +1,6 @@
 """
 RAG pipeline service - core business logic.
+Consolidated: templates + chain invocation + response formatting.
 No Streamlit dependency. No triple extraction.
 """
 from __future__ import annotations
@@ -9,8 +10,12 @@ import urllib.parse
 
 from retry import retry
 
+from config import get_settings
 from models.chain import invoke_chain
 from models.llm import get_main_llm
+from templates.cypher_templates import get_cypher_template
+from templates.entity_definitions import get_entity_definitions
+from templates.match_properties_map import get_match_properties_map
 from utils.helpers import normalize_value
 
 logger = logging.getLogger(__name__)
@@ -40,6 +45,22 @@ def _build_neo4j_link(encoded_query: str | None) -> str:
             f"?preselectAuthMethod=NO_AUTH&cmd=edit&arg={encoded_query})"
         )
     return f"[Open Neo4J]({NEO4J_BROWSER_URL})"
+
+
+def get_database_info() -> dict:
+    """
+    Get current database configuration and templates.
+    Useful for debugging and API responses.
+    """
+    settings = get_settings()
+    db_name = settings.database_name
+    
+    return {
+        "database": db_name,
+        "cypher_template": get_cypher_template(db_name),
+        "entity_definitions": get_entity_definitions(db_name),
+        "match_properties": get_match_properties_map(db_name),
+    }
 
 
 def process_question(
@@ -119,20 +140,73 @@ def get_raw_results(question: str) -> dict:
     """
     Flask API entry point — runs chain and returns raw database results
     without LLM formatting.
+    
+    Returns:
+        dict with keys:
+            - cypher_query: str (the generated Cypher)
+            - result: list (query results as list of dicts, JSON-safe)
+            - error: str or None
     """
     chain_result = invoke_chain(question)
 
     if isinstance(chain_result, dict):
         _, decoded_query = _extract_cypher_queries(chain_result)
-        result = normalize_value(chain_result.get("result")) if chain_result.get("result") else ""
+        raw_result = chain_result.get("result")
         error = chain_result.get("error")
+        
+        # Ensure result is a list of dicts AND normalize Neo4j types
+        if raw_result:
+            # If it's already a list, normalize it
+            if isinstance(raw_result, list):
+                result = normalize_value(raw_result)  
+            # If it's a string representation, try to parse it
+            elif isinstance(raw_result, str):
+                if raw_result.startswith("[") and raw_result.endswith("]"):
+                    try:
+                        import ast
+                        parsed = ast.literal_eval(raw_result)
+                        result = normalize_value(parsed) 
+                    except:
+                        result = []
+                else:
+                    result = []
+            else:
+                # Other types - try to normalize
+                result = normalize_value(raw_result) if raw_result else []
+                # Ensure it's a list
+                if not isinstance(result, list):
+                    result = []
+        else:
+            result = []
     else:
+        # Chain returned error string
         decoded_query = ""
-        result = chain_result
-        error = None
+        result = []
+        error = str(chain_result) if chain_result else None
 
     return {
         "cypher_query": decoded_query or "",
         "result": result,
         "error": error,
+    }
+
+
+def get_available_databases() -> list[str]:
+    """Get list of supported databases from templates."""
+    from templates.cypher_templates import _TEMPLATE_MAP
+    return list(_TEMPLATE_MAP.keys())
+
+
+def get_schema_info(database: str | None = None) -> dict:
+    """
+    Get schema information for a specific database.
+    Includes templates, entity definitions, and property mappings.
+    """
+    db = database or get_settings().database_name
+    
+    return {
+        "database": db,
+        "entity_definitions": get_entity_definitions(db),
+        "match_properties": get_match_properties_map(db),
+        "has_cypher_template": db in get_available_databases(),
     }

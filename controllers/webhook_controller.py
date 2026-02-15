@@ -1,8 +1,6 @@
 """
-Webhook controller - handles Flask API requests.
-No Streamlit dependency. Uses config for API key.
-
-FIX: No more hardcoded API key.
+Webhook controller - DEPRECATED, use rag_service instead.
+Kept for backward compatibility only.
 """
 from __future__ import annotations
 
@@ -12,7 +10,7 @@ import re
 from openai import OpenAI
 
 from config import get_settings
-from templates.cypher_templates import get_cypher_template, _TEMPLATE_MAP
+from templates.cypher_templates import get_cypher_template
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +20,12 @@ def _get_openai_client() -> OpenAI:
 
 
 def generate_cypher(question: str, schema: str, database: str | None = None) -> str:
-    """Generate Cypher query using OpenAI with the appropriate template."""
+    """
+    Generate Cypher query using OpenAI with the appropriate template.
+    
+    DEPRECATED: Use rag_service.get_raw_results() instead for better results.
+    This is a simple direct OpenAI call without RAG pipeline.
+    """
     settings = get_settings()
     db = database or settings.database_name
     template = get_cypher_template(db)
@@ -51,7 +54,3 @@ def generate_cypher(question: str, schema: str, database: str | None = None) -> 
     except Exception as e:
         logger.error(f"OpenAI error: {e}")
         return ""
-
-
-def get_available_databases() -> list[str]:
-    return list(_TEMPLATE_MAP.keys())
