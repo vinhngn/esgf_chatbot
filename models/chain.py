@@ -7,7 +7,7 @@ from __future__ import annotations
 import logging
 import urllib.parse
 
-from langchain_classic.chains import GraphCypherQAChain
+from langchain_community.chains.graph_qa.cypher import GraphCypherQAChain
 from langchain_core.prompts import PromptTemplate
 
 from config import get_settings
