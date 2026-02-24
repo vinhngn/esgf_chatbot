@@ -2,10 +2,11 @@
 Streamlit main app - View layer only.
 All business logic is in controllers/services.
 """
+
 from __future__ import annotations
 
-import sys
 import os
+import sys
 
 # Ensure project root is in path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -14,20 +15,25 @@ import logging
 import threading
 
 import streamlit as st
-from langchain_core.globals import set_llm_cache
-from langchain_community.cache import InMemoryCache
-from streamlit_feedback import streamlit_feedback
-
 from config import get_settings
 from constants import TITLE
-from controllers.chat_controller import handle_user_message, handle_feedback, get_session_id
+from controllers.chat_controller import (
+    get_session_id,
+    handle_feedback,
+    handle_user_message,
+)
+from langchain_community.cache import InMemoryCache
+from langchain_core.globals import set_llm_cache
 from services.analytics_service import track
+from streamlit_feedback import streamlit_feedback
+
 from views.sidebar import sidebar
 
 logger = logging.getLogger(__name__)
 
 # --- Start Flask API in background thread (once per process) ---
 _flask_launched = False
+
 
 def _ensure_flask_started():
     global _flask_launched
@@ -40,13 +46,25 @@ def _ensure_flask_started():
     _host = _settings.FLASK_HOST
 
     def _run_flask():
-        from views.flask_api import app
-        logger.info(f"Flask API starting on {_host}:{_port}")
-        app.run(host=_host, port=_port, debug=False, threaded=True)
+        try:
+            from views.flask_api import app
 
-    flask_thread = threading.Thread(target=_run_flask, daemon=True)
+            logger.info("Flask API starting on %s:%s", _host, _port)
+            app.run(host=_host, port=_port, debug=False, threaded=True)
+        except OSError as e:
+            logger.error(
+                "Flask API failed to start on %s:%s — port may already be in use. Error: %s",
+                _host,
+                _port,
+                e,
+            )
+        except Exception as e:
+            logger.error("Flask API unexpected error: %s", e)
+
+    flask_thread = threading.Thread(target=_run_flask, daemon=True, name="flask-api")
     flask_thread.start()
-    logger.info(f"Flask API thread launched on {_host}:{_port}")
+    logger.info("Flask API thread launched on %s:%s", _host, _port)
+
 
 _ensure_flask_started()
 
@@ -63,10 +81,10 @@ settings = get_settings()
 st.markdown(TITLE, unsafe_allow_html=True)
 sidebar()
 
-# Show Flask API info for debugging
+# Show Flask API info in sidebar
 flask_url = f"{settings.SERVER_URL}:{settings.FLASK_PORT}"
 st.sidebar.markdown("---")
-st.sidebar.caption(f"🔌 Flask API: {flask_url}")
+st.sidebar.caption(f"Flask API: {flask_url}")
 
 placeholder = st.empty()
 emoji_feedback = st.empty()
@@ -112,14 +130,38 @@ if user_input:
             st.markdown(user_input)
 
         with st.chat_message("ai"):
-            with st.spinner("..."):
+            with st.spinner("Thinking..."):
                 result = handle_user_message(user_input)
                 content = result["output"]
 
-                # Show generated Cypher if available
+                # --- Debug expander: triple extraction pipeline ---
+                rewritten = result.get("rewritten", "")
+                verified_triples = result.get("verified_triples", [])
+                instance_triples = result.get("instance_triples", [])
                 cypher = result.get("cypher_query", "")
-                if cypher:
-                    st.code(cypher, language="cypher")
+
+                with st.expander("Pipeline debug", expanded=False):
+                    st.markdown(f"**Rewritten question:** {rewritten or '—'}")
+
+                    if verified_triples:
+                        st.markdown("**Verified triples:**")
+                        for s, p, o in verified_triples:
+                            st.markdown(f"- `({s}, {p}, {o})`")
+                    else:
+                        st.markdown("**Verified triples:** —")
+
+                    if instance_triples:
+                        st.markdown("**Instance triples:**")
+                        for s, p, o in instance_triples:
+                            st.markdown(f"- `({s}, {p}, {o})`")
+                    else:
+                        st.markdown("**Instance triples:** —")
+
+                    if cypher:
+                        st.markdown("**Generated Cypher:**")
+                        st.code(cypher, language="cypher")
+                    else:
+                        st.markdown("**Generated Cypher:** —")
 
                 st.session_state.messages.append({"role": "ai", "content": content})
                 st.session_state["FREE_QUESTIONS_REMAINING"] -= 1

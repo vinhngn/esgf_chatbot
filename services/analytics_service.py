@@ -1,7 +1,9 @@
 """
 Analytics service - decoupled from Streamlit.
 Session ID is passed in, not read from st.session_state.
+FIX: properties dict is no longer mutated in-place (caller's dict is safe).
 """
+
 from __future__ import annotations
 
 import logging
@@ -26,6 +28,7 @@ def _init_analytics() -> None:
     if key:
         try:
             from segment import analytics
+
             analytics.write_key = key
             _analytics_enabled = True
         except ImportError:
@@ -38,15 +41,23 @@ def generate_session_id() -> str:
     return str(uuid.uuid4())
 
 
-def track(user_id: str, event_name: str, properties: dict, session_id: str = "") -> None:
-    """Track an analytics event."""
+def track(
+    user_id: str, event_name: str, properties: dict, session_id: str = ""
+) -> None:
+    """
+    Track an analytics event.
+    Creates a copy of properties so the caller's dict is never mutated.
+    """
     _init_analytics()
     if not _analytics_enabled:
         return
 
-    properties["session_id"] = session_id
+    # Copy to avoid mutating the caller's dict
+    payload = {**properties, "session_id": session_id}
+
     try:
         from segment import analytics
-        analytics.track(user_id=user_id, event=event_name, properties=properties)
+
+        analytics.track(user_id=user_id, event=event_name, properties=payload)
     except Exception as e:
-        logger.warning(f"Analytics tracking failed: {e}")
+        logger.warning("Analytics tracking failed: %s", e)

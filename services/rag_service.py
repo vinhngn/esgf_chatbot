@@ -1,22 +1,33 @@
 """
 RAG pipeline service - core business logic.
-Consolidated: templates + chain invocation + response formatting.
-No Streamlit dependency. No triple extraction.
+Restored: triple extraction + verification + enhanced question building.
+No Streamlit dependency.
+
+_run_pipeline() is the single shared core:
+  1. extract_triples_with_retry()  → rewritten, verified_triples, instance_triples
+  2. build_enhanced_question()     → enriched query string
+  3. invoke_chain()                → raw chain result dict
+
+process_question()  calls _run_pipeline() then adds LLM-formatted response.
+get_raw_results()   calls _run_pipeline() then returns raw DB result only.
 """
+
 from __future__ import annotations
 
 import logging
 import urllib.parse
 
-from retry import retry
-
 from config import get_settings
 from models.chain import invoke_chain
-from models.llm import get_main_llm
+from models.graph import get_graph, get_schema_labels, get_schema_relationships
+from models.llm import get_interpreter_llm, get_main_llm
+from retry import retry
 from templates.cypher_templates import get_cypher_template
 from templates.entity_definitions import get_entity_definitions
 from templates.match_properties_map import get_match_properties_map
 from utils.helpers import normalize_value
+
+from services.triple_service import build_enhanced_question, extract_triples_with_retry
 
 logger = logging.getLogger(__name__)
 
@@ -24,8 +35,13 @@ logger = logging.getLogger(__name__)
 NEO4J_BROWSER_URL = "https://neoforjcmip.templeuni.com/browser/"
 
 
+# ---------------------------------------------------------------------------
+# Internal helpers
+# ---------------------------------------------------------------------------
+
+
 def _extract_cypher_queries(chain_result: dict) -> tuple[str | None, str | None]:
-    """Extract encoded and decoded Cypher queries from chain result."""
+    """Extract the (encoded, decoded) Cypher query from intermediate_steps."""
     steps = chain_result.get("intermediate_steps", [])
     if not isinstance(steps, list):
         return None, None
@@ -38,7 +54,7 @@ def _extract_cypher_queries(chain_result: dict) -> tuple[str | None, str | None]
 
 
 def _build_neo4j_link(encoded_query: str | None) -> str:
-    """Build Neo4j Browser link with optional pre-filled query."""
+    """Build a Neo4j Browser link with the query pre-filled (if available)."""
     if encoded_query:
         return (
             f"[Open Neo4J]({NEO4J_BROWSER_URL}"
@@ -47,20 +63,93 @@ def _build_neo4j_link(encoded_query: str | None) -> str:
     return f"[Open Neo4J]({NEO4J_BROWSER_URL})"
 
 
-def get_database_info() -> dict:
+def _is_empty_result(result) -> bool:
+    """Return True when the chain produced no usable result."""
+    if not result:
+        return True
+    if isinstance(result, str) and result.strip() in ("", "No results found."):
+        return True
+    if isinstance(result, list) and len(result) == 0:
+        return True
+    return False
+
+
+# ---------------------------------------------------------------------------
+# Core shared pipeline (steps 1-3)
+# ---------------------------------------------------------------------------
+
+
+def _run_pipeline(
+    question: str,
+    conversation_history: list[dict[str, str]],
+) -> dict:
     """
-    Get current database configuration and templates.
-    Useful for debugging and API responses.
+    Run the shared RAG pipeline steps 1–3:
+
+      1. Triple extraction with retry  (interpreter LLM + Neo4j verification)
+      2. Build enhanced question        (original + rewritten + triples)
+      3. Invoke Cypher chain            (GraphCypherQAChain → Neo4j)
+
+    Returns a dict with keys:
+        rewritten          : str
+        verified_triples   : list[tuple[str,str,str]]
+        instance_triples   : list[tuple[str,str,str]]
+        chain_result       : dict | str   (raw chain output)
+        encoded_query      : str | None
+        decoded_query      : str | None
     """
-    settings = get_settings()
-    db_name = settings.database_name
-    
+    db_name = get_settings().database_name
+    interpreter_llm = get_interpreter_llm()
+    graph = get_graph()
+    schema_labels = get_schema_labels()
+    schema_relationships = get_schema_relationships()
+
+    # --- Step 1: Triple extraction with retry ---
+    rewritten, verified_triples, instance_triples = extract_triples_with_retry(
+        question=question,
+        interpreter_llm=interpreter_llm,
+        schema_labels=schema_labels,
+        schema_relationships=schema_relationships,
+        graph=graph,
+        database=db_name,
+        conversation_history=conversation_history,
+    )
+
+    logger.info("[RAGService] rewritten=%r", rewritten)
+    logger.info("[RAGService] verified_triples=%s", verified_triples)
+    logger.info("[RAGService] instance_triples=%s", instance_triples)
+
+    # --- Step 2: Build enriched question ---
+    enhanced_question = build_enhanced_question(
+        question=question,
+        rewritten=rewritten,
+        verified_triples=verified_triples,
+        instance_triples=instance_triples,
+        conversation_history=conversation_history,
+    )
+
+    # --- Step 3: Invoke chain ---
+    chain_result = invoke_chain(enhanced_question)
+
+    encoded_query, decoded_query = (
+        _extract_cypher_queries(chain_result)
+        if isinstance(chain_result, dict)
+        else (None, None)
+    )
+
     return {
-        "database": db_name,
-        "cypher_template": get_cypher_template(db_name),
-        "entity_definitions": get_entity_definitions(db_name),
-        "match_properties": get_match_properties_map(db_name),
+        "rewritten": rewritten,
+        "verified_triples": verified_triples,
+        "instance_triples": instance_triples,
+        "chain_result": chain_result,
+        "encoded_query": encoded_query,
+        "decoded_query": decoded_query,
     }
+
+
+# ---------------------------------------------------------------------------
+# Public API
+# ---------------------------------------------------------------------------
 
 
 def process_question(
@@ -68,54 +157,65 @@ def process_question(
     conversation_history: list[dict[str, str]] | None = None,
 ) -> dict:
     """
-    RAG pipeline: question → Cypher chain → LLM-formatted response.
-    Returns dict with keys: input, output, cypher_query.
+    Full RAG pipeline → LLM-formatted final response.
+
+    Steps:
+      1-3. _run_pipeline()
+      4.   Format the DB result with the main LLM.
+
+    Returns dict with keys:
+        input, output, cypher_query, rewritten, verified_triples, instance_triples
     """
     conversation_history = conversation_history or []
     main_llm = get_main_llm()
 
+    pipe = _run_pipeline(question, conversation_history)
+    chain_result = pipe["chain_result"]
+    encoded_query = pipe["encoded_query"]
+    decoded_query = pipe["decoded_query"]
+    rewritten = pipe["rewritten"]
+    verified_triples = pipe["verified_triples"]
+    instance_triples = pipe["instance_triples"]
+
+    neo4j_link = _build_neo4j_link(encoded_query)
+
+    # Handle chain error string
+    if isinstance(chain_result, str):
+        return {
+            "input": question,
+            "output": chain_result,
+            "cypher_query": "",
+            "rewritten": rewritten,
+            "verified_triples": verified_triples,
+            "instance_triples": instance_triples,
+        }
+
+    # Normalize Neo4j result
+    raw_result = normalize_value(chain_result.get("result"))
+
+    # --- Step 4: LLM-formatted response ---
     conversation_text = "\n".join(
         f"User: {msg['input']}\nBot: {msg['output']}"
         for msg in conversation_history[-3:]
     )
 
-    # Invoke chain directly
-    chain_result = invoke_chain(question)
-
-    # Handle string error responses
-    if isinstance(chain_result, str):
-        return {"input": question, "output": chain_result, "cypher_query": ""}
-
-    encoded_query, decoded_query = _extract_cypher_queries(chain_result)
-    neo4j_link = _build_neo4j_link(encoded_query)
-
-    chain_result["result"] = normalize_value(chain_result.get("result"))
-    result_only = chain_result.get("result") or chain_result.get("error") or "No results found."
-
-    # Generate final response with LLM
-    if not result_only or result_only == "No results found.":
+    if _is_empty_result(raw_result):
         final_response = (
-            f"It appears that there are no results for your question "
+            "It appears that there are no results for your question "
             f"in the database. Please click here to access the knowledge graph: {neo4j_link}"
         )
     else:
-        final_prompt = f"""
-Based on the conversation and the user question, provide a relevant and helpful response.
-
-Conversation:
-{conversation_text}
-
-Current question: {question}
-
-Here is the output from the database:
-{result_only}
-
-Please process the output and answer the user question clearly.
-Always end your answer with the exact phrase:
-"Please click here to access the knowledge graph: [[button_query]]"
-Do not use any other wording for the link.
-""".strip()
-
+        final_prompt = (
+            "Based on the conversation and the user question, provide a relevant and helpful response.\n\n"
+            f"Conversation:\n{conversation_text}\n\n"
+            f"Current question: {question}\n"
+            f"Rewritten question: {rewritten or question}\n\n"
+            f"Here is the output from the database:\n{raw_result}\n\n"
+            "Please process the output and answer the user question clearly.\n"
+            "Always end your answer with the exact phrase:\n"
+            '"Please click here to access the knowledge graph: [[button_query]]"\n'
+            "Do not use any other wording for the link."
+        )
         final_response = main_llm.invoke(final_prompt).content.strip()
         final_response = final_response.replace("[[button_query]]", neo4j_link)
 
@@ -123,6 +223,9 @@ Do not use any other wording for the link.
         "input": question,
         "output": final_response,
         "cypher_query": decoded_query or "",
+        "rewritten": rewritten,
+        "verified_triples": verified_triples,
+        "instance_triples": instance_triples,
     }
 
 
@@ -138,48 +241,49 @@ def get_results(
 @retry(tries=2, delay=10)
 def get_raw_results(question: str) -> dict:
     """
-    Flask API entry point — runs chain and returns raw database results
-    without LLM formatting.
-    
-    Returns:
-        dict with keys:
-            - cypher_query: str (the generated Cypher)
-            - result: list (query results as list of dicts, JSON-safe)
-            - error: str or None
+    Flask / T2C evaluation entry point.
+    Runs the full pipeline (triple extraction → chain) but skips LLM formatting.
+
+    Returns dict with keys:
+        cypher_query     : str
+        result           : list  (JSON-safe, normalised)
+        error            : str | None
+        rewritten        : str
+        verified_triples : list[list[str]]
+        instance_triples : list[list[str]]
     """
-    chain_result = invoke_chain(question)
+    pipe = _run_pipeline(question, conversation_history=[])
+    chain_result = pipe["chain_result"]
+    decoded_query = pipe["decoded_query"]
+    rewritten = pipe["rewritten"]
+    verified_triples = pipe["verified_triples"]
+    instance_triples = pipe["instance_triples"]
 
     if isinstance(chain_result, dict):
-        _, decoded_query = _extract_cypher_queries(chain_result)
         raw_result = chain_result.get("result")
         error = chain_result.get("error")
-        
-        # Ensure result is a list of dicts AND normalize Neo4j types
+
         if raw_result:
-            # If it's already a list, normalize it
             if isinstance(raw_result, list):
-                result = normalize_value(raw_result)  
-            # If it's a string representation, try to parse it
+                result: list = normalize_value(raw_result)
             elif isinstance(raw_result, str):
                 if raw_result.startswith("[") and raw_result.endswith("]"):
                     try:
                         import ast
+
                         parsed = ast.literal_eval(raw_result)
-                        result = normalize_value(parsed) 
-                    except:
+                        result = normalize_value(parsed)
+                    except Exception:
                         result = []
                 else:
                     result = []
             else:
-                # Other types - try to normalize
-                result = normalize_value(raw_result) if raw_result else []
-                # Ensure it's a list
-                if not isinstance(result, list):
-                    result = []
+                normalised = normalize_value(raw_result)
+                result = normalised if isinstance(normalised, list) else []
         else:
             result = []
     else:
-        # Chain returned error string
+        # chain_result is an error string
         decoded_query = ""
         result = []
         error = str(chain_result) if chain_result else None
@@ -188,22 +292,39 @@ def get_raw_results(question: str) -> dict:
         "cypher_query": decoded_query or "",
         "result": result,
         "error": error,
+        "rewritten": rewritten,
+        "verified_triples": [list(t) for t in verified_triples],
+        "instance_triples": [list(t) for t in instance_triples],
     }
 
 
+# ---------------------------------------------------------------------------
+# Info / schema helpers (used by Flask endpoints)
+# ---------------------------------------------------------------------------
+
+
 def get_available_databases() -> list[str]:
-    """Get list of supported databases from templates."""
+    """Return the list of databases that have a Cypher template."""
     from templates.cypher_templates import _TEMPLATE_MAP
+
     return list(_TEMPLATE_MAP.keys())
 
 
+def get_database_info() -> dict:
+    """Return current database config + template info (for debugging)."""
+    settings = get_settings()
+    db_name = settings.database_name
+    return {
+        "database": db_name,
+        "cypher_template": get_cypher_template(db_name),
+        "entity_definitions": get_entity_definitions(db_name),
+        "match_properties": get_match_properties_map(db_name),
+    }
+
+
 def get_schema_info(database: str | None = None) -> dict:
-    """
-    Get schema information for a specific database.
-    Includes templates, entity definitions, and property mappings.
-    """
+    """Return schema info (entity defs + property map) for a given database."""
     db = database or get_settings().database_name
-    
     return {
         "database": db,
         "entity_definitions": get_entity_definitions(db),

@@ -1,10 +1,13 @@
+"""
+Sidebar view - sample questions per database + schema images.
+No business logic here.
+"""
+
 from __future__ import annotations
 
 import os
 
 import streamlit as st
-import streamlit.components.v1 as components
-
 from config import get_settings
 from constants import LANGCHAIN_IMG_PATH
 
@@ -50,9 +53,47 @@ def sidebar():
                 "Who does neo4j interact with most frequently?",
                 "List the top 5 tweets with the most favorites",
                 "Find users who have retweeted tweets mentioning Neo4j",
-                "What is the average number of followers for users who follow neo4j?"
+                "What is the average number of followers for users who follow neo4j?",
             ]
+
+        elif database == "movies":
+            sample_questions = [
+                "Show all movies released after 2000",
+                "Who directed The Matrix?",
+                "List all actors who appeared in Cloud Atlas",
+                "Which movies did Tom Hanks act in?",
+                "Show the top 5 movies with the most votes",
+                "Who wrote the screenplay for V for Vendetta?",
+                "List all movies that Keanu Reeves acted in",
+                "Which directors have made more than 3 movies in the database?",
+            ]
+
+        elif database == "recommendations":
+            sample_questions = [
+                "Show the top 10 highest rated movies",
+                "Which movies are in the Action genre?",
+                "List all movies directed by Christopher Nolan",
+                "What movies has user 1 rated?",
+                "Show movies with a rating above 8.5",
+                "Which actors appeared in Inception?",
+                "List the top 5 movies by revenue",
+                "What genres does the movie Interstellar belong to?",
+            ]
+
+        elif database == "northwind":
+            sample_questions = [
+                "List all products in the Beverages category",
+                "Which suppliers are from Germany?",
+                "Show the top 5 most expensive products",
+                "Which customers have placed more than 10 orders?",
+                "List all products that are discontinued",
+                "Which supplier provides the most products?",
+                "Show all orders shipped to France",
+                "What is the total number of products per category?",
+            ]
+
         else:
+            # Default: climate database
             sample_questions = [
                 "Show regional climate models that predict precipitation over Florida, USA",
                 "Show the components, shared models, and realm for ACCESS models",

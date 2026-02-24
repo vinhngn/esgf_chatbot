@@ -2,6 +2,7 @@
 Centralized configuration - single source of truth.
 Reads from .env file, no more scattered secrets.toml files.
 """
+
 from __future__ import annotations
 
 import os
@@ -27,7 +28,9 @@ class Settings:
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
 
     # App
-    FREE_QUESTIONS_PER_SESSION: int = int(os.getenv("FREE_QUESTIONS_PER_SESSION", "100"))
+    FREE_QUESTIONS_PER_SESSION: int = int(
+        os.getenv("FREE_QUESTIONS_PER_SESSION", "100")
+    )
     FLASK_PORT: int = int(os.getenv("FLASK_PORT", "8954"))
     FLASK_HOST: str = os.getenv("FLASK_HOST", "0.0.0.0")
     SERVER_URL: str = os.getenv("SERVER_URL", "http://localhost")
