@@ -1,97 +1,86 @@
 """
-Match properties map per database type.
-FIX: Added default fallback so match_properties_map is always defined.
+Auto-generated match properties map for instance verification.
+
+Previous version: hardcoded property maps for each database.
+New version: dynamically derived from schema JSON using SchemaGraph's
+             primary-search-property detection algorithm.
+
+Public API (unchanged):
+    get_match_properties_map(db_name) -> dict
 """
+
+from __future__ import annotations
+
+import logging
 from config import get_settings
+from templates.schema_loader import load_schema
+from templates.schema_graph import build_schema_graph
 
-match_climate_properties_map = {
-    "Experiment": ["name", "experiment_title", "names"],
-    "SubExperiment": ["name", "names"],
-    "Activity": ["name", "names"],
-    "Realm": ["name", "names"],
-    "Country": ["name", "iso", "iso3", "country", "fips"],
-    "Project": ["name", "names"],
-    "Variable": ["name", "cf_standard_name", "variable_long_name", "names"],
-    "Forcing": ["name", "names"],
-    "Institute": ["name", "names"],
-    "ExperimentFamily": ["name", "names"],
-    "Frequency": ["name", "names"],
-    "GridLabel": ["name", "names"],
-    "Member": ["name", "names"],
-    "MIPEra": ["name", "names"],
-    "Resolution": ["name", "names"],
-    "Source": ["name", "names"],
-    "SourceType": ["name", "names"],
-    "Ensemble": ["name", "names"],
-    "Domain": ["name", "names"],
-    "RCM": ["name", "names", "rcm_version"],
-    "Continent": ["name", "iso"],
-    "Water_Bodies": ["name", "Name"],
-    "City": ["name", "asciiname", "alternatenames"],
-    "No_Country_Region": ["name", "asciiname", "alternatenames"],
-    "Country_Subdivision": ["name", "code", "asciiname"],
-    "SourceComponent": ["name"],
-}
+logger = logging.getLogger(__name__)
 
-match_movies_properties_map = {
-    "Movie": ["title", "tagline", "released", "votes"],
-    "Person": ["name", "born"],
-}
+_cache: dict[str, dict] = {}
 
-match_recommendations_properties_map = {
-    "Movie": ["title", "year", "released", "runtime", "budget", "revenue",
-              "imdbRating", "imdbVotes", "imdbId", "tmdbId", "countries",
-              "languages", "plot", "plotEmbedding", "posterEmbedding",
-              "poster", "movieId", "url"],
-    "Genre": ["name"],
-    "User": ["userId", "name"],
-    "Actor": ["name", "born", "died", "bornIn", "imdbId", "tmdbId", "url"],
-    "Director": ["name", "bio", "born", "died", "bornIn", "imdbId", "tmdbId", "poster", "url"],
-    "Person": ["name", "born", "died", "bornIn", "imdbId", "tmdbId", "url"],
-}
 
-match_northwind_properties_map = {
-    "Product": ["productName", "quantityPerUnit", "unitsOnOrder", "supplierID",
-                "productID", "discontinued", "categoryID", "reorderLevel",
-                "unitsInStock", "unitPrice"],
-    "Category": ["categoryName", "categoryID", "description", "picture"],
-    "Supplier": ["supplierID", "companyName", "contactName", "contactTitle",
-                 "address", "city", "region", "postalCode", "country",
-                 "phone", "fax", "homePage"],
-    "Customer": ["customerID", "companyName", "contactName", "contactTitle",
-                 "address", "city", "region", "postalCode", "country",
-                 "phone", "fax"],
-    "Order": ["orderID", "orderDate", "requiredDate", "shippedDate",
-              "shipName", "shipAddress", "shipCity", "shipRegion",
-              "shipPostalCode", "shipCountry", "shipVia", "employeeID",
-              "customerID", "freight"],
-}
+def _build_match_properties(db_name: str) -> dict:
+    """
+    Auto-derive the match properties map from schema data.
 
-match_twitter_properties_map = {
-    "User": ["name", "screen_name", "url", "location", "profile_image_url",
-             "followers", "following", "betweenness"],
-    "Me": ["name", "screen_name", "url", "location", "profile_image_url",
-           "followers", "following", "betweenness"],
-    "Tweet": ["id", "id_str", "text", "created_at", "favorites", "import_method"],
-    "Hashtag": ["name"],
-    "Link": ["url"],
-    "Source": ["name"],
-}
+    For each node label, determine which properties to search when
+    verifying entity instances in the database.
 
-_PROPERTIES_MAP = {
-    "climate": match_climate_properties_map,
-    "movies": match_movies_properties_map,
-    "recommendations": match_recommendations_properties_map,
-    "northwind": match_northwind_properties_map,
-    "twitter": match_twitter_properties_map,
-}
+    Algorithm:
+      1. Use SchemaGraph.get_primary_search_property() for primary field
+         (uses priority: name > title > screen_name > first String prop)
+      2. Add all mandatory String properties as secondary search fields
+      3. Result: {label: [prop1, prop2, ...]}
+    """
+    schema_data = load_schema(db_name)
+    if not schema_data:
+        return {}
+
+    graph = build_schema_graph(schema_data)
+    match_map: dict[str, list[str]] = {}
+
+    for label in graph.node_labels:
+        props = graph.get_node_properties(label)
+        primary = graph.get_primary_search_property(label)
+
+        search_props: list[str] = []
+
+        # Primary search property first
+        if primary:
+            search_props.append(primary)
+
+        # Add other mandatory String properties as secondary
+        for p in props:
+            pname = p["property"]
+            types = p.get("types", [])
+            if pname in search_props:
+                continue
+            if "String" in types and p.get("mandatory", False):
+                search_props.append(pname)
+
+        # Cap at 3 search properties per label (performance)
+        match_map[label] = search_props[:3]
+
+    logger.info(
+        "[MatchProperties] Built map for '%s': %d labels",
+        db_name,
+        len(match_map),
+    )
+    return match_map
 
 
 def get_match_properties_map(db_name: str | None = None) -> dict:
-    """Get match properties map for the given database (or current config)."""
+    """
+    Get the match properties map for the given database.
+    Unchanged signature -- drop-in replacement.
+    """
     db = db_name or get_settings().database_name
-    return _PROPERTIES_MAP.get(db, match_climate_properties_map)
+    if db not in _cache:
+        _cache[db] = _build_match_properties(db)
+    return _cache[db]
 
 
-# Module-level convenience
+# Module-level default (backward compat)
 match_properties_map = get_match_properties_map()

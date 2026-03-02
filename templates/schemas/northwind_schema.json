@@ -1,0 +1,889 @@
+{
+  "database": "northwind",
+  "node_labels": [
+    "Category",
+    "Customer",
+    "Order",
+    "Product",
+    "Supplier"
+  ],
+  "relationship_types": [
+    "ORDERS",
+    "PART_OF",
+    "PURCHASED",
+    "SUPPLIES"
+  ],
+  "node_properties": {
+    "Category": [
+      {
+        "property": "categoryID",
+        "types": [
+          "String"
+        ],
+        "mandatory": true
+      },
+      {
+        "property": "categoryName",
+        "types": [
+          "String"
+        ],
+        "mandatory": true
+      },
+      {
+        "property": "description",
+        "types": [
+          "String"
+        ],
+        "mandatory": true
+      },
+      {
+        "property": "picture",
+        "types": [
+          "String"
+        ],
+        "mandatory": true
+      }
+    ],
+    "Customer": [
+      {
+        "property": "address",
+        "types": [
+          "String"
+        ],
+        "mandatory": true
+      },
+      {
+        "property": "city",
+        "types": [
+          "String"
+        ],
+        "mandatory": true
+      },
+      {
+        "property": "companyName",
+        "types": [
+          "String"
+        ],
+        "mandatory": true
+      },
+      {
+        "property": "contactName",
+        "types": [
+          "String"
+        ],
+        "mandatory": true
+      },
+      {
+        "property": "contactTitle",
+        "types": [
+          "String"
+        ],
+        "mandatory": true
+      },
+      {
+        "property": "country",
+        "types": [
+          "String"
+        ],
+        "mandatory": true
+      },
+      {
+        "property": "customerID",
+        "types": [
+          "String"
+        ],
+        "mandatory": true
+      },
+      {
+        "property": "fax",
+        "types": [
+          "String"
+        ],
+        "mandatory": true
+      },
+      {
+        "property": "phone",
+        "types": [
+          "String"
+        ],
+        "mandatory": true
+      },
+      {
+        "property": "postalCode",
+        "types": [
+          "String"
+        ],
+        "mandatory": true
+      },
+      {
+        "property": "region",
+        "types": [
+          "String"
+        ],
+        "mandatory": true
+      }
+    ],
+    "Order": [
+      {
+        "property": "customerID",
+        "types": [
+          "String"
+        ],
+        "mandatory": true
+      },
+      {
+        "property": "employeeID",
+        "types": [
+          "String"
+        ],
+        "mandatory": true
+      },
+      {
+        "property": "freight",
+        "types": [
+          "String"
+        ],
+        "mandatory": true
+      },
+      {
+        "property": "orderDate",
+        "types": [
+          "String"
+        ],
+        "mandatory": true
+      },
+      {
+        "property": "orderID",
+        "types": [
+          "String"
+        ],
+        "mandatory": true
+      },
+      {
+        "property": "requiredDate",
+        "types": [
+          "String"
+        ],
+        "mandatory": true
+      },
+      {
+        "property": "shipAddress",
+        "types": [
+          "String"
+        ],
+        "mandatory": true
+      },
+      {
+        "property": "shipCity",
+        "types": [
+          "String"
+        ],
+        "mandatory": true
+      },
+      {
+        "property": "shipCountry",
+        "types": [
+          "String"
+        ],
+        "mandatory": true
+      },
+      {
+        "property": "shipName",
+        "types": [
+          "String"
+        ],
+        "mandatory": true
+      },
+      {
+        "property": "shipPostalCode",
+        "types": [
+          "String"
+        ],
+        "mandatory": true
+      },
+      {
+        "property": "shipRegion",
+        "types": [
+          "String"
+        ],
+        "mandatory": true
+      },
+      {
+        "property": "shipVia",
+        "types": [
+          "String"
+        ],
+        "mandatory": true
+      },
+      {
+        "property": "shippedDate",
+        "types": [
+          "String"
+        ],
+        "mandatory": true
+      }
+    ],
+    "Product": [
+      {
+        "property": "categoryID",
+        "types": [
+          "String"
+        ],
+        "mandatory": true
+      },
+      {
+        "property": "discontinued",
+        "types": [
+          "Boolean"
+        ],
+        "mandatory": true
+      },
+      {
+        "property": "productID",
+        "types": [
+          "String"
+        ],
+        "mandatory": true
+      },
+      {
+        "property": "productName",
+        "types": [
+          "String"
+        ],
+        "mandatory": true
+      },
+      {
+        "property": "quantityPerUnit",
+        "types": [
+          "String"
+        ],
+        "mandatory": true
+      },
+      {
+        "property": "reorderLevel",
+        "types": [
+          "Long"
+        ],
+        "mandatory": true
+      },
+      {
+        "property": "supplierID",
+        "types": [
+          "String"
+        ],
+        "mandatory": true
+      },
+      {
+        "property": "unitPrice",
+        "types": [
+          "Double"
+        ],
+        "mandatory": true
+      },
+      {
+        "property": "unitsInStock",
+        "types": [
+          "Long"
+        ],
+        "mandatory": true
+      },
+      {
+        "property": "unitsOnOrder",
+        "types": [
+          "Long"
+        ],
+        "mandatory": true
+      }
+    ],
+    "Supplier": [
+      {
+        "property": "address",
+        "types": [
+          "String"
+        ],
+        "mandatory": true
+      },
+      {
+        "property": "city",
+        "types": [
+          "String"
+        ],
+        "mandatory": true
+      },
+      {
+        "property": "companyName",
+        "types": [
+          "String"
+        ],
+        "mandatory": true
+      },
+      {
+        "property": "contactName",
+        "types": [
+          "String"
+        ],
+        "mandatory": true
+      },
+      {
+        "property": "contactTitle",
+        "types": [
+          "String"
+        ],
+        "mandatory": true
+      },
+      {
+        "property": "country",
+        "types": [
+          "String"
+        ],
+        "mandatory": true
+      },
+      {
+        "property": "fax",
+        "types": [
+          "String"
+        ],
+        "mandatory": true
+      },
+      {
+        "property": "homePage",
+        "types": [
+          "String"
+        ],
+        "mandatory": true
+      },
+      {
+        "property": "phone",
+        "types": [
+          "String"
+        ],
+        "mandatory": true
+      },
+      {
+        "property": "postalCode",
+        "types": [
+          "String"
+        ],
+        "mandatory": true
+      },
+      {
+        "property": "region",
+        "types": [
+          "String"
+        ],
+        "mandatory": true
+      },
+      {
+        "property": "supplierID",
+        "types": [
+          "String"
+        ],
+        "mandatory": true
+      }
+    ]
+  },
+  "relationship_properties": {
+    "ORDERS": [
+      {
+        "property": "discount",
+        "types": [
+          "String"
+        ],
+        "mandatory": true
+      },
+      {
+        "property": "orderID",
+        "types": [
+          "String"
+        ],
+        "mandatory": true
+      },
+      {
+        "property": "productID",
+        "types": [
+          "String"
+        ],
+        "mandatory": true
+      },
+      {
+        "property": "quantity",
+        "types": [
+          "Long"
+        ],
+        "mandatory": true
+      },
+      {
+        "property": "unitPrice",
+        "types": [
+          "String"
+        ],
+        "mandatory": true
+      }
+    ],
+    "PART_OF": [],
+    "PURCHASED": [],
+    "SUPPLIES": []
+  },
+  "schema_patterns": [
+    {
+      "start": "Order",
+      "relationship": "ORDERS",
+      "end": "Product"
+    },
+    {
+      "start": "Product",
+      "relationship": "PART_OF",
+      "end": "Category"
+    },
+    {
+      "start": "Supplier",
+      "relationship": "SUPPLIES",
+      "end": "Product"
+    },
+    {
+      "start": "Customer",
+      "relationship": "PURCHASED",
+      "end": "Order"
+    }
+  ],
+  "node_counts": {
+    "Category": 8,
+    "Customer": 91,
+    "Order": 830,
+    "Product": 77,
+    "Supplier": 29
+  },
+  "relationship_counts": {
+    "ORDERS": 2155,
+    "PART_OF": 77,
+    "PURCHASED": 830,
+    "SUPPLIES": 77
+  },
+  "sample_data": {
+    "Category": [
+      {
+        "description": "Soft drinks, coffees, teas, beers, and ales",
+        "categoryName": "Beverages",
+        "picture": "0x151C2F00020000000D000E0014002100FFFFFFFF4269746D617020496D616765005061696E742E5069637475726500010500000200000007000000504272757368000000000000000000A0290000424D98290000000000005600000028000000AC00000078000000010004000000000000000000880B0000880B0000080000",
+        "categoryID": "1"
+      },
+      {
+        "description": "Sweet and savory sauces, relishes, spreads, and seasonings",
+        "categoryName": "Condiments",
+        "picture": "0x151C2F00020000000D000E0014002100FFFFFFFF4269746D617020496D616765005061696E742E5069637475726500010500000200000007000000504272757368000000000000000000A0290000424D98290000000000005600000028000000AC00000078000000010004000000000000000000880B0000880B0000080000",
+        "categoryID": "2"
+      },
+      {
+        "description": "Desserts, candies, and sweet breads",
+        "categoryName": "Confections",
+        "categoryID": "3",
+        "picture": "0x151C2F00020000000D000E0014002100FFFFFFFF4269746D617020496D616765005061696E742E5069637475726500010500000200000007000000504272757368000000000000000000A0290000424D98290000000000005600000028000000AC00000078000000010004000000000000000000880B0000880B0000080000"
+      }
+    ],
+    "Customer": [
+      {
+        "country": "Germany",
+        "contactTitle": "Sales Representative",
+        "address": "Obere Str. 57",
+        "phone": "030-0074321",
+        "city": "Berlin",
+        "contactName": "Maria Anders",
+        "companyName": "Alfreds Futterkiste",
+        "postalCode": "12209",
+        "customerID": "ALFKI",
+        "fax": "030-0076545",
+        "region": "NULL"
+      },
+      {
+        "country": "Mexico",
+        "address": "Avda. de la Constitución 2222",
+        "contactTitle": "Owner",
+        "city": "México D.F.",
+        "phone": "(5) 555-4729",
+        "contactName": "Ana Trujillo",
+        "companyName": "Ana Trujillo Emparedados y helados",
+        "postalCode": "5021",
+        "customerID": "ANATR",
+        "fax": "(5) 555-3745",
+        "region": "NULL"
+      },
+      {
+        "country": "Mexico",
+        "address": "Mataderos  2312",
+        "contactTitle": "Owner",
+        "city": "México D.F.",
+        "phone": "(5) 555-3932",
+        "contactName": "Antonio Moreno",
+        "companyName": "Antonio Moreno Taquería",
+        "postalCode": "5023",
+        "customerID": "ANTON",
+        "fax": "NULL",
+        "region": "NULL"
+      }
+    ],
+    "Order": [
+      {
+        "shipCity": "Reims",
+        "orderID": "10248",
+        "freight": "32.38",
+        "requiredDate": "1996-08-01 00:00:00.000",
+        "employeeID": "5",
+        "shipName": "Vins et alcools Chevalier",
+        "shipPostalCode": "51100",
+        "shipCountry": "France",
+        "shipAddress": "59 rue de l'Abbaye",
+        "shipVia": "3",
+        "customerID": "VINET",
+        "shippedDate": "1996-07-16 00:00:00.000",
+        "orderDate": "1996-07-04 00:00:00.000",
+        "shipRegion": "NULL"
+      },
+      {
+        "shipCity": "Münster",
+        "orderID": "10249",
+        "freight": "11.61",
+        "requiredDate": "1996-08-16 00:00:00.000",
+        "employeeID": "6",
+        "shipName": "Toms Spezialitäten",
+        "shipPostalCode": "44087",
+        "shipCountry": "Germany",
+        "shipAddress": "Luisenstr. 48",
+        "shipVia": "1",
+        "customerID": "TOMSP",
+        "shippedDate": "1996-07-10 00:00:00.000",
+        "orderDate": "1996-07-05 00:00:00.000",
+        "shipRegion": "NULL"
+      },
+      {
+        "shipCity": " 67",
+        "orderID": "10250",
+        "freight": "65.83",
+        "requiredDate": "1996-08-05 00:00:00.000",
+        "employeeID": "4",
+        "shipName": "Hanari Carnes",
+        "shipPostalCode": "RJ",
+        "shipCountry": "05454-876",
+        "shipAddress": "Rua do Paço",
+        "shipVia": "2",
+        "customerID": "HANAR",
+        "shippedDate": "1996-07-12 00:00:00.000",
+        "shipRegion": "Rio de Janeiro",
+        "orderDate": "1996-07-08 00:00:00.000"
+      }
+    ],
+    "Product": [
+      {
+        "reorderLevel": 10,
+        "unitsInStock": 39,
+        "unitPrice": 18.0,
+        "supplierID": "1",
+        "productID": "1",
+        "quantityPerUnit": "10 boxes x 20 bags",
+        "discontinued": false,
+        "productName": "Chai",
+        "unitsOnOrder": 0,
+        "categoryID": "1"
+      },
+      {
+        "reorderLevel": 25,
+        "unitsInStock": 17,
+        "unitPrice": 19.0,
+        "supplierID": "1",
+        "productID": "2",
+        "quantityPerUnit": "24 - 12 oz bottles",
+        "discontinued": false,
+        "productName": "Chang",
+        "unitsOnOrder": 40,
+        "categoryID": "1"
+      },
+      {
+        "reorderLevel": 25,
+        "unitsInStock": 13,
+        "unitPrice": 10.0,
+        "supplierID": "1",
+        "productID": "3",
+        "quantityPerUnit": "12 - 550 ml bottles",
+        "discontinued": false,
+        "productName": "Aniseed Syrup",
+        "unitsOnOrder": 70,
+        "categoryID": "2"
+      }
+    ],
+    "Supplier": [
+      {
+        "country": "UK",
+        "contactTitle": "Purchasing Manager",
+        "address": "49 Gilbert St.",
+        "supplierID": "1",
+        "phone": "(171) 555-2222",
+        "city": "London",
+        "contactName": "Charlotte Cooper",
+        "companyName": "Exotic Liquids",
+        "postalCode": "EC1 4SD",
+        "region": "NULL",
+        "fax": "NULL",
+        "homePage": "NULL"
+      },
+      {
+        "country": "USA",
+        "contactTitle": "Order Administrator",
+        "address": "P.O. Box 78934",
+        "supplierID": "2",
+        "phone": "(100) 555-4822",
+        "city": "New Orleans",
+        "contactName": "Shelley Burke",
+        "companyName": "New Orleans Cajun Delights",
+        "postalCode": "70117",
+        "region": "LA",
+        "fax": "NULL",
+        "homePage": "#CAJUN.HTM#"
+      },
+      {
+        "country": "USA",
+        "contactTitle": "Sales Representative",
+        "address": "707 Oxford Rd.",
+        "supplierID": "3",
+        "phone": "(313) 555-5735",
+        "city": "Ann Arbor",
+        "contactName": "Regina Murphy",
+        "companyName": "Grandma Kelly's Homestead",
+        "postalCode": "48104",
+        "fax": "(313) 555-3349",
+        "region": "MI",
+        "homePage": "NULL"
+      }
+    ]
+  },
+  "relationship_sample_data": {
+    "ORDERS": [
+      {
+        "start_labels": [
+          "Order"
+        ],
+        "rel_props": {
+          "unitPrice": "34.80",
+          "quantity": 5,
+          "productID": "72",
+          "orderID": "10248",
+          "discount": "0"
+        },
+        "end_labels": [
+          "Product"
+        ],
+        "start_preview": [
+          "shipName: Vins et alcools Chevalier",
+          "requiredDate: 1996-08-01 00:00:00.000"
+        ],
+        "end_preview": [
+          "productName: Mozzarella di Giovanni",
+          "quantityPerUnit: 24 - 200 g pkgs."
+        ]
+      },
+      {
+        "start_labels": [
+          "Order"
+        ],
+        "rel_props": {
+          "unitPrice": "14.00",
+          "quantity": 12,
+          "productID": "11",
+          "orderID": "10248",
+          "discount": "0"
+        },
+        "end_labels": [
+          "Product"
+        ],
+        "start_preview": [
+          "shipName: Vins et alcools Chevalier",
+          "requiredDate: 1996-08-01 00:00:00.000"
+        ],
+        "end_preview": [
+          "productName: Queso Cabrales",
+          "quantityPerUnit: 1 kg pkg."
+        ]
+      },
+      {
+        "start_labels": [
+          "Order"
+        ],
+        "rel_props": {
+          "unitPrice": "9.80",
+          "quantity": 10,
+          "productID": "42",
+          "orderID": "10248",
+          "discount": "0"
+        },
+        "end_labels": [
+          "Product"
+        ],
+        "start_preview": [
+          "shipName: Vins et alcools Chevalier",
+          "requiredDate: 1996-08-01 00:00:00.000"
+        ],
+        "end_preview": [
+          "productName: Singaporean Hokkien Fried Mee",
+          "quantityPerUnit: 32 - 1 kg pkgs."
+        ]
+      }
+    ],
+    "PART_OF": [
+      {
+        "start_labels": [
+          "Product"
+        ],
+        "rel_props": {},
+        "end_labels": [
+          "Category"
+        ],
+        "start_preview": [
+          "productName: Chai",
+          "quantityPerUnit: 10 boxes x 20 bags"
+        ],
+        "end_preview": [
+          "picture: 0x151C2F00020000000D000E0014002100FFFFFFFF4269746D617020496D616765005061696E742E5069637475726500010500000200000007000000504272757368000000000000000000A0290000424D98290000000000005600000028000000AC00000078000000010004000000000000000000880B0000880B0000080000",
+          "categoryID: 1"
+        ]
+      },
+      {
+        "start_labels": [
+          "Product"
+        ],
+        "rel_props": {},
+        "end_labels": [
+          "Category"
+        ],
+        "start_preview": [
+          "productName: Chang",
+          "quantityPerUnit: 24 - 12 oz bottles"
+        ],
+        "end_preview": [
+          "picture: 0x151C2F00020000000D000E0014002100FFFFFFFF4269746D617020496D616765005061696E742E5069637475726500010500000200000007000000504272757368000000000000000000A0290000424D98290000000000005600000028000000AC00000078000000010004000000000000000000880B0000880B0000080000",
+          "categoryID: 1"
+        ]
+      },
+      {
+        "start_labels": [
+          "Product"
+        ],
+        "rel_props": {},
+        "end_labels": [
+          "Category"
+        ],
+        "start_preview": [
+          "productName: Aniseed Syrup",
+          "quantityPerUnit: 12 - 550 ml bottles"
+        ],
+        "end_preview": [
+          "picture: 0x151C2F00020000000D000E0014002100FFFFFFFF4269746D617020496D616765005061696E742E5069637475726500010500000200000007000000504272757368000000000000000000A0290000424D98290000000000005600000028000000AC00000078000000010004000000000000000000880B0000880B0000080000",
+          "categoryID: 2"
+        ]
+      }
+    ],
+    "PURCHASED": [
+      {
+        "start_labels": [
+          "Customer"
+        ],
+        "rel_props": {},
+        "end_labels": [
+          "Order"
+        ],
+        "start_preview": [
+          "fax: 030-0076545",
+          "companyName: Alfreds Futterkiste"
+        ],
+        "end_preview": [
+          "shipName: Alfreds Futterkiste",
+          "requiredDate: 1997-09-22 00:00:00.000"
+        ]
+      },
+      {
+        "start_labels": [
+          "Customer"
+        ],
+        "rel_props": {},
+        "end_labels": [
+          "Order"
+        ],
+        "start_preview": [
+          "fax: 030-0076545",
+          "companyName: Alfreds Futterkiste"
+        ],
+        "end_preview": [
+          "shipName: Alfred's Futterkiste",
+          "requiredDate: 1998-04-27 00:00:00.000"
+        ]
+      },
+      {
+        "start_labels": [
+          "Customer"
+        ],
+        "rel_props": {},
+        "end_labels": [
+          "Order"
+        ],
+        "start_preview": [
+          "fax: 030-0076545",
+          "companyName: Alfreds Futterkiste"
+        ],
+        "end_preview": [
+          "shipName: Alfred's Futterkiste",
+          "requiredDate: 1997-11-24 00:00:00.000"
+        ]
+      }
+    ],
+    "SUPPLIES": [
+      {
+        "start_labels": [
+          "Supplier"
+        ],
+        "rel_props": {},
+        "end_labels": [
+          "Product"
+        ],
+        "start_preview": [
+          "companyName: Exotic Liquids",
+          "contactName: Charlotte Cooper"
+        ],
+        "end_preview": [
+          "productName: Chai",
+          "quantityPerUnit: 10 boxes x 20 bags"
+        ]
+      },
+      {
+        "start_labels": [
+          "Supplier"
+        ],
+        "rel_props": {},
+        "end_labels": [
+          "Product"
+        ],
+        "start_preview": [
+          "companyName: Exotic Liquids",
+          "contactName: Charlotte Cooper"
+        ],
+        "end_preview": [
+          "productName: Chang",
+          "quantityPerUnit: 24 - 12 oz bottles"
+        ]
+      },
+      {
+        "start_labels": [
+          "Supplier"
+        ],
+        "rel_props": {},
+        "end_labels": [
+          "Product"
+        ],
+        "start_preview": [
+          "companyName: Exotic Liquids",
+          "contactName: Charlotte Cooper"
+        ],
+        "end_preview": [
+          "productName: Aniseed Syrup",
+          "quantityPerUnit: 12 - 550 ml bottles"
+        ]
+      }
+    ]
+  }
+}

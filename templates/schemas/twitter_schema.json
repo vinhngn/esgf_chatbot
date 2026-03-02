@@ -1,0 +1,1126 @@
+{
+  "database": "twitter",
+  "node_labels": [
+    "Hashtag",
+    "Link",
+    "Me",
+    "Source",
+    "Tweet",
+    "User"
+  ],
+  "relationship_types": [
+    "AMPLIFIES",
+    "CONTAINS",
+    "FOLLOWS",
+    "INTERACTS_WITH",
+    "MENTIONS",
+    "POSTS",
+    "REPLY_TO",
+    "RETWEETS",
+    "RT_MENTIONS",
+    "SIMILAR_TO",
+    "TAGS",
+    "USING"
+  ],
+  "node_properties": {
+    "Hashtag": [
+      {
+        "property": "name",
+        "types": [
+          "String"
+        ],
+        "mandatory": true
+      }
+    ],
+    "Link": [
+      {
+        "property": "url",
+        "types": [
+          "String"
+        ],
+        "mandatory": true
+      }
+    ],
+    "MeUser": [
+      {
+        "property": "betweenness",
+        "types": [
+          "Double"
+        ],
+        "mandatory": true
+      },
+      {
+        "property": "followers",
+        "types": [
+          "Long"
+        ],
+        "mandatory": true
+      },
+      {
+        "property": "following",
+        "types": [
+          "Long"
+        ],
+        "mandatory": true
+      },
+      {
+        "property": "location",
+        "types": [
+          "String"
+        ],
+        "mandatory": true
+      },
+      {
+        "property": "name",
+        "types": [
+          "String"
+        ],
+        "mandatory": true
+      },
+      {
+        "property": "profile_image_url",
+        "types": [
+          "String"
+        ],
+        "mandatory": true
+      },
+      {
+        "property": "screen_name",
+        "types": [
+          "String"
+        ],
+        "mandatory": true
+      },
+      {
+        "property": "url",
+        "types": [
+          "String"
+        ],
+        "mandatory": true
+      }
+    ],
+    "Source": [
+      {
+        "property": "name",
+        "types": [
+          "String"
+        ],
+        "mandatory": true
+      }
+    ],
+    "Tweet": [
+      {
+        "property": "created_at",
+        "types": [
+          "DateTime"
+        ],
+        "mandatory": false
+      },
+      {
+        "property": "favorites",
+        "types": [
+          "Long"
+        ],
+        "mandatory": false
+      },
+      {
+        "property": "id",
+        "types": [
+          "Long"
+        ],
+        "mandatory": true
+      },
+      {
+        "property": "id_str",
+        "types": [
+          "String"
+        ],
+        "mandatory": false
+      },
+      {
+        "property": "import_method",
+        "types": [
+          "String"
+        ],
+        "mandatory": false
+      },
+      {
+        "property": "text",
+        "types": [
+          "String"
+        ],
+        "mandatory": false
+      }
+    ],
+    "User": [
+      {
+        "property": "betweenness",
+        "types": [
+          "Double"
+        ],
+        "mandatory": true
+      },
+      {
+        "property": "followers",
+        "types": [
+          "Long"
+        ],
+        "mandatory": false
+      },
+      {
+        "property": "following",
+        "types": [
+          "Long"
+        ],
+        "mandatory": false
+      },
+      {
+        "property": "location",
+        "types": [
+          "String"
+        ],
+        "mandatory": false
+      },
+      {
+        "property": "name",
+        "types": [
+          "String"
+        ],
+        "mandatory": true
+      },
+      {
+        "property": "profile_image_url",
+        "types": [
+          "String"
+        ],
+        "mandatory": false
+      },
+      {
+        "property": "screen_name",
+        "types": [
+          "String"
+        ],
+        "mandatory": true
+      },
+      {
+        "property": "statuses",
+        "types": [
+          "Long"
+        ],
+        "mandatory": false
+      },
+      {
+        "property": "url",
+        "types": [
+          "String"
+        ],
+        "mandatory": false
+      }
+    ]
+  },
+  "relationship_properties": {
+    "AMPLIFIES": [],
+    "CONTAINS": [],
+    "FOLLOWS": [],
+    "INTERACTS_WITH": [],
+    "MENTIONS": [],
+    "POSTS": [],
+    "REPLY_TO": [],
+    "RETWEETS": [],
+    "RT_MENTIONS": [],
+    "SIMILAR_TO": [
+      {
+        "property": "score",
+        "types": [
+          "Double"
+        ],
+        "mandatory": true
+      }
+    ],
+    "TAGS": [],
+    "USING": []
+  },
+  "schema_patterns": [
+    {
+      "start": "Tweet",
+      "relationship": "USING",
+      "end": "Source"
+    },
+    {
+      "start": "User",
+      "relationship": "SIMILAR_TO",
+      "end": "Me"
+    },
+    {
+      "start": "User",
+      "relationship": "SIMILAR_TO",
+      "end": "User"
+    },
+    {
+      "start": "User",
+      "relationship": "AMPLIFIES",
+      "end": "User"
+    },
+    {
+      "start": "Me",
+      "relationship": "AMPLIFIES",
+      "end": "User"
+    },
+    {
+      "start": "User",
+      "relationship": "RT_MENTIONS",
+      "end": "User"
+    },
+    {
+      "start": "Me",
+      "relationship": "RT_MENTIONS",
+      "end": "User"
+    },
+    {
+      "start": "Me",
+      "relationship": "FOLLOWS",
+      "end": "Me"
+    },
+    {
+      "start": "User",
+      "relationship": "FOLLOWS",
+      "end": "Me"
+    },
+    {
+      "start": "Me",
+      "relationship": "FOLLOWS",
+      "end": "User"
+    },
+    {
+      "start": "User",
+      "relationship": "FOLLOWS",
+      "end": "User"
+    },
+    {
+      "start": "User",
+      "relationship": "INTERACTS_WITH",
+      "end": "User"
+    },
+    {
+      "start": "Me",
+      "relationship": "INTERACTS_WITH",
+      "end": "User"
+    },
+    {
+      "start": "Tweet",
+      "relationship": "RETWEETS",
+      "end": "Tweet"
+    },
+    {
+      "start": "Tweet",
+      "relationship": "REPLY_TO",
+      "end": "Tweet"
+    },
+    {
+      "start": "Tweet",
+      "relationship": "CONTAINS",
+      "end": "Link"
+    },
+    {
+      "start": "Tweet",
+      "relationship": "MENTIONS",
+      "end": "Me"
+    },
+    {
+      "start": "Tweet",
+      "relationship": "MENTIONS",
+      "end": "User"
+    },
+    {
+      "start": "Tweet",
+      "relationship": "TAGS",
+      "end": "Hashtag"
+    },
+    {
+      "start": "User",
+      "relationship": "POSTS",
+      "end": "Tweet"
+    },
+    {
+      "start": "Me",
+      "relationship": "POSTS",
+      "end": "Tweet"
+    }
+  ],
+  "node_counts": {
+    "Hashtag": 344,
+    "Link": 1561,
+    "Me": 1,
+    "Source": 27,
+    "Tweet": 2407,
+    "User": 38986
+  },
+  "relationship_counts": {
+    "AMPLIFIES": 145,
+    "CONTAINS": 1757,
+    "FOLLOWS": 44630,
+    "INTERACTS_WITH": 901,
+    "MENTIONS": 3459,
+    "POSTS": 2338,
+    "REPLY_TO": 504,
+    "RETWEETS": 268,
+    "RT_MENTIONS": 45,
+    "SIMILAR_TO": 210,
+    "TAGS": 1493,
+    "USING": 2146
+  },
+  "sample_data": {
+    "Hashtag": [
+      {
+        "name": "education"
+      },
+      {
+        "name": "neo4jauraenterprise"
+      },
+      {
+        "name": "neo4j"
+      }
+    ],
+    "Link": [
+      {
+        "url": "https://twitter.com/i/web/status/1371815021265747970"
+      },
+      {
+        "url": "https://twitter.com/i/web/status/1371778287970705408"
+      },
+      {
+        "url": "https://twitter.com/i/web/status/1371687808847519748"
+      }
+    ],
+    "Me": [
+      {
+        "followers": 34507,
+        "screen_name": "neo4j",
+        "following": 10124,
+        "name": "Neo4j",
+        "profile_image_url": "http://pbs.twimg.com/profile_images/1183755273753767936/vSV_IPTs_normal.jpg",
+        "location": "Graphs Are Everywhere",
+        "betweenness": 349332601.0,
+        "url": "https://t.co/JSIaZFJEaE"
+      }
+    ],
+    "Source": [
+      {
+        "name": "Buffer"
+      },
+      {
+        "name": "Tweetbot for iΟS"
+      },
+      {
+        "name": "TweetDeck"
+      }
+    ],
+    "Tweet": [
+      {
+        "favorites": 1,
+        "import_method": "user",
+        "id_str": "1371815021265747970",
+        "created_at": "2021-03-16T13:26:02.000000000+00:00",
+        "id": 1371815021265747970,
+        "text": "Proud to help @educationgovuk deliver critical services across the #education sector with #Neo4jAuraEnterprise! \n\nL… https://t.co/p0urzRAQph"
+      },
+      {
+        "favorites": 0,
+        "import_method": "user",
+        "id_str": "1371778287970705408",
+        "created_at": "2021-03-16T11:00:04.000000000+00:00",
+        "id": 1371778287970705408,
+        "text": "[Webinar] Produktdatenmanagement mit der Graphdatenbank Neo4j\n\nDonnerstag, 18. März // 11:00 CET \n\nRegister here:… https://t.co/OYvzyt2TBD"
+      },
+      {
+        "favorites": 0,
+        "import_method": "user",
+        "id_str": "1371687808847519748",
+        "created_at": "2021-03-16T05:00:33.000000000+00:00",
+        "id": 1371687808847519748,
+        "text": "[Webinar] Graph Data Science with #Neo4j – Italy\n\nGiovedì 17 Marzo || 10:00 CET \n\nRegister here:… https://t.co/IBADoePpiA"
+      }
+    ],
+    "User": [
+      {
+        "followers": 34507,
+        "screen_name": "neo4j",
+        "following": 10124,
+        "name": "Neo4j",
+        "profile_image_url": "http://pbs.twimg.com/profile_images/1183755273753767936/vSV_IPTs_normal.jpg",
+        "location": "Graphs Are Everywhere",
+        "betweenness": 349332601.0,
+        "url": "https://t.co/JSIaZFJEaE"
+      },
+      {
+        "followers": 2617355,
+        "screen_name": "NASAPersevere",
+        "following": 45,
+        "name": "NASA's Perseverance Mars Rover",
+        "statuses": 512,
+        "profile_image_url": "http://pbs.twimg.com/profile_images/1235636280165203974/6YjG6kTC_normal.jpg",
+        "location": "Jezero Crater, Mars",
+        "betweenness": 0.0,
+        "url": "https://t.co/GpTOmL7zGl"
+      },
+      {
+        "followers": 0,
+        "screen_name": "pranitahakim1",
+        "following": 0,
+        "name": "pranitahakim",
+        "location": "",
+        "profile_image_url": "http://pbs.twimg.com/profile_images/1370306070845911046/VQcQPkp3_normal.jpg",
+        "betweenness": 0.0
+      }
+    ]
+  },
+  "relationship_sample_data": {
+    "AMPLIFIES": [
+      {
+        "start_labels": [
+          "User",
+          "Me"
+        ],
+        "rel_props": {},
+        "end_labels": [
+          "User"
+        ],
+        "start_preview": [
+          "profile_image_url: http://pbs.twimg.com/profile_images/1183755273753767936/vSV_IPTs_normal.jpg",
+          "betweenness: 3.49332601E8"
+        ],
+        "end_preview": [
+          "profile_image_url: http://pbs.twimg.com/profile_images/876824150748274689/J80AqYt6_normal.jpg",
+          "betweenness: 0.0"
+        ]
+      },
+      {
+        "start_labels": [
+          "User",
+          "Me"
+        ],
+        "rel_props": {},
+        "end_labels": [
+          "User"
+        ],
+        "start_preview": [
+          "profile_image_url: http://pbs.twimg.com/profile_images/1183755273753767936/vSV_IPTs_normal.jpg",
+          "betweenness: 3.49332601E8"
+        ],
+        "end_preview": [
+          "betweenness: 0.0",
+          "url: https://t.co/43Cg8OxRib"
+        ]
+      },
+      {
+        "start_labels": [
+          "User",
+          "Me"
+        ],
+        "rel_props": {},
+        "end_labels": [
+          "User"
+        ],
+        "start_preview": [
+          "profile_image_url: http://pbs.twimg.com/profile_images/1183755273753767936/vSV_IPTs_normal.jpg",
+          "betweenness: 3.49332601E8"
+        ],
+        "end_preview": [
+          "betweenness: 0.0",
+          "url: https://t.co/lW7lhHGEhu"
+        ]
+      }
+    ],
+    "CONTAINS": [
+      {
+        "start_labels": [
+          "Tweet"
+        ],
+        "rel_props": {},
+        "end_labels": [
+          "Link"
+        ],
+        "start_preview": [
+          "created_at: 2021-03-16T13:26:02Z",
+          "id: 1371815021265747970"
+        ],
+        "end_preview": [
+          "url: https://twitter.com/i/web/status/1371815021265747970"
+        ]
+      },
+      {
+        "start_labels": [
+          "Tweet"
+        ],
+        "rel_props": {},
+        "end_labels": [
+          "Link"
+        ],
+        "start_preview": [
+          "created_at: 2021-03-16T11:00:04Z",
+          "id: 1371778287970705408"
+        ],
+        "end_preview": [
+          "url: https://twitter.com/i/web/status/1371778287970705408"
+        ]
+      },
+      {
+        "start_labels": [
+          "Tweet"
+        ],
+        "rel_props": {},
+        "end_labels": [
+          "Link"
+        ],
+        "start_preview": [
+          "created_at: 2021-03-16T05:00:33Z",
+          "id: 1371687808847519748"
+        ],
+        "end_preview": [
+          "url: https://twitter.com/i/web/status/1371687808847519748"
+        ]
+      }
+    ],
+    "FOLLOWS": [
+      {
+        "start_labels": [
+          "User",
+          "Me"
+        ],
+        "rel_props": {},
+        "end_labels": [
+          "User"
+        ],
+        "start_preview": [
+          "profile_image_url: http://pbs.twimg.com/profile_images/1183755273753767936/vSV_IPTs_normal.jpg",
+          "betweenness: 3.49332601E8"
+        ],
+        "end_preview": [
+          "url: http://t.co/4LDwiBaTAk",
+          "profile_image_url: http://pbs.twimg.com/profile_images/1813015851/horned_reaper_normal.jpg"
+        ]
+      },
+      {
+        "start_labels": [
+          "User",
+          "Me"
+        ],
+        "rel_props": {},
+        "end_labels": [
+          "User"
+        ],
+        "start_preview": [
+          "profile_image_url: http://pbs.twimg.com/profile_images/1183755273753767936/vSV_IPTs_normal.jpg",
+          "betweenness: 3.49332601E8"
+        ],
+        "end_preview": [
+          "betweenness: 0.0",
+          "url: https://t.co/wtQkqLoCL8"
+        ]
+      },
+      {
+        "start_labels": [
+          "User",
+          "Me"
+        ],
+        "rel_props": {},
+        "end_labels": [
+          "User"
+        ],
+        "start_preview": [
+          "profile_image_url: http://pbs.twimg.com/profile_images/1183755273753767936/vSV_IPTs_normal.jpg",
+          "betweenness: 3.49332601E8"
+        ],
+        "end_preview": [
+          "url: http://t.co/NjLNxUiWT4",
+          "profile_image_url: http://pbs.twimg.com/profile_images/418407449167552512/0j7V3jb0_normal.jpeg"
+        ]
+      }
+    ],
+    "INTERACTS_WITH": [
+      {
+        "start_labels": [
+          "User",
+          "Me"
+        ],
+        "rel_props": {},
+        "end_labels": [
+          "User"
+        ],
+        "start_preview": [
+          "profile_image_url: http://pbs.twimg.com/profile_images/1183755273753767936/vSV_IPTs_normal.jpg",
+          "betweenness: 3.49332601E8"
+        ],
+        "end_preview": [
+          "betweenness: 0.0",
+          "followers: 3844"
+        ]
+      },
+      {
+        "start_labels": [
+          "User",
+          "Me"
+        ],
+        "rel_props": {},
+        "end_labels": [
+          "User"
+        ],
+        "start_preview": [
+          "profile_image_url: http://pbs.twimg.com/profile_images/1183755273753767936/vSV_IPTs_normal.jpg",
+          "betweenness: 3.49332601E8"
+        ],
+        "end_preview": [
+          "betweenness: 0.0",
+          "url: https://t.co/k2lrEDxvoe"
+        ]
+      },
+      {
+        "start_labels": [
+          "User",
+          "Me"
+        ],
+        "rel_props": {},
+        "end_labels": [
+          "User"
+        ],
+        "start_preview": [
+          "profile_image_url: http://pbs.twimg.com/profile_images/1183755273753767936/vSV_IPTs_normal.jpg",
+          "betweenness: 3.49332601E8"
+        ],
+        "end_preview": [
+          "profile_image_url: http://pbs.twimg.com/profile_images/1336349288801193985/lrJngcML_normal.jpg",
+          "betweenness: 0.0"
+        ]
+      }
+    ],
+    "MENTIONS": [
+      {
+        "start_labels": [
+          "Tweet"
+        ],
+        "rel_props": {},
+        "end_labels": [
+          "User"
+        ],
+        "start_preview": [
+          "created_at: 2021-03-16T13:26:02Z",
+          "id: 1371815021265747970"
+        ],
+        "end_preview": [
+          "name: Department for Education",
+          "screen_name: educationgovuk"
+        ]
+      },
+      {
+        "start_labels": [
+          "Tweet"
+        ],
+        "rel_props": {},
+        "end_labels": [
+          "User"
+        ],
+        "start_preview": [
+          "created_at: 2021-03-16T11:35:05Z",
+          "id: 1371787098945114113"
+        ],
+        "end_preview": [
+          "url: https://t.co/uzcOFlyiOX",
+          "profile_image_url: http://pbs.twimg.com/profile_images/1368255878714044422/smftxdbx_normal.jpg"
+        ]
+      },
+      {
+        "start_labels": [
+          "Tweet"
+        ],
+        "rel_props": {},
+        "end_labels": [
+          "User"
+        ],
+        "start_preview": [
+          "created_at: 2021-03-16T10:41:00Z",
+          "id: 1371773486348255233"
+        ],
+        "end_preview": [
+          "url: https://t.co/le3JCTtAyq",
+          "statuses: 533"
+        ]
+      }
+    ],
+    "POSTS": [
+      {
+        "start_labels": [
+          "User",
+          "Me"
+        ],
+        "rel_props": {},
+        "end_labels": [
+          "Tweet"
+        ],
+        "start_preview": [
+          "profile_image_url: http://pbs.twimg.com/profile_images/1183755273753767936/vSV_IPTs_normal.jpg",
+          "betweenness: 3.49332601E8"
+        ],
+        "end_preview": [
+          "created_at: 2020-12-06T05:12:02Z",
+          "id: 1335451913203163138"
+        ]
+      },
+      {
+        "start_labels": [
+          "User",
+          "Me"
+        ],
+        "rel_props": {},
+        "end_labels": [
+          "Tweet"
+        ],
+        "start_preview": [
+          "profile_image_url: http://pbs.twimg.com/profile_images/1183755273753767936/vSV_IPTs_normal.jpg",
+          "betweenness: 3.49332601E8"
+        ],
+        "end_preview": [
+          "created_at: 2020-12-06T07:31:01Z",
+          "id: 1335486890548617216"
+        ]
+      },
+      {
+        "start_labels": [
+          "User",
+          "Me"
+        ],
+        "rel_props": {},
+        "end_labels": [
+          "Tweet"
+        ],
+        "start_preview": [
+          "profile_image_url: http://pbs.twimg.com/profile_images/1183755273753767936/vSV_IPTs_normal.jpg",
+          "betweenness: 3.49332601E8"
+        ],
+        "end_preview": [
+          "created_at: 2020-12-06T11:05:01Z",
+          "id: 1335540744535281666"
+        ]
+      }
+    ],
+    "REPLY_TO": [
+      {
+        "start_labels": [
+          "Tweet"
+        ],
+        "rel_props": {},
+        "end_labels": [
+          "Tweet"
+        ],
+        "start_preview": [
+          "created_at: 2021-03-15T08:23:14Z",
+          "id: 1371376428835606528"
+        ],
+        "end_preview": [
+          "id_str: 1361415227091292163",
+          "import_method: user"
+        ]
+      },
+      {
+        "start_labels": [
+          "Tweet"
+        ],
+        "rel_props": {},
+        "end_labels": [
+          "Tweet"
+        ],
+        "start_preview": [
+          "created_at: 2021-03-14T19:57:09Z",
+          "id: 1371188670472941570"
+        ],
+        "end_preview": [
+          "id_str: 1362366837011398657",
+          "import_method: user"
+        ]
+      },
+      {
+        "start_labels": [
+          "Tweet"
+        ],
+        "rel_props": {},
+        "end_labels": [
+          "Tweet"
+        ],
+        "start_preview": [
+          "created_at: 2021-03-14T15:13:10Z",
+          "id: 1371117204519944195"
+        ],
+        "end_preview": [
+          "id_str: 1370907230690668548",
+          "import_method: user"
+        ]
+      }
+    ],
+    "RETWEETS": [
+      {
+        "start_labels": [
+          "Tweet"
+        ],
+        "rel_props": {},
+        "end_labels": [
+          "Tweet"
+        ],
+        "start_preview": [
+          "created_at: 2021-03-16T11:35:05Z",
+          "id: 1371787098945114113"
+        ],
+        "end_preview": [
+          "id: 1371756686407577611"
+        ]
+      },
+      {
+        "start_labels": [
+          "Tweet"
+        ],
+        "rel_props": {},
+        "end_labels": [
+          "Tweet"
+        ],
+        "start_preview": [
+          "created_at: 2021-03-16T10:41:00Z",
+          "id: 1371773486348255233"
+        ],
+        "end_preview": [
+          "id: 1371773392370724864"
+        ]
+      },
+      {
+        "start_labels": [
+          "Tweet"
+        ],
+        "rel_props": {},
+        "end_labels": [
+          "Tweet"
+        ],
+        "start_preview": [
+          "created_at: 2021-03-15T16:30:44Z",
+          "id: 1371499112089202694"
+        ],
+        "end_preview": [
+          "id: 1371490116640776194"
+        ]
+      }
+    ],
+    "RT_MENTIONS": [
+      {
+        "start_labels": [
+          "User",
+          "Me"
+        ],
+        "rel_props": {},
+        "end_labels": [
+          "User"
+        ],
+        "start_preview": [
+          "profile_image_url: http://pbs.twimg.com/profile_images/1183755273753767936/vSV_IPTs_normal.jpg",
+          "betweenness: 3.49332601E8"
+        ],
+        "end_preview": [
+          "betweenness: 0.0",
+          "screen_name: chakra_ui"
+        ]
+      },
+      {
+        "start_labels": [
+          "User",
+          "Me"
+        ],
+        "rel_props": {},
+        "end_labels": [
+          "User"
+        ],
+        "start_preview": [
+          "profile_image_url: http://pbs.twimg.com/profile_images/1183755273753767936/vSV_IPTs_normal.jpg",
+          "betweenness: 3.49332601E8"
+        ],
+        "end_preview": [
+          "url: https://t.co/ekzn4qgGdh",
+          "profile_image_url: http://pbs.twimg.com/profile_images/745134977482821632/bwS52qfN_normal.jpg"
+        ]
+      },
+      {
+        "start_labels": [
+          "User",
+          "Me"
+        ],
+        "rel_props": {},
+        "end_labels": [
+          "User"
+        ],
+        "start_preview": [
+          "profile_image_url: http://pbs.twimg.com/profile_images/1183755273753767936/vSV_IPTs_normal.jpg",
+          "betweenness: 3.49332601E8"
+        ],
+        "end_preview": [
+          "profile_image_url: http://pbs.twimg.com/profile_images/2025671910/268086_10150263880417893_633002892_7623878_2019719_n_normal.jpg",
+          "betweenness: 0.0"
+        ]
+      }
+    ],
+    "SIMILAR_TO": [
+      {
+        "start_labels": [
+          "User"
+        ],
+        "rel_props": {
+          "score": 0.003205128205128205
+        },
+        "end_labels": [
+          "User",
+          "Me"
+        ],
+        "start_preview": [
+          "betweenness: 0.0",
+          "location: London, England"
+        ],
+        "end_preview": [
+          "profile_image_url: http://pbs.twimg.com/profile_images/1183755273753767936/vSV_IPTs_normal.jpg",
+          "betweenness: 3.49332601E8"
+        ]
+      },
+      {
+        "start_labels": [
+          "User"
+        ],
+        "rel_props": {
+          "score": 0.018518518518518517
+        },
+        "end_labels": [
+          "User",
+          "Me"
+        ],
+        "start_preview": [
+          "url: https://t.co/le3JCTtAyq",
+          "statuses: 533"
+        ],
+        "end_preview": [
+          "profile_image_url: http://pbs.twimg.com/profile_images/1183755273753767936/vSV_IPTs_normal.jpg",
+          "betweenness: 3.49332601E8"
+        ]
+      },
+      {
+        "start_labels": [
+          "User"
+        ],
+        "rel_props": {
+          "score": 0.02564102564102564
+        },
+        "end_labels": [
+          "User"
+        ],
+        "start_preview": [
+          "url: https://t.co/le3JCTtAyq",
+          "statuses: 533"
+        ],
+        "end_preview": [
+          "url: https://t.co/uzcOFlyiOX",
+          "profile_image_url: http://pbs.twimg.com/profile_images/1368255878714044422/smftxdbx_normal.jpg"
+        ]
+      }
+    ],
+    "TAGS": [
+      {
+        "start_labels": [
+          "Tweet"
+        ],
+        "rel_props": {},
+        "end_labels": [
+          "Hashtag"
+        ],
+        "start_preview": [
+          "created_at: 2021-03-16T13:26:02Z",
+          "id: 1371815021265747970"
+        ],
+        "end_preview": [
+          "name: neo4jauraenterprise"
+        ]
+      },
+      {
+        "start_labels": [
+          "Tweet"
+        ],
+        "rel_props": {},
+        "end_labels": [
+          "Hashtag"
+        ],
+        "start_preview": [
+          "created_at: 2021-03-16T13:26:02Z",
+          "id: 1371815021265747970"
+        ],
+        "end_preview": [
+          "name: education"
+        ]
+      },
+      {
+        "start_labels": [
+          "Tweet"
+        ],
+        "rel_props": {},
+        "end_labels": [
+          "Hashtag"
+        ],
+        "start_preview": [
+          "created_at: 2021-03-16T05:00:33Z",
+          "id: 1371687808847519748"
+        ],
+        "end_preview": [
+          "name: neo4j"
+        ]
+      }
+    ],
+    "USING": [
+      {
+        "start_labels": [
+          "Tweet"
+        ],
+        "rel_props": {},
+        "end_labels": [
+          "Source"
+        ],
+        "start_preview": [
+          "created_at: 2021-03-16T13:26:02Z",
+          "id: 1371815021265747970"
+        ],
+        "end_preview": [
+          "name: Buffer"
+        ]
+      },
+      {
+        "start_labels": [
+          "Tweet"
+        ],
+        "rel_props": {},
+        "end_labels": [
+          "Source"
+        ],
+        "start_preview": [
+          "created_at: 2021-03-16T11:00:04Z",
+          "id: 1371778287970705408"
+        ],
+        "end_preview": [
+          "name: Buffer"
+        ]
+      },
+      {
+        "start_labels": [
+          "Tweet"
+        ],
+        "rel_props": {},
+        "end_labels": [
+          "Source"
+        ],
+        "start_preview": [
+          "created_at: 2021-03-16T05:00:33Z",
+          "id: 1371687808847519748"
+        ],
+        "end_preview": [
+          "name: Buffer"
+        ]
+      }
+    ]
+  }
+}

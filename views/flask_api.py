@@ -1,14 +1,14 @@
 """
-Flask REST API — View layer only.
+Flask REST API -- View layer only.
 Business logic lives in services/rag_service.py.
 
 Endpoints:
-    POST /api/text2cypher  — question → triple extraction → Cypher → raw DB results
-    POST /api/rag          — question → Cypher → LLM-formatted response
-    POST /api/set_database — info endpoint (DB set via .env)
-    GET  /api/databases    — list available databases
-    GET  /api/schema       — schema info for current or specified DB
-    GET  /health           — health check
+    POST /api/text2cypher  -- question -> auto-route -> Cypher -> raw DB results
+    POST /api/rag          -- question -> Cypher -> LLM-formatted response
+    POST /api/route        -- test question routing (no DB connection needed)
+    GET  /api/databases    -- list available databases
+    GET  /api/schema       -- schema info for current or specified DB
+    GET  /health           -- health check
 """
 
 from __future__ import annotations
@@ -71,6 +71,7 @@ def text2cypher():
 
         return jsonify(
             {
+                "database": results.get("db_name", ""),
                 "cypher_query": results.get("cypher_query", ""),
                 "result": results.get("result", []),
                 "error": results.get("error"),
@@ -177,16 +178,33 @@ def health():
 
 @app.get("/api/databases")
 def list_databases():
-    """List all available databases with their configurations."""
+    """List all available databases (auto-detected from schema files)."""
     available = get_available_databases()
-    settings = get_settings()
     return jsonify(
         {
-            "current": settings.database_name,
             "available": available,
-            "note": "Change NEO4J_DATABASE in .env to switch databases.",
+            "mode": "auto-routing",
+            "note": "Questions are auto-routed to the best database.",
         }
     )
+
+
+@app.post("/api/route")
+def route_endpoint():
+    """
+    Test question routing without connecting to Neo4j.
+    Returns which database would be selected and scoring details.
+    """
+    from templates.db_router import route_question_with_scores
+
+    payload = request.get_json(silent=True) or {}
+    question = (payload.get("question") or "").strip()
+
+    if not question:
+        return jsonify({"error": "question is required"}), 400
+
+    result = route_question_with_scores(question)
+    return jsonify(result)
 
 
 @app.get("/api/schema")
@@ -206,12 +224,13 @@ if __name__ == "__main__":
     port = settings.FLASK_PORT
     host = settings.FLASK_HOST
 
-    print(f"Flask API | DB: {settings.database_name}")
+    print(f"Flask API | Auto-routing mode")
     print(f"Listening on http://{host}:{port}")
-    print("  POST /api/text2cypher  — raw results (for t2c)")
-    print("  POST /api/rag          — LLM-formatted response")
-    print("  GET  /api/databases    — list databases")
-    print("  GET  /api/schema       — schema info")
-    print("  GET  /health           — health check")
+    print("  POST /api/text2cypher  -- auto-route + raw results")
+    print("  POST /api/rag          -- auto-route + LLM response")
+    print("  POST /api/route        -- test routing (no DB needed)")
+    print("  GET  /api/databases    -- list databases")
+    print("  GET  /api/schema       -- schema info")
+    print("  GET  /health           -- health check")
 
     app.run(host=host, port=port, debug=False, threaded=True)

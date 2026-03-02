@@ -23,6 +23,7 @@ from models.graph import get_graph, get_schema_labels, get_schema_relationships
 from models.llm import get_interpreter_llm, get_main_llm
 from retry import retry
 from templates.cypher_templates import get_cypher_template
+from templates.db_router import route_question, route_question_with_scores
 from templates.entity_definitions import get_entity_definitions
 from templates.match_properties_map import get_match_properties_map
 from utils.helpers import normalize_value
@@ -82,15 +83,18 @@ def _is_empty_result(result) -> bool:
 def _run_pipeline(
     question: str,
     conversation_history: list[dict[str, str]],
+    db_name: str | None = None,
 ) -> dict:
     """
-    Run the shared RAG pipeline steps 1–3:
+    Run the shared RAG pipeline steps 1-3:
 
-      1. Triple extraction with retry  (interpreter LLM + Neo4j verification)
-      2. Build enhanced question        (original + rewritten + triples)
-      3. Invoke Cypher chain            (GraphCypherQAChain → Neo4j)
+      1. Route question to correct database (if db_name not specified)
+      2. Triple extraction with retry  (interpreter LLM + Neo4j verification)
+      3. Build enhanced question        (original + rewritten + triples)
+      4. Invoke Cypher chain            (GraphCypherQAChain -> Neo4j)
 
     Returns a dict with keys:
+        db_name            : str
         rewritten          : str
         verified_triples   : list[tuple[str,str,str]]
         instance_triples   : list[tuple[str,str,str]]
@@ -98,11 +102,15 @@ def _run_pipeline(
         encoded_query      : str | None
         decoded_query      : str | None
     """
-    db_name = get_settings().database_name
+    # Auto-route if no db specified
+    if not db_name:
+        db_name = route_question(question)
+        logger.info("[RAGService] Auto-routed to database: '%s'", db_name)
+
     interpreter_llm = get_interpreter_llm()
-    graph = get_graph()
-    schema_labels = get_schema_labels()
-    schema_relationships = get_schema_relationships()
+    graph = get_graph(db_name)
+    schema_labels = get_schema_labels(db_name)
+    schema_relationships = get_schema_relationships(db_name)
 
     # --- Step 1: Triple extraction with retry ---
     rewritten, verified_triples, instance_triples = extract_triples_with_retry(
@@ -129,7 +137,7 @@ def _run_pipeline(
     )
 
     # --- Step 3: Invoke chain ---
-    chain_result = invoke_chain(enhanced_question)
+    chain_result = invoke_chain(enhanced_question, db_name=db_name)
 
     encoded_query, decoded_query = (
         _extract_cypher_queries(chain_result)
@@ -138,6 +146,7 @@ def _run_pipeline(
     )
 
     return {
+        "db_name": db_name,
         "rewritten": rewritten,
         "verified_triples": verified_triples,
         "instance_triples": instance_triples,
@@ -304,10 +313,10 @@ def get_raw_results(question: str) -> dict:
 
 
 def get_available_databases() -> list[str]:
-    """Return the list of databases that have a Cypher template."""
-    from templates.cypher_templates import _TEMPLATE_MAP
+    """Return the list of databases that have schema data available."""
+    from templates.cypher_templates import get_available_databases as _get_dbs
 
-    return list(_TEMPLATE_MAP.keys())
+    return _get_dbs()
 
 
 def get_database_info() -> dict:

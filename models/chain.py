@@ -1,8 +1,8 @@
 """
-GraphCypherQAChain setup.
-Uses langchain_neo4j.GraphCypherQAChain (compatible with GraphStore/Neo4jGraph)
-instead of langchain_community version which caused validation errors.
-Thread-safe singleton with double-checked locking.
+GraphCypherQAChain setup -- multi-database support.
+
+Each database gets its own chain instance (with the correct template
+and graph connection). Chains are built lazily and cached.
 """
 
 from __future__ import annotations
@@ -21,14 +21,15 @@ from models.llm import get_cypher_llm, get_qa_llm
 
 logger = logging.getLogger(__name__)
 
-_chain: GraphCypherQAChain | None = None
+# Per-DB chain pool
+_chains: dict[str, GraphCypherQAChain] = {}
 _chain_lock = threading.Lock()
 
 
-def _build_chain() -> GraphCypherQAChain:
-    """Build the GraphCypherQAChain with current config."""
-    logger.info("[Chain] Building GraphCypherQAChain...")
-    template = get_cypher_template()
+def _build_chain(db_name: str) -> GraphCypherQAChain:
+    """Build the GraphCypherQAChain for a specific database."""
+    logger.info("[Chain] Building GraphCypherQAChain for '%s'...", db_name)
+    template = get_cypher_template(db_name)
     prompt = PromptTemplate(
         input_variables=["schema", "question"],
         template=template,
@@ -36,7 +37,7 @@ def _build_chain() -> GraphCypherQAChain:
     chain = GraphCypherQAChain.from_llm(
         cypher_llm=get_cypher_llm(),
         qa_llm=get_qa_llm(),
-        graph=get_graph(),
+        graph=get_graph(db_name),
         cypher_prompt=prompt,
         validate_cypher=True,
         return_direct=True,
@@ -45,46 +46,54 @@ def _build_chain() -> GraphCypherQAChain:
         return_intermediate_steps=True,
         top_k=100,
     )
-    logger.info("[Chain] GraphCypherQAChain ready.")
+    logger.info("[Chain] GraphCypherQAChain ready for '%s'.", db_name)
     return chain
 
 
-def get_chain() -> GraphCypherQAChain:
-    """Get or create the chain (thread-safe singleton)."""
-    global _chain
-    if _chain is None:
+def get_chain(db_name: str | None = None) -> GraphCypherQAChain:
+    """Get or create the chain for a database (thread-safe)."""
+    from config import get_settings
+    db = db_name or get_settings().database_name or "movies"
+
+    if db not in _chains:
         with _chain_lock:
-            if _chain is None:  # double-checked locking
-                _chain = _build_chain()
-    return _chain
+            if db not in _chains:
+                _chains[db] = _build_chain(db)
+    return _chains[db]
 
 
-def reset_chain() -> None:
-    """Force rebuild the chain on next call (e.g. after config change)."""
-    global _chain
+def reset_chain(db_name: str | None = None) -> None:
+    """Force rebuild chain(s) on next call."""
     with _chain_lock:
-        _chain = None
-    logger.info("[Chain] Chain reset — will rebuild on next invoke.")
+        if db_name:
+            _chains.pop(db_name, None)
+        else:
+            _chains.clear()
+    logger.info("[Chain] Chain reset for: %s", db_name or "ALL")
 
 
-def invoke_chain(question: str) -> dict | str:
+def invoke_chain(question: str, db_name: str | None = None) -> dict | str:
     """
     Invoke the chain with a question.
+    If db_name is provided, uses that database's chain.
     Returns chain result dict or an error string.
     """
-    maybe_refresh_schema()
-    chain = get_chain()
+    from config import get_settings
+    db = db_name or get_settings().database_name or "movies"
+
+    maybe_refresh_schema(db)
+    chain = get_chain(db)
 
     try:
         result = chain.invoke({"query": question}, return_only_outputs=True)
     except Exception as e:
-        logger.warning("[Chain] GraphCypher chain error: %s", e)
+        logger.warning("[Chain] GraphCypher chain error for '%s': %s", db, e)
         return "Sorry, I couldn't find an answer to your question."
 
     if result is None:
         return "No answer was generated."
 
-    # Clean and URL-encode the generated Cypher query for Neo4j Browser links
+    # Clean and URL-encode the generated Cypher query
     try:
         steps = result.get("intermediate_steps", [{}])
         if steps and isinstance(steps[-1], dict):

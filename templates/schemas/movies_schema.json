@@ -1,0 +1,506 @@
+{
+  "database": "movies",
+  "node_labels": [
+    "Movie",
+    "Person"
+  ],
+  "relationship_types": [
+    "ACTED_IN",
+    "DIRECTED",
+    "FOLLOWS",
+    "PRODUCED",
+    "REVIEWED",
+    "WROTE"
+  ],
+  "node_properties": {
+    "Movie": [
+      {
+        "property": "released",
+        "types": [
+          "Long"
+        ],
+        "mandatory": true
+      },
+      {
+        "property": "tagline",
+        "types": [
+          "String"
+        ],
+        "mandatory": false
+      },
+      {
+        "property": "title",
+        "types": [
+          "String"
+        ],
+        "mandatory": true
+      },
+      {
+        "property": "votes",
+        "types": [
+          "Long"
+        ],
+        "mandatory": true
+      }
+    ],
+    "Person": [
+      {
+        "property": "born",
+        "types": [
+          "Long"
+        ],
+        "mandatory": false
+      },
+      {
+        "property": "name",
+        "types": [
+          "String"
+        ],
+        "mandatory": true
+      }
+    ]
+  },
+  "relationship_properties": {
+    "ACTED_IN": [
+      {
+        "property": "roles",
+        "types": [
+          "StringArray"
+        ],
+        "mandatory": true
+      }
+    ],
+    "DIRECTED": [],
+    "FOLLOWS": [],
+    "PRODUCED": [],
+    "REVIEWED": [
+      {
+        "property": "rating",
+        "types": [
+          "Long"
+        ],
+        "mandatory": true
+      },
+      {
+        "property": "summary",
+        "types": [
+          "String"
+        ],
+        "mandatory": true
+      }
+    ],
+    "WROTE": []
+  },
+  "schema_patterns": [
+    {
+      "start": "Person",
+      "relationship": "ACTED_IN",
+      "end": "Movie"
+    },
+    {
+      "start": "Person",
+      "relationship": "REVIEWED",
+      "end": "Movie"
+    },
+    {
+      "start": "Person",
+      "relationship": "PRODUCED",
+      "end": "Movie"
+    },
+    {
+      "start": "Person",
+      "relationship": "WROTE",
+      "end": "Movie"
+    },
+    {
+      "start": "Person",
+      "relationship": "FOLLOWS",
+      "end": "Person"
+    },
+    {
+      "start": "Person",
+      "relationship": "DIRECTED",
+      "end": "Movie"
+    }
+  ],
+  "node_counts": {
+    "Movie": 38,
+    "Person": 133
+  },
+  "relationship_counts": {
+    "ACTED_IN": 172,
+    "DIRECTED": 44,
+    "FOLLOWS": 3,
+    "PRODUCED": 15,
+    "REVIEWED": 9,
+    "WROTE": 10
+  },
+  "sample_data": {
+    "Movie": [
+      {
+        "tagline": "Welcome to the Real World",
+        "votes": 242,
+        "title": "The Matrix",
+        "released": 1999
+      },
+      {
+        "tagline": "Free your mind",
+        "votes": 1939,
+        "title": "The Matrix Reloaded",
+        "released": 2003
+      },
+      {
+        "tagline": "Everything that has a beginning has an end",
+        "votes": 1598,
+        "title": "The Matrix Revolutions",
+        "released": 2003
+      }
+    ],
+    "Person": [
+      {
+        "born": 1964,
+        "name": "Keanu Reeves"
+      },
+      {
+        "born": 1967,
+        "name": "Carrie-Anne Moss"
+      },
+      {
+        "born": 1961,
+        "name": "Laurence Fishburne"
+      }
+    ]
+  },
+  "relationship_sample_data": {
+    "ACTED_IN": [
+      {
+        "start_labels": [
+          "Person"
+        ],
+        "rel_props": {
+          "roles": [
+            "Julian Mercer"
+          ]
+        },
+        "end_labels": [
+          "Movie"
+        ],
+        "start_preview": [
+          "born: 1964",
+          "name: Keanu Reeves"
+        ],
+        "end_preview": [
+          "votes: 57",
+          "title: Something's Gotta Give"
+        ]
+      },
+      {
+        "start_labels": [
+          "Person"
+        ],
+        "rel_props": {
+          "roles": [
+            "Shane Falco"
+          ]
+        },
+        "end_labels": [
+          "Movie"
+        ],
+        "start_preview": [
+          "born: 1964",
+          "name: Keanu Reeves"
+        ],
+        "end_preview": [
+          "released: 2000",
+          "votes: 24"
+        ]
+      },
+      {
+        "start_labels": [
+          "Person"
+        ],
+        "rel_props": {
+          "roles": [
+            "Johnny Mnemonic"
+          ]
+        },
+        "end_labels": [
+          "Movie"
+        ],
+        "start_preview": [
+          "born: 1964",
+          "name: Keanu Reeves"
+        ],
+        "end_preview": [
+          "released: 1995",
+          "votes: 41"
+        ]
+      }
+    ],
+    "DIRECTED": [
+      {
+        "start_labels": [
+          "Person"
+        ],
+        "rel_props": {},
+        "end_labels": [
+          "Movie"
+        ],
+        "start_preview": [
+          "born: 1967",
+          "name: Lilly Wachowski"
+        ],
+        "end_preview": [
+          "title: Speed Racer",
+          "votes: 30"
+        ]
+      },
+      {
+        "start_labels": [
+          "Person"
+        ],
+        "rel_props": {},
+        "end_labels": [
+          "Movie"
+        ],
+        "start_preview": [
+          "born: 1967",
+          "name: Lilly Wachowski"
+        ],
+        "end_preview": [
+          "title: Cloud Atlas",
+          "votes: 126"
+        ]
+      },
+      {
+        "start_labels": [
+          "Person"
+        ],
+        "rel_props": {},
+        "end_labels": [
+          "Movie"
+        ],
+        "start_preview": [
+          "born: 1967",
+          "name: Lilly Wachowski"
+        ],
+        "end_preview": [
+          "released: 2003",
+          "votes: 1598"
+        ]
+      }
+    ],
+    "FOLLOWS": [
+      {
+        "start_labels": [
+          "Person"
+        ],
+        "rel_props": {},
+        "end_labels": [
+          "Person"
+        ],
+        "start_preview": [
+          "name: Paul Blythe"
+        ],
+        "end_preview": [
+          "name: Angela Scope"
+        ]
+      },
+      {
+        "start_labels": [
+          "Person"
+        ],
+        "rel_props": {},
+        "end_labels": [
+          "Person"
+        ],
+        "start_preview": [
+          "name: Angela Scope"
+        ],
+        "end_preview": [
+          "name: Jessica Thompson"
+        ]
+      },
+      {
+        "start_labels": [
+          "Person"
+        ],
+        "rel_props": {},
+        "end_labels": [
+          "Person"
+        ],
+        "start_preview": [
+          "name: James Thompson"
+        ],
+        "end_preview": [
+          "name: Jessica Thompson"
+        ]
+      }
+    ],
+    "PRODUCED": [
+      {
+        "start_labels": [
+          "Person"
+        ],
+        "rel_props": {},
+        "end_labels": [
+          "Movie"
+        ],
+        "start_preview": [
+          "born: 1967",
+          "name: Lilly Wachowski"
+        ],
+        "end_preview": [
+          "title: V for Vendetta",
+          "votes: 59"
+        ]
+      },
+      {
+        "start_labels": [
+          "Person"
+        ],
+        "rel_props": {},
+        "end_labels": [
+          "Movie"
+        ],
+        "start_preview": [
+          "born: 1967",
+          "name: Lilly Wachowski"
+        ],
+        "end_preview": [
+          "votes: 15",
+          "tagline: Prepare to enter a secret world of assassins"
+        ]
+      },
+      {
+        "start_labels": [
+          "Person"
+        ],
+        "rel_props": {},
+        "end_labels": [
+          "Movie"
+        ],
+        "start_preview": [
+          "born: 1965",
+          "name: Lana Wachowski"
+        ],
+        "end_preview": [
+          "title: V for Vendetta",
+          "votes: 59"
+        ]
+      }
+    ],
+    "REVIEWED": [
+      {
+        "start_labels": [
+          "Person"
+        ],
+        "rel_props": {
+          "summary": "Pretty funny at times",
+          "rating": 62
+        },
+        "end_labels": [
+          "Movie"
+        ],
+        "start_preview": [
+          "name: Angela Scope"
+        ],
+        "end_preview": [
+          "released: 2000",
+          "votes: 24"
+        ]
+      },
+      {
+        "start_labels": [
+          "Person"
+        ],
+        "rel_props": {
+          "summary": "A solid romp",
+          "rating": 68
+        },
+        "end_labels": [
+          "Movie"
+        ],
+        "start_preview": [
+          "name: Jessica Thompson"
+        ],
+        "end_preview": [
+          "title: The Da Vinci Code",
+          "votes: 308"
+        ]
+      },
+      {
+        "start_labels": [
+          "Person"
+        ],
+        "rel_props": {
+          "summary": "Silly, but fun",
+          "rating": 65
+        },
+        "end_labels": [
+          "Movie"
+        ],
+        "start_preview": [
+          "name: Jessica Thompson"
+        ],
+        "end_preview": [
+          "released: 2000",
+          "votes: 24"
+        ]
+      }
+    ],
+    "WROTE": [
+      {
+        "start_labels": [
+          "Person"
+        ],
+        "rel_props": {},
+        "end_labels": [
+          "Movie"
+        ],
+        "start_preview": [
+          "born: 1967",
+          "name: Lilly Wachowski"
+        ],
+        "end_preview": [
+          "title: Speed Racer",
+          "votes: 30"
+        ]
+      },
+      {
+        "start_labels": [
+          "Person"
+        ],
+        "rel_props": {},
+        "end_labels": [
+          "Movie"
+        ],
+        "start_preview": [
+          "born: 1967",
+          "name: Lilly Wachowski"
+        ],
+        "end_preview": [
+          "title: V for Vendetta",
+          "votes: 59"
+        ]
+      },
+      {
+        "start_labels": [
+          "Person"
+        ],
+        "rel_props": {},
+        "end_labels": [
+          "Movie"
+        ],
+        "start_preview": [
+          "born: 1965",
+          "name: Lana Wachowski"
+        ],
+        "end_preview": [
+          "title: V for Vendetta",
+          "votes: 59"
+        ]
+      }
+    ]
+  }
+}
