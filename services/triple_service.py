@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import logging
 import re
+from typing import Any
 
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_neo4j import Neo4jGraph
@@ -34,14 +35,40 @@ MAX_ATTEMPTS = 3
 # ---------------------------------------------------------------------------
 
 
-def _parse_triple_response(response: str) -> tuple[str, list[tuple[str, str, str]]]:
-    """Parse LLM response to extract rewritten question and triples."""
+def _parse_triple_response(
+    response: str,
+) -> tuple[str, list[tuple[str, str, str]], dict[str, Any]]:
+    """Parse LLM response to extract rewritten question, triples, and light intent."""
     rewritten = ""
     triples: list[tuple[str, str, str]] = []
+    intent: dict[str, Any] = {
+        "operation": "",
+        "target": "",
+        "filters": [],
+        "sort": "",
+        "limit": "",
+        "aggregation": "",
+    }
+    current_section = ""
 
     for line in response.splitlines():
+        line = line.strip()
+        if not line:
+            continue
         if line.startswith("Rewritten:"):
             rewritten = line.replace("Rewritten:", "").strip()
+        elif line.startswith("Intent:"):
+            current_section = "intent"
+        elif line.startswith("Triples:"):
+            current_section = "triples"
+        elif current_section == "intent" and ":" in line:
+            key, value = line.split(":", 1)
+            key = key.strip().lower()
+            value = value.strip()
+            if key == "filters":
+                intent["filters"] = [item.strip() for item in value.split(";") if item.strip()]
+            elif key in intent:
+                intent[key] = value
         elif re.match(r"^\d+\.", line):
             match = re.search(r"\(([^,]+),\s*([^,]+),\s*([^)]+)\)", line)
             if match:
@@ -49,7 +76,62 @@ def _parse_triple_response(response: str) -> tuple[str, list[tuple[str, str, str
                     tuple(strip_quotes(x.strip()) for x in match.groups())  # type: ignore[return-value]
                 )
 
-    return rewritten, triples
+    return rewritten, triples, _merge_intent_with_question(intent, rewritten)
+
+
+def _merge_intent_with_question(
+    intent: dict[str, Any],
+    rewritten: str,
+) -> dict[str, Any]:
+    """Backfill missing intent slots with light heuristics."""
+    text = rewritten.lower()
+    merged = {
+        "operation": intent.get("operation", ""),
+        "target": intent.get("target", ""),
+        "filters": intent.get("filters", []) or [],
+        "sort": intent.get("sort", ""),
+        "limit": intent.get("limit", ""),
+        "aggregation": intent.get("aggregation", ""),
+    }
+
+    if not merged["operation"]:
+        if any(token in text for token in ("how many", "count", "number of")):
+            merged["operation"] = "count"
+        elif any(token in text for token in ("top ", "highest", "most", "lowest", "least")):
+            merged["operation"] = "rank"
+        elif any(token in text for token in ("average", "avg", "sum", "total", "minimum", "maximum")):
+            merged["operation"] = "aggregate"
+        else:
+            merged["operation"] = "lookup"
+
+    if not merged["aggregation"]:
+        if any(token in text for token in ("average", "avg")):
+            merged["aggregation"] = "avg"
+        elif "count" in merged["operation"] or "how many" in text or "number of" in text:
+            merged["aggregation"] = "count"
+        elif "sum" in text or "total" in text:
+            merged["aggregation"] = "sum"
+
+    if not merged["sort"]:
+        if any(token in text for token in ("highest", "most", "top")):
+            merged["sort"] = "desc"
+        elif any(token in text for token in ("lowest", "least", "oldest")):
+            merged["sort"] = "asc"
+
+    if not merged["limit"]:
+        limit_match = re.search(r"\b(top|first)\s+(\d+)\b", text)
+        if limit_match:
+            merged["limit"] = limit_match.group(2)
+
+    if not merged["filters"]:
+        filters: list[str] = []
+        if any(token in text for token in ("after ", "before ", "between ")):
+            filters.append("temporal")
+        if any(token in text for token in ("in ", "over ", "within ", "across ")):
+            filters.append("scope")
+        merged["filters"] = filters
+
+    return merged
 
 
 # ---------------------------------------------------------------------------
@@ -61,7 +143,7 @@ def interpret_question(
     user_question: str,
     interpreter_llm,
     conversation_history: list[dict[str, str]] | None = None,
-) -> tuple[str, list[tuple[str, str, str]]]:
+) -> tuple[str, list[tuple[str, str, str]], dict[str, Any]]:
     """
     First-pass triple extraction — no schema constraints.
     Rewrites the question and extracts free-form semantic triples.
@@ -78,6 +160,13 @@ def interpret_question(
         "- Use `UNKNOWN` if an entity isn't specified explicitly.\n\n"
         "Output format MUST be:\n"
         "Rewritten: <clarified question>\n"
+        "Intent:\n"
+        "operation: <lookup|count|aggregate|rank|compare>\n"
+        "target: <main entity or metric>\n"
+        "filters: <semicolon-separated filters or NONE>\n"
+        "sort: <desc|asc|NONE>\n"
+        "limit: <integer or NONE>\n"
+        "aggregation: <count|avg|sum|min|max|NONE>\n"
         "Triples:\n"
         "1. (subject, predicate, object)\n"
         "2. ...\n\n"
@@ -104,8 +193,9 @@ def interpret_question_with_schema(
     schema_labels: set[str],
     schema_relationships: set[str],
     database: str,
+    schema_context: str,
     conversation_history: list[dict[str, str]] | None = None,
-) -> tuple[str, list[tuple[str, str, str]]]:
+) -> tuple[str, list[tuple[str, str, str]], dict[str, Any]]:
     """
     Schema-guided triple extraction.
     Only allows labels and relationship types that exist in Neo4j.
@@ -137,8 +227,18 @@ Your job is to:
 ### Allowed Relationship Types:
 {rels_str}
 
+### Schema Context:
+{schema_context}
+
 Output format:
 Rewritten: <clarified question>
+Intent:
+operation: <lookup|count|aggregate|rank|compare>
+target: <main entity or metric>
+filters: <semicolon-separated filters or NONE>
+sort: <desc|asc|NONE>
+limit: <integer or NONE>
+aggregation: <count|avg|sum|min|max|NONE>
 Triples:
 1. (<subject_label>, <relationship_type>, <object_label>)
 2. ...
@@ -303,8 +403,9 @@ def extract_triples_with_retry(
     schema_relationships: set[str],
     graph: Neo4jGraph,
     database: str,
+    schema_context: str,
     conversation_history: list[dict[str, str]] | None = None,
-) -> tuple[str, list[tuple[str, str, str]], list[tuple[str, str, str]]]:
+) -> tuple[str, list[tuple[str, str, str]], list[tuple[str, str, str]], dict[str, Any]]:
     """
     Full triple extraction pipeline with retry loop (up to MAX_ATTEMPTS).
 
@@ -320,6 +421,7 @@ def extract_triples_with_retry(
     """
     verified_triples: list[tuple[str, str, str]] = []
     instance_triples: list[tuple[str, str, str]] = []
+    intent: dict[str, Any] = {}
     rewritten = ""
     raw_triples: list[tuple[str, str, str]] = []
 
@@ -327,16 +429,17 @@ def extract_triples_with_retry(
         logger.info("[TripleService] extract attempt %d/%d", attempt + 1, MAX_ATTEMPTS)
 
         if attempt == 0:
-            rewritten, triples = interpret_question(
+            rewritten, triples, intent = interpret_question(
                 question, interpreter_llm, conversation_history
             )
         else:
-            rewritten, triples = interpret_question_with_schema(
+            rewritten, triples, intent = interpret_question_with_schema(
                 question,
                 interpreter_llm,
                 schema_labels,
                 schema_relationships,
                 database,
+                schema_context,
                 conversation_history,
             )
 
@@ -375,7 +478,7 @@ def extract_triples_with_retry(
         len(verified_triples),
         len(instance_triples),
     )
-    return rewritten, verified_triples, instance_triples
+    return rewritten, verified_triples, instance_triples, intent
 
 
 def build_enhanced_question(
@@ -383,6 +486,8 @@ def build_enhanced_question(
     rewritten: str,
     verified_triples: list[tuple[str, str, str]],
     instance_triples: list[tuple[str, str, str]],
+    intent: dict[str, Any] | None = None,
+    schema_context: str = "",
     conversation_history: list[dict[str, str]] | None = None,
 ) -> str:
     """
@@ -392,14 +497,27 @@ def build_enhanced_question(
       - Recent conversation history (last 3 turns)
       - Original question
       - Rewritten (clarified) question
+      - Light intent slots
       - Verified triples (schema-validated)
       - Instance triples (actual DB entity matches)
+      - Compact schema context
     """
     triples_text = (
         "\n".join(f"({s}, {r}, {o})" for s, r, o in verified_triples) or "None"
     )
     instance_text = (
         "\n".join(f"({s}, {r}, {o})" for s, r, o in instance_triples) or "None"
+    )
+    intent = intent or {}
+    intent_text = "\n".join(
+        [
+            f"operation: {intent.get('operation', 'unknown')}",
+            f"target: {intent.get('target', 'unknown')}",
+            f"filters: {'; '.join(intent.get('filters', [])) or 'NONE'}",
+            f"sort: {intent.get('sort', 'NONE') or 'NONE'}",
+            f"limit: {intent.get('limit', 'NONE') or 'NONE'}",
+            f"aggregation: {intent.get('aggregation', 'NONE') or 'NONE'}",
+        ]
     )
 
     parts: list[str] = []
@@ -414,7 +532,10 @@ def build_enhanced_question(
 
     parts.append(f"Question: {question}")
     parts.append(f"Rewritten: {rewritten or question}")
+    parts.append(f"Intent:\n{intent_text}")
     parts.append(f"Verified Triples:\n{triples_text}")
     parts.append(f"Instance Triples:\n{instance_text}")
+    if schema_context.strip():
+        parts.append(schema_context.strip())
 
     return "\n\n".join(parts)

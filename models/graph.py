@@ -10,6 +10,7 @@ from __future__ import annotations
 import logging
 import threading
 import time
+from collections import defaultdict
 
 from config import get_settings
 from langchain_neo4j import Neo4jGraph
@@ -22,6 +23,9 @@ _graph_lock = threading.Lock()
 
 _schema_labels: set[str] = set()
 _schema_relationships: set[str] = set()
+_schema_node_properties: dict[str, list[str]] = {}
+_schema_relationship_properties: dict[str, list[str]] = {}
+_schema_sample_values: dict[str, list[str]] = {}
 _schema_last_refresh: float = 0.0
 _SCHEMA_REFRESH_INTERVAL = 300  # 5 minutes
 
@@ -52,14 +56,20 @@ def get_graph() -> Neo4jGraph:
 def refresh_schema() -> None:
     """Refresh schema from Neo4j and parse labels/relationships."""
     global _schema_labels, _schema_relationships, _schema_last_refresh
+    global _schema_node_properties, _schema_relationship_properties
+    global _schema_sample_values
     graph = get_graph()
     graph.refresh_schema()
     _schema_labels, _schema_relationships = parse_schema(graph.get_schema)
+    _schema_node_properties = _load_node_properties(graph)
+    _schema_relationship_properties = _load_relationship_properties(graph)
+    _schema_sample_values = _load_sample_values(graph, _schema_node_properties)
     _schema_last_refresh = time.time()
     logger.info(
-        "Schema refreshed: %d labels, %d relationships",
+        "Schema refreshed: %d labels, %d relationships, %d property groups",
         len(_schema_labels),
         len(_schema_relationships),
+        len(_schema_node_properties),
     )
 
 
@@ -83,6 +93,56 @@ def get_schema_relationships() -> set[str]:
     return _schema_relationships
 
 
+def get_schema_node_properties() -> dict[str, list[str]]:
+    """Return cached node label -> properties metadata."""
+    if not _schema_node_properties:
+        refresh_schema()
+    return _schema_node_properties
+
+
+def get_schema_relationship_properties() -> dict[str, list[str]]:
+    """Return cached relationship type -> properties metadata."""
+    if not _schema_relationship_properties:
+        refresh_schema()
+    return _schema_relationship_properties
+
+
+def get_schema_sample_values() -> dict[str, list[str]]:
+    """Return cached sample entity values for selected labels."""
+    if not _schema_sample_values:
+        refresh_schema()
+    return _schema_sample_values
+
+
+def get_schema_context() -> str:
+    """Return a compact, prompt-friendly schema summary with properties and examples."""
+    labels = sorted(get_schema_labels())
+    rels = sorted(get_schema_relationships())
+    node_properties = get_schema_node_properties()
+    rel_properties = get_schema_relationship_properties()
+    sample_values = get_schema_sample_values()
+
+    lines = ["Schema Context:"]
+
+    if labels:
+        lines.append("Node labels:")
+        for label in labels:
+            props = ", ".join(node_properties.get(label, [])[:8]) or "no known properties"
+            samples = ", ".join(sample_values.get(label, [])[:3])
+            line = f"- {label}: properties [{props}]"
+            if samples:
+                line += f"; sample values [{samples}]"
+            lines.append(line)
+
+    if rels:
+        lines.append("Relationship types:")
+        for rel in rels:
+            props = ", ".join(rel_properties.get(rel, [])[:6]) or "no properties"
+            lines.append(f"- {rel}: properties [{props}]")
+
+    return "\n".join(lines)
+
+
 def get_schema_text() -> str:
     """Get a human-readable schema string for display/debugging."""
     labels = get_schema_labels()
@@ -93,3 +153,83 @@ def get_schema_text() -> str:
         + "\n\nAvailable Relationships:\n"
         + "\n".join(f"- {rel}" for rel in sorted(rels))
     )
+
+
+def _load_node_properties(graph: Neo4jGraph) -> dict[str, list[str]]:
+    """Load node properties from Neo4j schema procedures."""
+    grouped: dict[str, set[str]] = defaultdict(set)
+    try:
+        rows = graph.query(
+            """
+            CALL db.schema.nodeTypeProperties()
+            YIELD nodeLabels, propertyName
+            RETURN nodeLabels, propertyName
+            """
+        )
+        for row in rows:
+            labels = row.get("nodeLabels") or []
+            prop = row.get("propertyName")
+            if not prop:
+                continue
+            for label in labels:
+                grouped[str(label)].add(str(prop))
+    except Exception as e:
+        logger.warning("[Graph] Failed to load node properties: %s", e)
+    return {label: sorted(props) for label, props in grouped.items()}
+
+
+def _load_relationship_properties(graph: Neo4jGraph) -> dict[str, list[str]]:
+    """Load relationship properties from Neo4j schema procedures."""
+    grouped: dict[str, set[str]] = defaultdict(set)
+    try:
+        rows = graph.query(
+            """
+            CALL db.schema.relTypeProperties()
+            YIELD relType, propertyName
+            RETURN relType, propertyName
+            """
+        )
+        for row in rows:
+            rel_type = str(row.get("relType") or "").strip(":")
+            prop = row.get("propertyName")
+            if rel_type and prop:
+                grouped[rel_type].add(str(prop))
+    except Exception as e:
+        logger.warning("[Graph] Failed to load relationship properties: %s", e)
+    return {rel: sorted(props) for rel, props in grouped.items()}
+
+
+def _load_sample_values(
+    graph: Neo4jGraph,
+    node_properties: dict[str, list[str]],
+) -> dict[str, list[str]]:
+    """Load a few high-signal sample values to ground entity matching."""
+    sample_values: dict[str, list[str]] = {}
+    preferred_props = ("name", "title", "screen_name", "categoryName", "companyName")
+
+    for label, properties in node_properties.items():
+        selected_prop = next((prop for prop in preferred_props if prop in properties), None)
+        if not selected_prop:
+            continue
+        try:
+            rows = graph.query(
+                f"""
+                MATCH (n:{label})
+                WHERE n.{selected_prop} IS NOT NULL
+                RETURN DISTINCT toString(n.{selected_prop}) AS value
+                ORDER BY value
+                LIMIT 3
+                """
+            )
+            values = [str(row.get("value")) for row in rows if row.get("value")]
+            if values:
+                sample_values[label] = values
+        except Exception as e:
+            logger.debug(
+                "[Graph] Failed to load sample values for %s.%s: %s",
+                label,
+                selected_prop,
+                e,
+            )
+
+    return sample_values

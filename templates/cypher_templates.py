@@ -17,6 +17,169 @@ from config import get_settings
 # 5. {question} placeholder
 # =============================================================================
 
+UNIVERSAL_CYPHER_CORE_TEMPLATE = """
+You are an expert Neo4j Cypher generator.
+
+CRITICAL: Output ONLY the raw Cypher query. NO markdown, NO code blocks, NO explanation.
+
+=== SCHEMA ===
+{schema}
+
+=== UNIVERSAL QUERY-GENERATION RULES ===
+RULE 1 - OUTPUT CONTRACT:
+- Return only executable Cypher.
+- Never add comments, markdown fences, or prose.
+
+RULE 2 - SCHEMA GROUNDING:
+- Use only labels, relationships, and properties supported by the schema.
+- Respect relationship direction when the schema implies a clear direction.
+- Prefer explicit property location over guessing.
+
+RULE 3 - RETURN SHAPE:
+- If the user asks for entities, return the entity or its primary identifying fields.
+- If the user asks for a metric, return the metric with a meaningful alias.
+- If the user asks for both entity and metric, return both.
+
+RULE 4 - RANKING VS RETRIEVAL:
+- "top", "highest", "most" usually require ORDER BY ... DESC.
+- "lowest", "least", "oldest" usually require ORDER BY ... ASC.
+- "first N" often means LIMIT N without ranking unless chronology is explicit.
+
+RULE 5 - AGGREGATION:
+- Use COUNT, AVG, SUM, MIN, MAX when the question is aggregative.
+- Use WITH for intermediate aggregations before filtering or ranking.
+
+RULE 6 - DEDUPLICATION:
+- Use DISTINCT only when joins can duplicate the requested answer.
+- Do not add DISTINCT by default when ranking already defines the result shape.
+
+RULE 7 - FILTERING:
+- Apply exact matches when a specific entity/value is requested.
+- Apply range filters for years, dates, counts, and numeric thresholds.
+- Handle NULL checks explicitly when the question implies missingness.
+
+RULE 8 - TYPE SAFETY:
+- Cast values when arithmetic or aggregation requires numeric conversion.
+- Avoid comparing strings and numbers without conversion.
+
+RULE 9 - OPTIONALITY:
+- Use OPTIONAL MATCH only when the question allows missing linked data.
+- Use required MATCH for mandatory conditions.
+
+RULE 10 - QUERY STABILITY:
+- Prefer simple, direct patterns over unnecessary hops.
+- If the question is underspecified, choose the most schema-faithful interpretation.
+
+=== DOMAIN SUPPLEMENT ===
+{domain_supplement}
+
+=== FEW-SHOT STYLE HINTS ===
+{few_shot_hints}
+
+{question}
+"""
+
+_GENERALIZED_SUPPLEMENTS = {
+    "climate": """
+- Domain focus: climate models, variables, experiments, regions, institutes, realms.
+- Common disambiguations:
+  - regional models often map to RCM-like labels.
+  - global model families may map through SourceType rather than a direct label.
+  - variable requests often require exact variable identifiers and sometimes scientific aliases.
+- Be careful with geography, model family, variable, and experiment joins.
+""".strip(),
+    "movies": """
+- Domain focus: people, movies, and relationship properties.
+- Common disambiguations:
+  - ratings and summaries may live on review relationships.
+  - roles may live on acted-in relationships.
+  - the same person can participate in multiple roles across the same movie.
+""".strip(),
+    "recommendations": """
+- Domain focus: movies, users, genres, actors, directors, and analytics-style metrics.
+- Common disambiguations:
+  - user-facing ranking questions often need aliases and complete report columns.
+  - temporal questions may use year for range filters and released date for exact calendar logic.
+  - movie metadata can include budgets, revenues, ratings, and identifiers.
+""".strip(),
+    "northwind": """
+- Domain focus: products, categories, suppliers, customers, orders, and order-line relationship properties.
+- Common disambiguations:
+  - revenue-like calculations often rely on relationship properties.
+  - freight, discount, and unit price may require numeric conversion.
+  - "least/fewest" usually means minimum positive value, not missing value.
+""".strip(),
+    "twitter": """
+- Domain focus: users, tweets, mentions, retweets, follows, and interaction graphs.
+- Common disambiguations:
+  - different user roles may exist and should not be conflated.
+  - counts of followers/following may require graph traversal rather than node properties.
+  - retweet and mention patterns are direction-sensitive.
+""".strip(),
+}
+
+_GENERALIZED_HINTS = {
+    "climate": """
+Q: Show regional climate models that predict precipitation over Florida.
+Cypher should combine the regional-model label, a precipitation variable match, and a Florida region constraint.
+
+Q: How many models are used in the historical experiment?
+Cypher should use COUNT over the model-to-experiment pattern.
+""".strip(),
+    "movies": """
+Q: Find the top 5 movies with the most votes.
+Cypher should rank movies by votes descending and limit to 5.
+
+Q: What are the roles of Keanu Reeves in The Matrix?
+Cypher should read roles from the acting relationship, not the person node.
+""".strip(),
+    "recommendations": """
+Q: Which country has the most movies?
+Cypher should aggregate and return both the country and the count metric.
+
+Q: List the first 5 movies released before 2000.
+Cypher should filter by year and limit the output.
+""".strip(),
+    "northwind": """
+Q: Which customer has placed the most orders?
+Cypher should aggregate order counts per customer and rank descending.
+
+Q: What is the total revenue generated by orders shipped in 1996?
+Cypher should use relationship-level price and quantity fields.
+""".strip(),
+    "twitter": """
+Q: Who does neo4j interact with most frequently?
+Cypher should aggregate interactions per target user and rank descending.
+
+Q: Which three tweets have the most mentions of other users?
+Cypher should count mentions per tweet and return the tweet identifier with the metric.
+""".strip(),
+}
+
+
+def build_generalized_cypher_template(db_name: str | None = None) -> str:
+    """Build a generalized template from a universal core plus a small domain supplement."""
+    db = db_name or get_settings().database_name
+    domain_supplement = _GENERALIZED_SUPPLEMENTS.get(
+        db,
+        "Use the schema to infer the main entities, properties, and relationship directions.",
+    )
+    few_shot_hints = _GENERALIZED_HINTS.get(
+        db,
+        "Q: Return the top matching entities.\nCypher should follow schema-grounded ranking behavior.",
+    )
+    return UNIVERSAL_CYPHER_CORE_TEMPLATE.format(
+        schema="{schema}",
+        domain_supplement=domain_supplement,
+        few_shot_hints=few_shot_hints,
+        question="{question}",
+    )
+
+# Climate keeps the heaviest domain ontology bias.
+# Generalization path:
+# - keep output, limit, aggregation, DISTINCT, and direction rules as universal core
+# - move climate-only lexical mappings (pr/tas/ps, RCM/AOGCM, region hierarchy)
+#   into retrieved schema hints or ontology grounding instead of fixed prompt text
 CYPHER_GENERATION_CLIMATE_TEMPLATE = """
 You are a Cypher expert for a Neo4j Climate Science graph database.
 
@@ -199,6 +362,11 @@ RETURN i.name, model_count
 {question}
 """
 
+# Movies is a good source for universal structural rules because it highlights:
+# - property location mistakes
+# - relationship-property mistakes
+# - alias/return-shape mismatches
+# These patterns generalize better than the movie-specific entity names.
 CYPHER_GENERATION_MOVIES_TEMPLATE = """
 You are a Cypher expert for the Neo4j Movies graph database.
 
@@ -425,6 +593,12 @@ MATCH (:Person)-[r:REVIEWED]->(m:Movie) WHERE r.rating > 95 With size(split(r.su
 {question}
 """
 
+# Recommendations is closer to an analytics workload.
+# It contributes universal lessons about:
+# - ranking and return completeness
+# - alias discipline
+# - year/date normalization
+# - aggregation and numeric filtering
 CYPHER_GENERATION_RECOMMENDATIONS_TEMPLATE = """
 You are a Cypher expert for the Neo4j Movie Recommendations graph database.
 
@@ -1041,6 +1215,11 @@ MATCH (m:Movie) WHERE m.budget > 100000000 RETURN m.title, m.budget ORDER BY m.b
 {question}
 """
 
+# Northwind contributes general business-query behavior:
+# - numeric casts
+# - "first N" vs "top N"
+# - aggregation over relationship properties
+# - NULL handling and least/fewest semantics
 CYPHER_GENERATION_NORTHWIND_TEMPLATE = """
 You are a Cypher expert for the Neo4j Northwind graph database.
 
@@ -1167,6 +1346,12 @@ MATCH (c:Customer)-[:PURCHASED]->(o:Order)-[:ORDERS]->(p:Product)-[:PART_OF]->(c
 {question}
 """
 
+# Twitter is the strongest source for graph-structural disambiguation:
+# - direction-sensitive relationships
+# - node-role disambiguation (:Me vs :User)
+# - count subquery usage
+# - strict return-column contracts
+# These are domain-specific today but should become schema-grounded behaviors.
 CYPHER_GENERATION_TWITTER_TEMPLATE = """
 You are a Cypher expert for a Neo4j Twitter graph.
 
@@ -1431,6 +1616,9 @@ MATCH (me:Me {{screen_name: 'neo4j'}})-[:FOLLOWS]->(user:User) RETURN user.name,
 # =============================================================================
 # TEMPLATE SELECTOR
 # =============================================================================
+# Current design = shared scaffolding + domain adapters.
+# For a more general research version, keep this selector but reduce each
+# adapter to a compact domain supplement generated from schema and examples.
 _TEMPLATE_MAP = {
     "climate": CYPHER_GENERATION_CLIMATE_TEMPLATE,
     "movies": CYPHER_GENERATION_MOVIES_TEMPLATE,
@@ -1443,4 +1631,6 @@ _TEMPLATE_MAP = {
 def get_cypher_template(db_name: str | None = None) -> str:
     """Get the Cypher generation template for the given database."""
     db = db_name or get_settings().database_name
+    if get_settings().USE_GENERALIZED_TEMPLATE:
+        return build_generalized_cypher_template(db)
     return _TEMPLATE_MAP.get(db, CYPHER_GENERATION_CLIMATE_TEMPLATE)

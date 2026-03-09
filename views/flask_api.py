@@ -77,6 +77,7 @@ def text2cypher():
                 "rewritten": results.get("rewritten", ""),
                 "verified_triples": results.get("verified_triples", []),
                 "instance_triples": results.get("instance_triples", []),
+                "intent": results.get("intent", {}),
             }
         )
 
@@ -90,6 +91,7 @@ def text2cypher():
                 "rewritten": "",
                 "verified_triples": [],
                 "instance_triples": [],
+                "intent": {},
             }
         ), 500
 
@@ -124,6 +126,7 @@ def rag_endpoint():
                 "input_question": question,
                 "output": result.get("output", ""),
                 "cypher_query": result.get("cypher_query", ""),
+                "intent": result.get("intent", {}),
                 "error": None,
             }
         )
@@ -145,6 +148,7 @@ def set_database():
         {
             "current_database": settings.database_name,
             "available": available,
+            "use_generalized_template": settings.USE_GENERALIZED_TEMPLATE,
             "note": "Change NEO4J_DATABASE in .env to switch databases.",
         }
     )
@@ -166,6 +170,7 @@ def health():
             {
                 "status": "ok",
                 "database": settings.database_name,
+                "use_generalized_template": settings.USE_GENERALIZED_TEMPLATE,
                 "labels": len(labels),
                 "relationships": len(rels),
             }
@@ -184,6 +189,7 @@ def list_databases():
         {
             "current": settings.database_name,
             "available": available,
+            "use_generalized_template": settings.USE_GENERALIZED_TEMPLATE,
             "note": "Change NEO4J_DATABASE in .env to switch databases.",
         }
     )

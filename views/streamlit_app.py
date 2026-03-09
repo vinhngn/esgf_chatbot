@@ -138,10 +138,20 @@ if user_input:
                 rewritten = result.get("rewritten", "")
                 verified_triples = result.get("verified_triples", [])
                 instance_triples = result.get("instance_triples", [])
+                intent = result.get("intent", {})
                 cypher = result.get("cypher_query", "")
 
                 with st.expander("Pipeline debug", expanded=False):
                     st.markdown(f"**Rewritten question:** {rewritten or '—'}")
+                    st.markdown(
+                        f"**Template mode:** {'generalized' if settings.USE_GENERALIZED_TEMPLATE else 'specialized'}"
+                    )
+
+                    if intent:
+                        st.markdown("**Intent:**")
+                        st.json(intent)
+                    else:
+                        st.markdown("**Intent:** —")
 
                     if verified_triples:
                         st.markdown("**Verified triples:**")

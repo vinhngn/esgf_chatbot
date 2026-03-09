@@ -31,6 +31,9 @@ class Settings:
     FREE_QUESTIONS_PER_SESSION: int = int(
         os.getenv("FREE_QUESTIONS_PER_SESSION", "100")
     )
+    USE_GENERALIZED_TEMPLATE: bool = os.getenv(
+        "USE_GENERALIZED_TEMPLATE", "false"
+    ).lower() in {"1", "true", "yes", "on"}
     FLASK_PORT: int = int(os.getenv("FLASK_PORT", "8954"))
     FLASK_HOST: str = os.getenv("FLASK_HOST", "0.0.0.0")
     SERVER_URL: str = os.getenv("SERVER_URL", "http://localhost")

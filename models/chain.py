@@ -16,7 +16,7 @@ from langchain_neo4j import GraphCypherQAChain
 from templates.cypher_templates import get_cypher_template
 from utils.helpers import clean_cypher_query
 
-from models.graph import get_graph, maybe_refresh_schema
+from models.graph import get_graph, get_schema_context, maybe_refresh_schema
 from models.llm import get_cypher_llm, get_qa_llm
 
 logger = logging.getLogger(__name__)
@@ -79,6 +79,9 @@ def invoke_chain(question: str) -> dict | str:
         result = chain.invoke({"query": question}, return_only_outputs=True)
     except Exception as e:
         logger.warning("[Chain] GraphCypher chain error: %s", e)
+        fallback_result = _run_fallback_query(question, str(e))
+        if fallback_result is not None:
+            return fallback_result
         return "Sorry, I couldn't find an answer to your question."
 
     if result is None:
@@ -97,3 +100,43 @@ def invoke_chain(question: str) -> dict | str:
         logger.warning("[Chain] Failed to extract/clean Cypher query: %s", e)
 
     return result
+
+
+def _run_fallback_query(question: str, error_message: str) -> dict | None:
+    """
+    Generate and execute a direct Cypher fallback when GraphCypherQAChain fails.
+    This keeps the current architecture but adds one low-frequency repair path.
+    """
+    try:
+        graph = get_graph()
+        schema_text = graph.get_schema
+        schema_context = get_schema_context()
+        template = get_cypher_template()
+        prompt = (
+            template.replace("{schema}", schema_text).replace(
+                "{question}",
+                (
+                    "The previous generated query failed.\n"
+                    f"Failure: {error_message}\n\n"
+                    "Use the schema and the grounded question below to repair the query.\n"
+                    "If the question contains intent hints or schema context, use them.\n\n"
+                    f"{question}\n\nCypher Query:"
+                ),
+            )
+            + f"\n\nAdditional schema grounding:\n{schema_context}"
+        )
+        query_raw = get_cypher_llm().invoke(prompt).content.strip()
+        cleaned = clean_cypher_query(query_raw)
+        if not cleaned:
+            return None
+
+        result = graph.query(cleaned)
+        encoded = urllib.parse.quote(cleaned)
+        logger.info("[Chain] Fallback direct query succeeded.")
+        return {
+            "result": result,
+            "intermediate_steps": [{"query": encoded}],
+        }
+    except Exception as fallback_error:
+        logger.warning("[Chain] Fallback query failed: %s", fallback_error)
+        return None

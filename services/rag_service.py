@@ -16,10 +16,16 @@ from __future__ import annotations
 
 import logging
 import urllib.parse
+from typing import Any
 
 from config import get_settings
 from models.chain import invoke_chain
-from models.graph import get_graph, get_schema_labels, get_schema_relationships
+from models.graph import (
+    get_graph,
+    get_schema_context,
+    get_schema_labels,
+    get_schema_relationships,
+)
 from models.llm import get_interpreter_llm, get_main_llm
 from retry import retry
 from templates.cypher_templates import get_cypher_template
@@ -94,6 +100,7 @@ def _run_pipeline(
         rewritten          : str
         verified_triples   : list[tuple[str,str,str]]
         instance_triples   : list[tuple[str,str,str]]
+        intent             : dict[str, Any]
         chain_result       : dict | str   (raw chain output)
         encoded_query      : str | None
         decoded_query      : str | None
@@ -103,19 +110,22 @@ def _run_pipeline(
     graph = get_graph()
     schema_labels = get_schema_labels()
     schema_relationships = get_schema_relationships()
+    schema_context = get_schema_context()
 
     # --- Step 1: Triple extraction with retry ---
-    rewritten, verified_triples, instance_triples = extract_triples_with_retry(
+    rewritten, verified_triples, instance_triples, intent = extract_triples_with_retry(
         question=question,
         interpreter_llm=interpreter_llm,
         schema_labels=schema_labels,
         schema_relationships=schema_relationships,
         graph=graph,
         database=db_name,
+        schema_context=schema_context,
         conversation_history=conversation_history,
     )
 
     logger.info("[RAGService] rewritten=%r", rewritten)
+    logger.info("[RAGService] intent=%s", intent)
     logger.info("[RAGService] verified_triples=%s", verified_triples)
     logger.info("[RAGService] instance_triples=%s", instance_triples)
 
@@ -125,6 +135,8 @@ def _run_pipeline(
         rewritten=rewritten,
         verified_triples=verified_triples,
         instance_triples=instance_triples,
+        intent=intent,
+        schema_context=schema_context,
         conversation_history=conversation_history,
     )
 
@@ -141,6 +153,7 @@ def _run_pipeline(
         "rewritten": rewritten,
         "verified_triples": verified_triples,
         "instance_triples": instance_triples,
+        "intent": intent,
         "chain_result": chain_result,
         "encoded_query": encoded_query,
         "decoded_query": decoded_query,
@@ -176,6 +189,7 @@ def process_question(
     rewritten = pipe["rewritten"]
     verified_triples = pipe["verified_triples"]
     instance_triples = pipe["instance_triples"]
+    intent: dict[str, Any] = pipe.get("intent", {})
 
     neo4j_link = _build_neo4j_link(encoded_query)
 
@@ -188,6 +202,7 @@ def process_question(
             "rewritten": rewritten,
             "verified_triples": verified_triples,
             "instance_triples": instance_triples,
+            "intent": intent,
         }
 
     # Normalize Neo4j result
@@ -210,6 +225,7 @@ def process_question(
             f"Conversation:\n{conversation_text}\n\n"
             f"Current question: {question}\n"
             f"Rewritten question: {rewritten or question}\n\n"
+            f"Intent hints: {intent}\n\n"
             f"Here is the output from the database:\n{raw_result}\n\n"
             "Please process the output and answer the user question clearly.\n"
             "Always end your answer with the exact phrase:\n"
@@ -226,6 +242,7 @@ def process_question(
         "rewritten": rewritten,
         "verified_triples": verified_triples,
         "instance_triples": instance_triples,
+        "intent": intent,
     }
 
 
@@ -258,6 +275,7 @@ def get_raw_results(question: str) -> dict:
     rewritten = pipe["rewritten"]
     verified_triples = pipe["verified_triples"]
     instance_triples = pipe["instance_triples"]
+    intent: dict[str, Any] = pipe.get("intent", {})
 
     if isinstance(chain_result, dict):
         raw_result = chain_result.get("result")
@@ -295,6 +313,7 @@ def get_raw_results(question: str) -> dict:
         "rewritten": rewritten,
         "verified_triples": [list(t) for t in verified_triples],
         "instance_triples": [list(t) for t in instance_triples],
+        "intent": intent,
     }
 
 
@@ -316,6 +335,7 @@ def get_database_info() -> dict:
     db_name = settings.database_name
     return {
         "database": db_name,
+        "use_generalized_template": settings.USE_GENERALIZED_TEMPLATE,
         "cypher_template": get_cypher_template(db_name),
         "entity_definitions": get_entity_definitions(db_name),
         "match_properties": get_match_properties_map(db_name),
@@ -327,6 +347,7 @@ def get_schema_info(database: str | None = None) -> dict:
     db = database or get_settings().database_name
     return {
         "database": db,
+        "use_generalized_template": get_settings().USE_GENERALIZED_TEMPLATE,
         "entity_definitions": get_entity_definitions(db),
         "match_properties": get_match_properties_map(db),
         "has_cypher_template": db in get_available_databases(),
