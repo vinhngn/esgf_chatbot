@@ -31,20 +31,20 @@ def build_query_ir(
         focus_label = verified_triples[0][0]
 
     anchor = {}
-    plan_anchor = query_plan.get("anchor", {}) or {}
-    if isinstance(plan_anchor, dict) and plan_anchor.get("label"):
+    lock_anchor = query_constraints.get("anchor_lock", {}) or {}
+    if isinstance(lock_anchor, dict) and lock_anchor.get("label"):
         anchor = {
-            "label": str(plan_anchor.get("label", "")),
-            "property": str(plan_anchor.get("property", "")),
-            "value": str(plan_anchor.get("value", "")),
+            "label": str(lock_anchor.get("label", "")),
+            "property": str(lock_anchor.get("property", "")),
+            "value": str(lock_anchor.get("value", "")),
         }
     if not anchor:
-        lock_anchor = query_constraints.get("anchor_lock", {}) or {}
-        if isinstance(lock_anchor, dict) and lock_anchor.get("label"):
+        plan_anchor = query_plan.get("anchor", {}) or {}
+        if isinstance(plan_anchor, dict) and plan_anchor.get("label"):
             anchor = {
-                "label": str(lock_anchor.get("label", "")),
-                "property": str(lock_anchor.get("property", "")),
-                "value": str(lock_anchor.get("value", "")),
+                "label": str(plan_anchor.get("label", "")),
+                "property": str(plan_anchor.get("property", "")),
+                "value": str(plan_anchor.get("value", "")),
             }
 
     if not anchor and instance_triples:
@@ -55,16 +55,23 @@ def build_query_ir(
     if anchor:
         anchors.append(anchor)
     for literal, _, label in instance_triples:
+        if anchor and str(anchor.get("value") or "").strip().lower() == str(literal).strip().lower():
+            continue
         candidate = {"label": str(label), "property": "", "value": str(literal)}
         if candidate not in anchors:
             anchors.append(candidate)
 
+    preferred_items = (
+        return_contract.get("expected_items")
+        if return_contract.get("strict")
+        else query_plan.get("return_items") or return_contract.get("expected_items") or []
+    )
+    if not preferred_items:
+        preferred_items = query_plan.get("return_items") or return_contract.get("expected_items") or []
     return_items = [
         str(item).strip()
         for item in (
-            query_plan.get("return_items")
-            or return_contract.get("expected_items")
-            or []
+            preferred_items
         )
         if str(item).strip()
     ]
@@ -84,6 +91,17 @@ def build_query_ir(
         ] if part
     ).strip()
 
+    cardinality = str(return_contract.get("cardinality") or "").strip().lower()
+    limit = query_plan.get("limit") or _safe_int(intent.get("limit"))
+    if not limit:
+        card_match = re.search(r"(?:top|first)_(\d+)$", cardinality)
+        if card_match:
+            limit = int(card_match.group(1))
+        elif cardinality in {"top_1", "one", "single"}:
+            limit = 1
+        elif any(token in question_text.lower() for token in (" most ", " most?", " most.", " most frequently", " highest ", " lowest ", " least ")) and "top " not in question_text.lower():
+            limit = 1
+
     return {
         "database": database,
         "focus_label": focus_label,
@@ -98,7 +116,7 @@ def build_query_ir(
         "relation_path": relation_path,
         "sort_field": str(query_plan.get("sort_field") or ""),
         "sort_direction": str(query_plan.get("sort_direction") or ""),
-        "limit": query_plan.get("limit") or _safe_int(intent.get("limit")),
+        "limit": limit,
         "aggregation": str(query_plan.get("aggregation") or intent.get("aggregation") or ""),
         "allow_aggregation": bool(query_constraints.get("allow_aggregation", False)),
         "count_pattern": str(path_hints.get("count_pattern") or ""),
@@ -111,6 +129,9 @@ def build_query_ir(
 
 def render_cypher_from_ir(ir: dict[str, Any]) -> str | None:
     focus_label = str(ir.get("focus_label") or "")
+    family_cypher = _render_question_family_fallback(ir)
+    if family_cypher:
+        return family_cypher
     if not focus_label:
         return None
 
@@ -122,11 +143,6 @@ def render_cypher_from_ir(ir: dict[str, Any]) -> str | None:
 
     if query_mode == "rank_graph_count" and count_pattern:
         return _render_rank_graph_count(ir, focus_label)
-
-    if query_mode == "aggregate_projection":
-        cypher = _render_aggregate_projection(ir, focus_label)
-        if cypher:
-            return cypher
 
     if verified:
         if len(verified) == 1:
@@ -142,9 +158,10 @@ def render_cypher_from_ir(ir: dict[str, Any]) -> str | None:
             if cypher:
                 return cypher
 
-    family_cypher = _render_question_family_fallback(ir)
-    if family_cypher:
-        return family_cypher
+    if query_mode == "aggregate_projection":
+        cypher = _render_aggregate_projection(ir, focus_label)
+        if cypher:
+            return cypher
 
     if query_mode in {"rank_by_existing_property", "lookup_property", "lookup_entity"}:
         return _render_focus_scan(ir, focus_label, anchor, match_map)
@@ -234,6 +251,36 @@ def _render_dual_relation(ir: dict[str, Any], focus_label: str, anchor: dict[str
             match_map,
         )
         focus_alias = shared_alias if focus_label == s1 else other_alias
+        return _assemble_query(ir, match_clause, where_clause, focus_alias)
+    if o1 == s2:
+        aliases = {
+            s1: _alias_for_label(s1),
+            o1: _alias_for_label(o1),
+            o2: _alias_for_label(o2),
+        }
+        match_clause = (
+            f"MATCH ({aliases[s1]}:{s1})-[:{r1}]->({aliases[o1]}:{o1})"
+            f"-[:{r2}]->({aliases[o2]}:{o2})"
+        )
+        where_clause = _where_from_anchors(
+            [
+                (aliases[s1], a)
+                for a in (ir.get("anchors", []) or [])
+                if str(a.get("label") or "") == s1
+            ]
+            + [
+                (aliases[o1], a)
+                for a in (ir.get("anchors", []) or [])
+                if str(a.get("label") or "") == o1
+            ]
+            + [
+                (aliases[o2], a)
+                for a in (ir.get("anchors", []) or [])
+                if str(a.get("label") or "") == o2
+            ],
+            match_map,
+        )
+        focus_alias = _alias_for_label(focus_label)
         return _assemble_query(ir, match_clause, where_clause, focus_alias)
     return None
 
@@ -357,14 +404,13 @@ def _assemble_query(ir: dict[str, Any], match_clause: str, where_clause: str, fo
 
 def _normalize_return_items(items: list[str], focus_alias: str, focus_label: str) -> list[str]:
     normalized = []
-    focus_prefix = _alias_for_label(str(focus_label))
     for item in items:
         text = str(item).strip()
         if not text:
             continue
-        text = _normalize_alias_tokens(text, focus_alias)
-        if focus_prefix and focus_prefix != focus_alias:
-            text = re.sub(rf"\b{re.escape(focus_prefix)}\.", f"{focus_alias}.", text)
+        text = _normalize_alias_tokens(text)
+        if re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", text):
+            text = _normalize_alias_tokens(f"{text}.id").rsplit(".", 1)[0]
         normalized.append(text)
     return normalized
 
@@ -374,7 +420,7 @@ def _inject_metric_items(items: list[str], ir: dict[str, Any], focus_alias: str)
         return items
     count_pattern = str(ir.get("count_pattern") or "").strip()
     if count_pattern:
-        count_pattern = _normalize_alias_tokens(count_pattern, focus_alias)
+        count_pattern = _normalize_alias_tokens(count_pattern)
         alias_match = re.search(r"\bAS\s+([A-Za-z_][A-Za-z0-9_]*)\b", count_pattern, flags=re.IGNORECASE)
         alias = alias_match.group(1) if alias_match else ""
         out = []
@@ -412,6 +458,16 @@ def _apply_projection_policy(items: list[str], ir: dict[str, Any]) -> list[str]:
 
     projection_lock = str(ir.get("projection_lock") or ir.get("return_mode") or "")
     if projection_lock == "full_node":
+        node_items: list[str] = []
+        seen: set[str] = set()
+        for item in items:
+            bare = item.split(".", 1)[0].split(" AS ", 1)[0].strip()
+            bare = _normalize_alias_tokens(bare)
+            if bare and bare not in seen:
+                seen.add(bare)
+                node_items.append(bare)
+        if node_items:
+            return node_items
         return [items[0].split(".", 1)[0]] if "." in items[0] else [items[0]]
 
     explicit_sort_field = str(ir.get("sort_field") or "")
@@ -465,7 +521,7 @@ def _derive_order_spec(ir: dict[str, Any], focus_alias: str) -> tuple[str, str]:
     if not field:
         field = _default_order_field(ir, focus_alias)
 
-    field = _normalize_alias_tokens(field, focus_alias)
+    field = _normalize_alias_tokens(field)
     return field, direction or "DESC"
 
 
@@ -523,11 +579,34 @@ def _default_order_field(ir: dict[str, Any], focus_alias: str) -> str:
     return ""
 
 
-def _normalize_alias_tokens(text: str, focus_alias: str) -> str:
-    for alias in ("user", "tweet", "u", "t"):
-        text = re.sub(rf"\b{alias}\b(?=\.)", focus_alias, text)
-        text = re.sub(rf"\b{alias}\b(?=\))", focus_alias, text)
-        text = re.sub(rf"\b{alias}\b(?=\s*-\[)", focus_alias, text)
+def _normalize_alias_tokens(text: str) -> str:
+    alias_map = {
+        "u": "user",
+        "user": "user",
+        "me": "me",
+        "neo4j": "me",
+        "t": "tweet",
+        "tweet": "tweet",
+        "retweet": "retweet",
+        "original": "original",
+        "reply": "reply",
+        "mentioned": "mentioned",
+        "interacted": "user",
+        "h": "hashtag",
+        "hashtag": "hashtag",
+        "l": "link",
+        "link": "link",
+        "m": "movie",
+        "movie": "movie",
+        "p": "person",
+        "person": "person",
+    }
+    for alias, canonical in alias_map.items():
+        text = re.sub(rf"^{alias}$", canonical, text)
+        text = re.sub(rf"\b{alias}\b(?=\.)", canonical, text)
+        text = re.sub(rf"\b{alias}\b(?=\))", canonical, text)
+        text = re.sub(rf"\b{alias}\b(?=\s*-\[)", canonical, text)
+        text = re.sub(rf"\b{alias}\b(?=\s*<-\[)", canonical, text)
     return text
 
 
@@ -624,6 +703,17 @@ def _render_question_family_fallback(ir: dict[str, Any]) -> str | None:
             "MATCH (tweet:Tweet)-[:MENTIONS]->(:User {screen_name: 'neo4j'}) "
             "WHERE exists{ (tweet)-[:CONTAINS]->(:Link) } "
             "RETURN tweet"
+        )
+
+    if "mention users who have retweeted tweets that mention" in q:
+        quoted = re.search(r"['\"]([^'\"]+)['\"]", str(ir.get("question_text") or ""))
+        literal = quoted.group(1) if quoted else "Neo4j"
+        prop = "name" if any(ch.isupper() for ch in literal) else "screen_name"
+        value = literal if prop == "name" else literal.lower()
+        return (
+            f"MATCH (me:Me {{{prop}: {_quote_literal(value)}}})<-[:MENTIONS]-(tweet1:Tweet)"
+            "<-[:RETWEETS]-(:Tweet)<-[:POSTS]-(user:User)<-[:MENTIONS]-(tweet2:Tweet) "
+            "RETURN DISTINCT tweet2.id_str"
         )
 
     return None

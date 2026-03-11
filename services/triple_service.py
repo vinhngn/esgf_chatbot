@@ -936,7 +936,8 @@ def infer_query_constraints(
     query_plan: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Compile lightweight hard constraints before Cypher generation."""
-    text = f"{question}\n{rewritten}".lower()
+    raw_text = f"{question}\n{rewritten}"
+    text = raw_text.lower()
     db = (database or "").lower()
     intent = intent or {}
     return_contract = return_contract or {}
@@ -993,6 +994,9 @@ def infer_query_constraints(
 
     if db == "twitter":
         anchor_lock: dict[str, str] = {}
+        quoted_literal_match = re.search(r"['\"]([^'\"]+)['\"]", raw_text)
+        quoted_literal = quoted_literal_match.group(1).strip() if quoted_literal_match else ""
+        quoted_has_upper = any(char.isupper() for char in quoted_literal)
 
         if "'me'" in text or '"me"' in text or " according to the amplifies relationship" in text:
             anchor_lock = {"label": "Me", "property": "", "value": ""}
@@ -1002,9 +1006,17 @@ def infer_query_constraints(
             if any(token in text for token in ("screen_name", "mentions", "started following", "follow 'neo4j'", "follow neo4j")):
                 anchor_lock = {"label": "Me", "property": "screen_name", "value": "neo4j"}
             elif any(token in text for token in ("posted by 'neo4j'", "tweets by 'neo4j'", "by 'neo4j'")):
-                anchor_lock = {"label": "User", "property": "screen_name", "value": "neo4j"}
+                anchor_lock = {
+                    "label": "User",
+                    "property": "name" if quoted_has_upper else "screen_name",
+                    "value": quoted_literal or ("Neo4j" if quoted_has_upper else "neo4j"),
+                }
             else:
-                anchor_lock = {"label": "Me", "property": "name", "value": "Neo4j"}
+                anchor_lock = {
+                    "label": "Me",
+                    "property": "name" if quoted_has_upper else "screen_name",
+                    "value": quoted_literal or ("Neo4j" if quoted_has_upper else "neo4j"),
+                }
 
         if anchor_lock:
             constraints["anchor_lock"] = anchor_lock
