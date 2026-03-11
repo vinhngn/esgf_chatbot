@@ -26,6 +26,8 @@ class Settings:
 
     # OpenAI
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
+    OPENAI_TIMEOUT_SECONDS: int = int(os.getenv("OPENAI_TIMEOUT_SECONDS", "60"))
+    OPENAI_MAX_RETRIES: int = int(os.getenv("OPENAI_MAX_RETRIES", "1"))
 
     # App
     FREE_QUESTIONS_PER_SESSION: int = int(
@@ -33,6 +35,9 @@ class Settings:
     )
     USE_GENERALIZED_TEMPLATE: bool = os.getenv(
         "USE_GENERALIZED_TEMPLATE", "false"
+    ).lower() in {"1", "true", "yes", "on"}
+    ENABLE_LLM_CACHE: bool = os.getenv(
+        "ENABLE_LLM_CACHE", "false"
     ).lower() in {"1", "true", "yes", "on"}
     FLASK_PORT: int = int(os.getenv("FLASK_PORT", "8954"))
     FLASK_HOST: str = os.getenv("FLASK_HOST", "0.0.0.0")

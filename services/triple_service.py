@@ -21,6 +21,7 @@ from typing import Any
 
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_neo4j import Neo4jGraph
+from pydantic import BaseModel, Field
 from templates.entity_definitions import get_entity_definitions
 from templates.match_properties_map import get_match_properties_map
 from utils.helpers import strip_quotes
@@ -57,6 +58,71 @@ _GENERIC_ENTITY_LITERALS = {
     "sum",
     "total",
 }
+
+_TWITTER_DYNAMIC_EXAMPLES = [
+    {
+        "tags": {"follows", "users", "neo4j", "recent"},
+        "question": "List the 5 most recent users who started following 'Neo4j'.",
+        "cypher": "MATCH (neo4j:Me {screen_name: 'neo4j'})<-[:FOLLOWS]-(user:User) RETURN user.screen_name, user.name, user.followers, user.following, user.profile_image_url, user.url, user.location, user.statuses ORDER BY user.followers DESC LIMIT 5",
+    },
+    {
+        "tags": {"amplifies", "me", "users"},
+        "question": "Which users are amplified by 'Me' according to the AMPLIFIES relationship?",
+        "cypher": "MATCH (me:Me)-[:AMPLIFIES]->(user:User) RETURN user.screen_name AS AmplifiedUser",
+    },
+    {
+        "tags": {"following", "count", "users"},
+        "question": "Identify the top 3 users by the number of people they are following.",
+        "cypher": "MATCH (u:User) RETURN u.name, u.screen_name, count{(u)-[:FOLLOWS]->(:User)} AS followingCount ORDER BY followingCount DESC LIMIT 3",
+    },
+    {
+        "tags": {"mentions", "favorites", "tweets", "neo4j"},
+        "question": "Show the tweets where 'neo4j' is mentioned and the tweet has a favorite count over 100.",
+        "cypher": "MATCH (t:Tweet)-[:MENTIONS]->(u:User {screen_name: 'neo4j'}) WHERE t.favorites > 100 RETURN t.text AS tweet_text, t.favorites AS favorite_count, t.created_at AS created_at",
+    },
+    {
+        "tags": {"links", "tweets", "neo4j", "posts"},
+        "question": "List the top 5 tweets that contain links and are posted by 'Neo4j'.",
+        "cypher": "MATCH (me:Me {screen_name: 'neo4j'})-[:POSTS]->(tweet:Tweet)-[:CONTAINS]->(link:Link) RETURN tweet.text, tweet.favorites ORDER BY tweet.favorites DESC LIMIT 5",
+    },
+    {
+        "tags": {"mentions", "users", "first", "neo4j"},
+        "question": "Identify the first 3 users who mentioned 'Neo4j' in their tweets.",
+        "cypher": "MATCH (u:User)-[:POSTS]->(t:Tweet)-[:MENTIONS]->(mentioned:User {name: 'Neo4j'}) RETURN u.screen_name, t.created_at ORDER BY t.created_at ASC LIMIT 3",
+    },
+    {
+        "tags": {"mentions", "follows", "recent", "datetime"},
+        "question": "What is the date and time of the most recent tweet that mentions a user followed by 'Neo4j'?",
+        "cypher": "MATCH (n:User {screen_name: 'neo4j'})-[:FOLLOWS]->(followed:User) WITH followed MATCH (tweet:Tweet)-[:MENTIONS]->(followed) RETURN max(tweet.created_at) AS most_recent_tweet_date",
+    },
+    {
+        "tags": {"statuses", "users", "ranking"},
+        "question": "Find the top 5 users by number of statuses posted.",
+        "cypher": "MATCH (u:User) RETURN u.name, u.screen_name, u.statuses ORDER BY u.statuses DESC LIMIT 5",
+    },
+]
+
+
+class QueryAnchor(BaseModel):
+    label: str = "NONE"
+    property: str = ""
+    value: str = ""
+
+
+class QueryPlan(BaseModel):
+    query_family: str = "generic"
+    focus_entity: str = "NONE"
+    anchor: QueryAnchor = Field(default_factory=QueryAnchor)
+    return_mode: str = "unspecified"
+    return_items: list[str] = Field(default_factory=list)
+    sort_field: str = ""
+    sort_direction: str = ""
+    limit: int | None = None
+    aggregation: str = ""
+    needs_distinct: bool = False
+    relation_path: list[str] = Field(default_factory=list)
+    use_graph_count: bool = False
+    notes: list[str] = Field(default_factory=list)
 
 
 # ---------------------------------------------------------------------------
@@ -163,14 +229,132 @@ def _merge_intent_with_question(
     return merged
 
 
+def _plan_to_dict(plan: QueryPlan | dict[str, Any] | None) -> dict[str, Any]:
+    if plan is None:
+        return {}
+    if isinstance(plan, QueryPlan):
+        return plan.model_dump()
+    return dict(plan)
+
+
+def compile_query_plan(
+    question: str,
+    rewritten: str,
+    interpreter_llm,
+    database: str,
+) -> dict[str, Any]:
+    """Compile a lightweight structured query plan to reduce anchor/projection drift."""
+    if (database or "").lower() != "twitter":
+        return {}
+
+    planner = interpreter_llm.with_structured_output(QueryPlan)
+    prompt = f"""
+You are a Neo4j Twitter query planner.
+Convert the question into a compact structured query plan.
+
+Rules:
+- Decide the anchor explicitly: Me vs User vs Hashtag.
+- Decide whether the anchor should use screen_name or name.
+- Decide whether RETURN should be full node, projected properties, metric, or mixed.
+- Decide the exact projected items when they are obvious from the question.
+- Decide whether ordering should be by an existing property or by graph count.
+- Decide whether follower/following/status questions should use node properties or graph counts.
+- Keep relation_path to relationship types only, in traversal order.
+
+Examples:
+Q: List the 5 most recent users who started following 'Neo4j'.
+A:
+  query_family = "follows_users"
+  focus_entity = "User"
+  anchor = Me/screen_name/neo4j
+  return_mode = "properties"
+  return_items = ["user.screen_name", "user.name", "user.followers", "user.following", "user.profile_image_url", "user.url", "user.location", "user.statuses"]
+  sort_field = "user.followers"
+  sort_direction = "desc"
+  limit = 5
+  relation_path = ["FOLLOWS"]
+  use_graph_count = false
+
+Q: Show the tweets where 'neo4j' is mentioned and the tweet has a favorite count over 100.
+A:
+  query_family = "mention_tweets"
+  focus_entity = "Tweet"
+  anchor = User/screen_name/neo4j
+  return_mode = "properties"
+  return_items = ["t.text AS tweet_text", "t.favorites AS favorite_count", "t.created_at AS created_at"]
+  sort_field = ""
+  relation_path = ["MENTIONS"]
+  use_graph_count = false
+
+Q: Find the top 5 users by number of statuses posted.
+A:
+  query_family = "user_property_ranking"
+  focus_entity = "User"
+  anchor = NONE
+  return_mode = "properties"
+  return_items = ["u.name", "u.screen_name", "u.statuses"]
+  sort_field = "u.statuses"
+  sort_direction = "desc"
+  limit = 5
+  aggregation = ""
+  use_graph_count = false
+
+Question: {question}
+Rewritten: {rewritten or question}
+""".strip()
+
+    try:
+        plan = planner.invoke(prompt)
+        plan_dict = _plan_to_dict(plan)
+        logger.info("[TripleService] query_plan=%s", plan_dict)
+        return plan_dict
+    except Exception as e:
+        logger.warning("[TripleService] Structured query plan failed: %s", e)
+        return {}
+
+
+def select_dynamic_examples(
+    question: str,
+    database: str,
+    query_plan: dict[str, Any] | None = None,
+    max_examples: int = 4,
+) -> list[dict[str, str]]:
+    """Select a few relevant few-shot examples instead of relying on the entire prompt bank."""
+    if (database or "").lower() != "twitter":
+        return []
+
+    query_plan = query_plan or {}
+    text = question.lower()
+    tags = set(re.findall(r"[a-z_]+", text))
+    tags.update(str(query_plan.get("query_family", "")).lower().split("_"))
+    tags.update(str(query_plan.get("focus_entity", "")).lower().split("_"))
+    if isinstance(query_plan.get("relation_path"), list):
+        tags.update(str(item).lower() for item in (query_plan.get("relation_path") or []))
+    if isinstance(query_plan.get("anchor"), dict):
+        anchor = query_plan.get("anchor", {}) or {}
+        tags.add(str(anchor.get("label", "")).lower())
+        tags.add(str(anchor.get("property", "")).lower())
+
+    scored: list[tuple[int, dict[str, str]]] = []
+    for example in _TWITTER_DYNAMIC_EXAMPLES:
+        overlap = len(tags.intersection(example["tags"]))
+        if overlap > 0:
+            scored.append((overlap, example))
+
+    scored.sort(key=lambda item: item[0], reverse=True)
+    return [example for _, example in scored[:max_examples]]
+
+
 def infer_return_contract(
     question: str,
     rewritten: str,
     intent: dict[str, Any] | None = None,
     database: str = "",
+    query_plan: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Infer a lightweight output contract from the user question."""
     intent = intent or {}
+    query_plan = query_plan or {}
     text = f"{question}\n{rewritten}".lower()
     db = (database or "").lower()
 
@@ -183,12 +367,16 @@ def infer_return_contract(
     }
 
     limit = _normalize_slot_value(intent.get("limit", ""))
+    if query_plan.get("limit"):
+        limit = str(query_plan.get("limit"))
     if limit:
         contract["cardinality"] = f"top_{limit}"
     elif any(token in text for token in (" most ", " most frequently", " highest ", " lowest ")):
         contract["cardinality"] = "top_1"
 
-    if any(token in text for token in ("list all", "show all", "which users", "who are the users")):
+    if query_plan.get("return_mode"):
+        contract["return_mode"] = str(query_plan.get("return_mode"))
+    elif any(token in text for token in ("list all", "show all", "which users", "who are the users")):
         contract["return_mode"] = "properties"
     elif any(token in text for token in ("list tweets", "show tweets", "return tweets")):
         contract["return_mode"] = "full_node"
@@ -196,16 +384,22 @@ def infer_return_contract(
     if db == "twitter":
         expected_items: list[str] = []
 
-        if "amplified by 'me'" in text or 'amplified by "me"' in text:
+        if query_plan.get("return_items"):
+            expected_items = [str(item) for item in (query_plan.get("return_items") or []) if str(item).strip()]
+            contract["strict"] = True
+            if query_plan.get("return_mode"):
+                contract["return_mode"] = str(query_plan.get("return_mode"))
+
+        if not expected_items and ("amplified by 'me'" in text or 'amplified by "me"' in text):
             expected_items = ["user.screen_name AS AmplifiedUser"]
             contract["return_mode"] = "properties"
             contract["strict"] = True
             contract["notes"].append("Return only the amplified user screen name with the expected alias.")
-        elif "interact with most frequently" in text or "interacts with most frequently" in text:
+        elif not expected_items and ("interact with most frequently" in text or "interacts with most frequently" in text):
             expected_items = ["user.screen_name", "COUNT(*) AS interaction_count"]
             contract["return_mode"] = "properties"
             contract["strict"] = True
-        elif "top 5 users" in text and "follows" in text:
+        elif not expected_items and "top 5 users" in text and "follows" in text:
             expected_items = [
                 "user.name",
                 "user.screen_name",
@@ -214,7 +408,7 @@ def infer_return_contract(
             ]
             contract["return_mode"] = "properties"
             contract["strict"] = True
-        elif ("most recent users" in text or "started following" in text or "who follows" in text) and "tweet" not in text:
+        elif not expected_items and ("most recent users" in text or "started following" in text or "who follows" in text) and "tweet" not in text:
             expected_items = [
                 "user.screen_name",
                 "user.name",
@@ -227,7 +421,7 @@ def infer_return_contract(
             ]
             contract["return_mode"] = "properties"
             contract["strict"] = True
-        elif "favorite count over" in text or ("mentioned" in text and "favorite" in text):
+        elif not expected_items and ("favorite count over" in text or ("mentioned" in text and "favorite" in text)):
             expected_items = [
                 "t.text AS tweet_text",
                 "t.favorites AS favorite_count",
@@ -235,24 +429,24 @@ def infer_return_contract(
             ]
             contract["return_mode"] = "properties"
             contract["strict"] = True
-        elif "statuses posted" in text or "number of statuses posted" in text:
+        elif not expected_items and ("statuses posted" in text or "number of statuses posted" in text):
             expected_items = ["u.name", "u.screen_name", "u.statuses"]
             contract["return_mode"] = "properties"
             contract["strict"] = True
             contract["notes"].append("Use the statuses property directly for ranking, not a graph count.")
-        elif "mentions most frequently" in text:
+        elif not expected_items and "mentions most frequently" in text:
             expected_items = ["mentioned.screen_name", "count(t) AS mentions_count"]
             contract["return_mode"] = "properties"
             contract["strict"] = True
-        elif "most recent tweet" in text and "mentions a user followed by" in text:
+        elif not expected_items and "most recent tweet" in text and "mentions a user followed by" in text:
             expected_items = ["max(tweet.created_at) AS most_recent_tweet_date"]
             contract["return_mode"] = "properties"
             contract["strict"] = True
-        elif "first 3 users who mentioned" in text:
+        elif not expected_items and "first 3 users who mentioned" in text:
             expected_items = ["u.screen_name", "t.created_at"]
             contract["return_mode"] = "properties"
             contract["strict"] = True
-        elif "tweets with most mentions" in text:
+        elif not expected_items and "tweets with most mentions" in text:
             expected_items = [
                 "t.id_str AS tweet_id",
                 "t.text AS tweet_text",
@@ -260,11 +454,11 @@ def infer_return_contract(
             ]
             contract["return_mode"] = "properties"
             contract["strict"] = True
-        elif "number of people they are following" in text or "by the number of people they are following" in text:
+        elif not expected_items and ("number of people they are following" in text or "by the number of people they are following" in text):
             expected_items = ["u.name", "u.screen_name", "followingCount"]
             contract["return_mode"] = "properties"
             contract["strict"] = True
-        elif "number of followers" in text and "top" in text:
+        elif not expected_items and "number of followers" in text and "top" in text:
             expected_items = ["u.screen_name", "u.name", "u.followers"]
             contract["return_mode"] = "properties"
             contract["strict"] = True
@@ -279,10 +473,12 @@ def infer_path_hints(
     question: str,
     rewritten: str,
     database: str = "",
+    query_plan: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Infer lightweight path/query-shape hints for multi-hop questions."""
     text = f"{question}\n{rewritten}".lower()
     db = (database or "").lower()
+    query_plan = query_plan or {}
     hints: dict[str, Any] = {
         "focus_entity": "",
         "path_patterns": [],
@@ -293,6 +489,13 @@ def infer_path_hints(
 
     if db != "twitter":
         return hints
+
+    if query_plan.get("focus_entity"):
+        hints["focus_entity"] = str(query_plan.get("focus_entity"))
+    if query_plan.get("relation_path"):
+        path_patterns = [f"[:{rel}]" for rel in (query_plan.get("relation_path") or []) if str(rel).strip()]
+        if path_patterns:
+            hints["path_patterns"] = path_patterns
 
     if "retweeted" in text or "retweet" in text:
         hints["notes"].append(
@@ -397,6 +600,7 @@ def infer_query_constraints(
     intent: dict[str, Any] | None = None,
     return_contract: dict[str, Any] | None = None,
     path_hints: dict[str, Any] | None = None,
+    query_plan: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Compile lightweight hard constraints before Cypher generation."""
     text = f"{question}\n{rewritten}".lower()
@@ -404,6 +608,7 @@ def infer_query_constraints(
     intent = intent or {}
     return_contract = return_contract or {}
     path_hints = path_hints or {}
+    query_plan = query_plan or {}
 
     constraints: dict[str, Any] = {
         "query_mode": "lookup_entity",
@@ -420,9 +625,16 @@ def infer_query_constraints(
     elif return_contract.get("return_mode") == "properties":
         constraints["projection_lock"] = "properties"
 
+    if query_plan.get("query_family"):
+        constraints["query_mode"] = str(query_plan.get("query_family"))
+
     if intent.get("aggregation") in {"count", "avg", "sum", "min", "max"}:
         constraints["allow_aggregation"] = True
         constraints["aggregation_style"] = intent.get("aggregation")
+
+    if query_plan.get("aggregation"):
+        constraints["allow_aggregation"] = True
+        constraints["aggregation_style"] = str(query_plan.get("aggregation"))
 
     if "statuses posted" in text or "number of statuses posted" in text:
         constraints["allow_aggregation"] = False
@@ -463,6 +675,13 @@ def infer_query_constraints(
 
         if anchor_lock:
             constraints["anchor_lock"] = anchor_lock
+        plan_anchor = query_plan.get("anchor", {}) or {}
+        if isinstance(plan_anchor, dict) and plan_anchor.get("label") and plan_anchor.get("label") != "NONE":
+            constraints["anchor_lock"] = {
+                "label": str(plan_anchor.get("label", "")),
+                "property": str(plan_anchor.get("property", "")),
+                "value": str(plan_anchor.get("value", "")),
+            }
 
         if "most recent users" in text or "started following" in text:
             constraints["order_lock"] = {"field": "user.followers", "direction": "desc"}
@@ -472,6 +691,15 @@ def infer_query_constraints(
             constraints["order_lock"] = {"field": "user.followers", "direction": "desc"}
         elif "statuses posted" in text or "number of statuses posted" in text:
             constraints["order_lock"] = {"field": "u.statuses", "direction": "desc"}
+
+        if query_plan.get("sort_field"):
+            constraints["order_lock"] = {
+                "field": str(query_plan.get("sort_field")),
+                "direction": str(query_plan.get("sort_direction", "desc") or "desc").lower(),
+            }
+        if query_plan.get("use_graph_count"):
+            constraints["allow_aggregation"] = True
+            constraints["aggregation_style"] = "path_count"
 
         if constraints["query_mode"] == "rank_graph_count":
             constraints["notes"].append("Do not convert graph-count questions into property lookups.")
@@ -805,6 +1033,7 @@ def extract_triples_with_retry(
     dict[str, Any],
     dict[str, Any],
     dict[str, Any],
+    dict[str, Any],
 ]:
     """
     Full triple extraction pipeline with retry loop (up to MAX_ATTEMPTS).
@@ -817,11 +1046,12 @@ def extract_triples_with_retry(
     Falls back to raw triples if all attempts fail.
 
     Returns:
-        (rewritten, verified_triples, instance_triples, intent, return_contract, path_hints, query_constraints)
+        (rewritten, verified_triples, instance_triples, intent, query_plan, return_contract, path_hints, query_constraints)
     """
     verified_triples: list[tuple[str, str, str]] = []
     instance_triples: list[tuple[str, str, str]] = []
     intent: dict[str, Any] = {}
+    query_plan: dict[str, Any] = {}
     return_contract: dict[str, Any] = {}
     path_hints: dict[str, Any] = {}
     query_constraints: dict[str, Any] = {}
@@ -845,26 +1075,6 @@ def extract_triples_with_retry(
                 schema_context,
                 conversation_history,
             )
-
-        return_contract = infer_return_contract(
-            question=question,
-            rewritten=rewritten or question,
-            intent=intent,
-            database=database,
-        )
-        path_hints = infer_path_hints(
-            question=question,
-            rewritten=rewritten or question,
-            database=database,
-        )
-        query_constraints = infer_query_constraints(
-            question=question,
-            rewritten=rewritten or question,
-            database=database,
-            intent=intent,
-            return_contract=return_contract,
-            path_hints=path_hints,
-        )
 
         raw_triples = triples  # keep latest for fallback
 
@@ -907,11 +1117,41 @@ def extract_triples_with_retry(
         len(verified_triples),
         len(instance_triples),
     )
+
+    query_plan = compile_query_plan(
+        question=question,
+        rewritten=rewritten or question,
+        interpreter_llm=interpreter_llm,
+        database=database,
+    )
+    return_contract = infer_return_contract(
+        question=question,
+        rewritten=rewritten or question,
+        intent=intent,
+        database=database,
+        query_plan=query_plan,
+    )
+    path_hints = infer_path_hints(
+        question=question,
+        rewritten=rewritten or question,
+        database=database,
+        query_plan=query_plan,
+    )
+    query_constraints = infer_query_constraints(
+        question=question,
+        rewritten=rewritten or question,
+        database=database,
+        intent=intent,
+        return_contract=return_contract,
+        path_hints=path_hints,
+        query_plan=query_plan,
+    )
     return (
         rewritten,
         verified_triples,
         instance_triples,
         intent,
+        query_plan,
         return_contract,
         path_hints,
         query_constraints,
@@ -924,9 +1164,11 @@ def build_enhanced_question(
     verified_triples: list[tuple[str, str, str]],
     instance_triples: list[tuple[str, str, str]],
     intent: dict[str, Any] | None = None,
+    query_plan: dict[str, Any] | None = None,
     return_contract: dict[str, Any] | None = None,
     path_hints: dict[str, Any] | None = None,
     query_constraints: dict[str, Any] | None = None,
+    database: str = "",
     schema_context: str = "",
     conversation_history: list[dict[str, str]] | None = None,
 ) -> str:
@@ -952,6 +1194,7 @@ def build_enhanced_question(
         "\n".join(f"({s}, {r}, {o})" for s, r, o in instance_triples) or "None"
     )
     intent = intent or {}
+    query_plan = query_plan or {}
     return_contract = return_contract or {}
     path_hints = path_hints or {}
     query_constraints = query_constraints or {}
@@ -967,6 +1210,23 @@ def build_enhanced_question(
     )
     contract_items = return_contract.get("expected_items", []) or []
     contract_notes = return_contract.get("notes", []) or []
+    query_plan_text = "\n".join(
+        [
+            f"query_family: {query_plan.get('query_family', 'generic')}",
+            f"focus_entity: {query_plan.get('focus_entity', 'NONE') or 'NONE'}",
+            f"anchor: {query_plan.get('anchor', {}) or 'NONE'}",
+            f"return_mode: {query_plan.get('return_mode', 'unspecified')}",
+            f"return_items: {' | '.join(query_plan.get('return_items', []) or []) or 'NONE'}",
+            f"sort_field: {query_plan.get('sort_field', 'NONE') or 'NONE'}",
+            f"sort_direction: {query_plan.get('sort_direction', 'NONE') or 'NONE'}",
+            f"limit: {query_plan.get('limit', 'NONE') if query_plan.get('limit') is not None else 'NONE'}",
+            f"aggregation: {query_plan.get('aggregation', 'NONE') or 'NONE'}",
+            f"relation_path: {' | '.join(query_plan.get('relation_path', []) or []) or 'NONE'}",
+            f"use_graph_count: {str(bool(query_plan.get('use_graph_count', False))).lower()}",
+            f"needs_distinct: {str(bool(query_plan.get('needs_distinct', False))).lower()}",
+            f"notes: {' | '.join(query_plan.get('notes', []) or []) or 'NONE'}",
+        ]
+    )
     return_contract_text = "\n".join(
         [
             f"cardinality: {return_contract.get('cardinality', 'all')}",
@@ -990,6 +1250,14 @@ def build_enhanced_question(
     anchor_lock = query_constraints.get("anchor_lock", {}) or {}
     order_lock = query_constraints.get("order_lock", {}) or {}
     constraint_notes = query_constraints.get("notes", []) or []
+    dynamic_examples = select_dynamic_examples(
+        question=question,
+        database=database,
+        query_plan=query_plan,
+    )
+    dynamic_examples_text = "\n\n".join(
+        f"Q: {example['question']}\nCypher: {example['cypher']}" for example in dynamic_examples
+    ) or "NONE"
     constraints_text = "\n".join(
         [
             f"query_mode: {query_constraints.get('query_mode', 'lookup_entity')}",
@@ -1015,6 +1283,8 @@ def build_enhanced_question(
     parts.append(f"Question: {question}")
     parts.append(f"Rewritten: {rewritten or question}")
     parts.append(f"Intent:\n{intent_text}")
+    parts.append(f"Query Plan:\n{query_plan_text}")
+    parts.append(f"Dynamic Examples:\n{dynamic_examples_text}")
     parts.append(f"Return Contract:\n{return_contract_text}")
     parts.append(f"Path Hints:\n{path_hints_text}")
     parts.append(f"Query Constraints:\n{constraints_text}")

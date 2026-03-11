@@ -19,6 +19,8 @@ import urllib.parse
 from typing import Any
 
 from config import get_settings
+from neo4j.exceptions import ServiceUnavailable, SessionExpired, TransientError
+from openai import APIConnectionError, APITimeoutError, InternalServerError, RateLimitError
 from models.chain import invoke_chain
 from models.graph import (
     get_graph,
@@ -37,6 +39,17 @@ from utils.helpers import normalize_value
 from services.triple_service import build_enhanced_question, extract_triples_with_retry
 
 logger = logging.getLogger(__name__)
+RETRYABLE_EXCEPTIONS = (
+    TimeoutError,
+    ConnectionError,
+    APIConnectionError,
+    APITimeoutError,
+    RateLimitError,
+    InternalServerError,
+    ServiceUnavailable,
+    SessionExpired,
+    TransientError,
+)
 
 # Neo4j browser base URL
 NEO4J_BROWSER_URL = "https://neoforjcmip.templeuni.com/browser/"
@@ -120,6 +133,7 @@ def _run_pipeline(
         verified_triples,
         instance_triples,
         intent,
+        query_plan,
         return_contract,
         path_hints,
         query_constraints,
@@ -137,6 +151,7 @@ def _run_pipeline(
 
     logger.info("[RAGService] rewritten=%r", rewritten)
     logger.info("[RAGService] intent=%s", intent)
+    logger.info("[RAGService] query_plan=%s", query_plan)
     logger.info("[RAGService] return_contract=%s", return_contract)
     logger.info("[RAGService] path_hints=%s", path_hints)
     logger.info("[RAGService] query_constraints=%s", query_constraints)
@@ -150,9 +165,11 @@ def _run_pipeline(
         verified_triples=verified_triples,
         instance_triples=instance_triples,
         intent=intent,
+        query_plan=query_plan,
         return_contract=return_contract,
         path_hints=path_hints,
         query_constraints=query_constraints,
+        database=db_name,
         schema_context=schema_context,
         conversation_history=conversation_history,
     )
@@ -171,6 +188,7 @@ def _run_pipeline(
         "verified_triples": verified_triples,
         "instance_triples": instance_triples,
         "intent": intent,
+        "query_plan": query_plan,
         "return_contract": return_contract,
         "path_hints": path_hints,
         "query_constraints": query_constraints,
@@ -210,6 +228,7 @@ def process_question(
     verified_triples = pipe["verified_triples"]
     instance_triples = pipe["instance_triples"]
     intent: dict[str, Any] = pipe.get("intent", {})
+    query_plan: dict[str, Any] = pipe.get("query_plan", {})
     return_contract: dict[str, Any] = pipe.get("return_contract", {})
     path_hints: dict[str, Any] = pipe.get("path_hints", {})
     query_constraints: dict[str, Any] = pipe.get("query_constraints", {})
@@ -226,6 +245,7 @@ def process_question(
             "verified_triples": verified_triples,
             "instance_triples": instance_triples,
             "intent": intent,
+            "query_plan": query_plan,
             "return_contract": return_contract,
             "path_hints": path_hints,
             "query_constraints": query_constraints,
@@ -252,6 +272,7 @@ def process_question(
             f"Current question: {question}\n"
             f"Rewritten question: {rewritten or question}\n\n"
             f"Intent hints: {intent}\n\n"
+            f"Structured query plan: {query_plan}\n\n"
             f"Return contract hints: {return_contract}\n\n"
             f"Path hints: {path_hints}\n\n"
             f"Query constraints: {query_constraints}\n\n"
@@ -272,13 +293,14 @@ def process_question(
         "verified_triples": verified_triples,
         "instance_triples": instance_triples,
         "intent": intent,
+        "query_plan": query_plan,
         "return_contract": return_contract,
         "path_hints": path_hints,
         "query_constraints": query_constraints,
     }
 
 
-@retry(tries=2, delay=10)
+@retry(exceptions=RETRYABLE_EXCEPTIONS, tries=2, delay=2)
 def get_results(
     question: str,
     conversation_history: list[dict[str, str]] | None = None,
@@ -287,7 +309,7 @@ def get_results(
     return process_question(question, conversation_history)
 
 
-@retry(tries=2, delay=10)
+@retry(exceptions=RETRYABLE_EXCEPTIONS, tries=2, delay=2)
 def get_raw_results(question: str) -> dict:
     """
     Flask / T2C evaluation entry point.
@@ -308,6 +330,7 @@ def get_raw_results(question: str) -> dict:
     verified_triples = pipe["verified_triples"]
     instance_triples = pipe["instance_triples"]
     intent: dict[str, Any] = pipe.get("intent", {})
+    query_plan: dict[str, Any] = pipe.get("query_plan", {})
     return_contract: dict[str, Any] = pipe.get("return_contract", {})
     path_hints: dict[str, Any] = pipe.get("path_hints", {})
     query_constraints: dict[str, Any] = pipe.get("query_constraints", {})
@@ -349,6 +372,7 @@ def get_raw_results(question: str) -> dict:
         "verified_triples": [list(t) for t in verified_triples],
         "instance_triples": [list(t) for t in instance_triples],
         "intent": intent,
+        "query_plan": query_plan,
         "return_contract": return_contract,
         "path_hints": path_hints,
         "query_constraints": query_constraints,

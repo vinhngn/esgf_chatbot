@@ -48,10 +48,10 @@ def _build_chain() -> GraphCypherQAChain:
         cypher_prompt=prompt,
         validate_cypher=True,
         return_direct=True,
-        verbose=True,
+        verbose=False,
         allow_dangerous_requests=True,
         return_intermediate_steps=True,
-        top_k=100,
+        top_k=25,
     )
     logger.info("[Chain] GraphCypherQAChain ready.")
     return chain

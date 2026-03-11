@@ -31,6 +31,8 @@ def _create_llm(temperature: float, model: str = "gpt-4o-mini") -> ChatOpenAI:
         api_key=settings.OPENAI_API_KEY,
         temperature=temperature,
         model=model,
+        timeout=settings.OPENAI_TIMEOUT_SECONDS,
+        max_retries=settings.OPENAI_MAX_RETRIES,
     )
 
 

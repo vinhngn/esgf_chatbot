@@ -47,10 +47,16 @@ def _ensure_flask_started():
 
     def _run_flask():
         try:
-            from views.flask_api import app
+            from views.flask_api import QuietWSGIRequestHandler, app
 
             logger.info("Flask API starting on %s:%s", _host, _port)
-            app.run(host=_host, port=_port, debug=False, threaded=True)
+            app.run(
+                host=_host,
+                port=_port,
+                debug=False,
+                threaded=True,
+                request_handler=QuietWSGIRequestHandler,
+            )
         except OSError as e:
             logger.error(
                 "Flask API failed to start on %s:%s — port may already be in use. Error: %s",
@@ -68,8 +74,15 @@ def _ensure_flask_started():
 
 _ensure_flask_started()
 
+settings = get_settings()
+
 # LangChain caching
-set_llm_cache(InMemoryCache())
+if settings.ENABLE_LLM_CACHE:
+    set_llm_cache(InMemoryCache())
+    logger.info("LLM cache enabled.")
+else:
+    set_llm_cache(None)
+    logger.info("LLM cache disabled.")
 
 # Track app start
 if "SESSION_ID" not in st.session_state:
@@ -77,7 +90,6 @@ if "SESSION_ID" not in st.session_state:
     track("rag_demo", "appStarted", {}, session_id)
 
 # Page layout
-settings = get_settings()
 st.markdown(TITLE, unsafe_allow_html=True)
 sidebar()
 
@@ -139,6 +151,7 @@ if user_input:
                 verified_triples = result.get("verified_triples", [])
                 instance_triples = result.get("instance_triples", [])
                 intent = result.get("intent", {})
+                query_plan = result.get("query_plan", {})
                 return_contract = result.get("return_contract", {})
                 path_hints = result.get("path_hints", {})
                 query_constraints = result.get("query_constraints", {})
@@ -155,6 +168,12 @@ if user_input:
                         st.json(intent)
                     else:
                         st.markdown("**Intent:** —")
+
+                    if query_plan:
+                        st.markdown("**Query plan:**")
+                        st.json(query_plan)
+                    else:
+                        st.markdown("**Query plan:** —")
 
                     if return_contract:
                         st.markdown("**Return contract:**")

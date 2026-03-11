@@ -29,10 +29,41 @@ from services.rag_service import (
     get_results,
     get_schema_info,
 )
+from werkzeug.serving import WSGIRequestHandler
 
 app = Flask(__name__)
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+
+
+class QuietWSGIRequestHandler(WSGIRequestHandler):
+    """Suppress noisy probe/TLS-handshake logs on the plain HTTP dev server."""
+
+    _suppressed_error_markers = (
+        "Bad request version",
+        "Bad request syntax",
+        "Bad HTTP/0.9 request type",
+    )
+    _suppressed_path_markers = (
+        "HEAD /.aws/",
+        "HEAD /.ada/",
+        "HEAD /.ssh/",
+        "HEAD /.midway/",
+    )
+
+    def log_error(self, format: str, *args) -> None:  # noqa: A002
+        message = format % args if args else format
+        if any(marker in message for marker in self._suppressed_error_markers):
+            return
+        super().log_error(format, *args)
+
+    def log_request(self, code: int | str = "-", size: int | str = "-") -> None:
+        request_line = getattr(self, "requestline", "") or ""
+        if any(marker in request_line for marker in self._suppressed_path_markers):
+            return
+        if str(code) == "400" and "\\x16\\x03" in request_line.encode("unicode_escape").decode():
+            return
+        super().log_request(code, size)
 
 
 # ---------------------------------------------------------------------------
@@ -78,6 +109,7 @@ def text2cypher():
                 "verified_triples": results.get("verified_triples", []),
                 "instance_triples": results.get("instance_triples", []),
                 "intent": results.get("intent", {}),
+                "query_plan": results.get("query_plan", {}),
                 "return_contract": results.get("return_contract", {}),
                 "path_hints": results.get("path_hints", {}),
                 "query_constraints": results.get("query_constraints", {}),
@@ -95,6 +127,7 @@ def text2cypher():
                 "verified_triples": [],
                 "instance_triples": [],
                 "intent": {},
+                "query_plan": {},
                 "return_contract": {},
                 "path_hints": {},
                 "query_constraints": {},
@@ -133,6 +166,7 @@ def rag_endpoint():
                 "output": result.get("output", ""),
                 "cypher_query": result.get("cypher_query", ""),
                 "intent": result.get("intent", {}),
+                "query_plan": result.get("query_plan", {}),
                 "return_contract": result.get("return_contract", {}),
                 "path_hints": result.get("path_hints", {}),
                 "query_constraints": result.get("query_constraints", {}),
@@ -189,6 +223,19 @@ def health():
         return jsonify({"status": "error", "detail": str(e)}), 500
 
 
+@app.get("/")
+def root():
+    """Quiet root endpoint for local checks and incidental probes."""
+    settings = get_settings()
+    return jsonify(
+        {
+            "status": "ok",
+            "service": "esgf_chatbot_flask_api",
+            "database": settings.database_name,
+        }
+    )
+
+
 @app.get("/api/databases")
 def list_databases():
     """List all available databases with their configurations."""
@@ -229,4 +276,10 @@ if __name__ == "__main__":
     print("  GET  /api/schema       — schema info")
     print("  GET  /health           — health check")
 
-    app.run(host=host, port=port, debug=False, threaded=True)
+    app.run(
+        host=host,
+        port=port,
+        debug=False,
+        threaded=True,
+        request_handler=QuietWSGIRequestHandler,
+    )
