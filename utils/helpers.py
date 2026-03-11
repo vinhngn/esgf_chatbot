@@ -74,6 +74,14 @@ def normalize_cypher_query(query: str) -> str:
         flags=re.IGNORECASE,
     )
 
+    # Convert invalid COUNT(:Label) into COUNT(*) when the model tries to count matched rows.
+    normalized = re.sub(
+        r"\bCOUNT\s*\(\s*:\s*[A-Za-z_][A-Za-z0-9_]*\s*\)",
+        "COUNT(*)",
+        normalized,
+        flags=re.IGNORECASE,
+    )
+
     # Normalize COUNT(*) spacing/casing for downstream comparisons.
     normalized = re.sub(r"\bCOUNT\s*\(\s*\*\s*\)", "COUNT(*)", normalized, flags=re.IGNORECASE)
 

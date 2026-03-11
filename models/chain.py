@@ -484,12 +484,14 @@ def _projection_schema(query: str) -> list[dict[str, str]]:
     schema: list[dict[str, str]] = []
     for base, alias in return_aliases.items():
         lineage_base = with_aliases.get(base, base) if re.fullmatch(r"[A-Za-z_]\w*", base) else base
+        canonical_base = _canonical_expr(lineage_base)
+        canonical_alias = _canonical_expr(alias)
         schema.append(
             {
                 "base": base,
                 "alias": alias,
-                "canonical_base": _canonical_expr(lineage_base),
-                "canonical_alias": alias.lower(),
+                "canonical_base": canonical_base,
+                "canonical_alias": canonical_alias,
             }
         )
     return schema
@@ -718,8 +720,7 @@ def _validate_return_contract(question: str, query: str) -> list[str]:
                     f"return item {idx + 1} should expose alias '{expected_alias}' but got '{actual_alias or actual_base}'"
                 )
                 continue
-
-        if expected_base and actual_base and expected_base != actual_base:
+        elif actual_base and expected_base and actual_base != expected_base:
             errors.append(
                 f"return item {idx + 1} should have canonical base '{expected_base}' but got '{actual_base}'"
             )
