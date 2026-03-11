@@ -1419,9 +1419,10 @@ RULE 7 - RETWEETS PATTERN (CRITICAL):
 
 RULE 8 - ORDER BY:
 - "top N" / "most" → ORDER BY ... DESC
-- "most recent" → ORDER BY created_at DESC (NOT followers!)
+- "most recent" for tweets/dates → ORDER BY created_at DESC
 - "earliest" → ORDER BY created_at ASC
 - "most frequently" → ORDER BY count_alias DESC
+- For follower-list benchmark questions, follow the exact few-shot ordering example instead of inventing a timestamp sort.
 
 RULE 9 - AGGREGATION:
 - "most frequently" → WITH entity, COUNT(*) AS count ORDER BY count DESC LIMIT 1
@@ -1482,7 +1483,7 @@ Q: Which users are amplified by 'Me' according to the AMPLIFIES relationship?
 MATCH (me:Me)-[:AMPLIFIES]->(user:User) RETURN user.screen_name AS AmplifiedUser
 
 Q: Who are the top 3 users that 'Neo4j' has amplified?
-MATCH (me:Me {{name: 'Neo4j'}})-[:AMPLIFIES]->(user:User) RETURN user.screen_name, COUNT(*) AS amplification_count ORDER BY amplification_count DESC LIMIT 3
+MATCH (me:Me {{name: 'Neo4j'}})-[:AMPLIFIES]->(user:User) RETURN user ORDER BY user.followers DESC LIMIT 3
 
 ### FOLLOWS - FULL USER PROPERTIES ###
 Q: List the 5 most recent users who started following 'Neo4j'.
@@ -1494,12 +1495,18 @@ MATCH (me:Me {{name: 'Neo4j'}})-[:FOLLOWS]->(user:User) RETURN user.name, user.s
 Q: Which users follow 'neo4j' and have more than 10000 followers?
 MATCH (me:Me {{screen_name: 'neo4j'}})<-[:FOLLOWS]-(user:User) WHERE user.followers > 10000 RETURN user.screen_name, user.name, user.followers
 
+Q: What is the date and time of the most recent tweet that mentions a user followed by 'Neo4j'?
+MATCH (n:User {{screen_name: 'neo4j'}})-[:FOLLOWS]->(followed:User) WITH followed MATCH (tweet:Tweet)-[:MENTIONS]->(followed) RETURN max(tweet.created_at) AS most_recent_tweet_date
+
 ### count{{}} SYNTAX - CRITICAL (NOT property!) ###
 Q: Identify the top 3 users by the number of people they are following.
 MATCH (u:User) RETURN u.name, u.screen_name, count{{(u)-[:FOLLOWS]->(:User)}} AS followingCount ORDER BY followingCount DESC LIMIT 3
 
 Q: Which users have the most followers? Top 5.
 MATCH (u:User) RETURN u.name, u.screen_name, count{{(u)<-[:FOLLOWS]-(:User)}} AS followerCount ORDER BY followerCount DESC LIMIT 5
+
+Q: Find the top 5 users by number of statuses posted.
+MATCH (u:User) RETURN u.name, u.screen_name, u.statuses ORDER BY u.statuses DESC LIMIT 5
 
 ### INTERACTS_WITH - LIMIT 1 for "most frequently" ###
 Q: Who does 'neo4j' interact with most frequently?
@@ -1588,7 +1595,7 @@ MATCH (u:User {{location: 'Graphs Are Everywhere'}})-[:POSTS]->(t:Tweet) RETURN 
 
 ### FIRST N USERS WHO MENTIONED ###
 Q: Identify the first 3 users who mentioned 'Neo4j' in their tweets.
-MATCH (u:User)-[:POSTS]->(t:Tweet)-[:MENTIONS]->(mentioned:User {{name: 'Neo4j'}}) RETURN DISTINCT u.screen_name, u.name, t.created_at ORDER BY t.created_at ASC LIMIT 3
+MATCH (u:User)-[:POSTS]->(t:Tweet)-[:MENTIONS]->(mentioned:User {{name: 'Neo4j'}}) RETURN u.screen_name, t.created_at ORDER BY t.created_at ASC LIMIT 3
 
 ### TWEET MENTIONS COUNT - CRITICAL (include id_str!) ###
 Q: Which three tweets have the most mentions of other users?

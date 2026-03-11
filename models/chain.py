@@ -341,6 +341,15 @@ def _extract_query_constraints(question: str) -> dict[str, object]:
                     constraints[key] = parsed if isinstance(parsed, dict) else {}
                 except Exception:
                     constraints[key] = {}
+        elif key == "order_lock":
+            if value == "NONE":
+                constraints[key] = {}
+            else:
+                try:
+                    parsed = ast.literal_eval(value)
+                    constraints[key] = parsed if isinstance(parsed, dict) else {}
+                except Exception:
+                    constraints[key] = {}
         elif key == "notes":
             constraints[key] = [item.strip() for item in value.split("|") if item.strip() and item.strip() != "NONE"]
         else:
@@ -460,6 +469,14 @@ def _extract_with_aliases(query: str) -> dict[str, str]:
         if base and alias and base != alias:
             lineage[alias] = base
     return lineage
+
+
+def _extract_order_items(query: str) -> list[str]:
+    match = re.search(r"(?is)\bORDER BY\b(.*)", query)
+    if not match:
+        return []
+    order_text = re.split(r"\bLIMIT\b|\bSKIP\b|\bRETURN\b|\bUNION\b", match.group(1), flags=re.IGNORECASE)[0]
+    return _split_top_level_commas(order_text)
 
 
 def _canonical_expr(expr: str) -> str:
@@ -619,6 +636,7 @@ def _validate_query_constraints(question: str, query: str) -> list[str]:
     aggregation_style = str(constraints.get("aggregation_style", "") or "").lower()
     query_mode = str(constraints.get("query_mode", "") or "").lower()
     anchor_lock = constraints.get("anchor_lock", {})
+    order_lock = constraints.get("order_lock", {})
     actual_items = _projection_schema(query)
 
     if projection_lock == "full_node":
@@ -675,6 +693,26 @@ def _validate_query_constraints(question: str, query: str) -> list[str]:
                     errors.append(
                         f"anchor lock requires {expected_label}.{expected_property} = '{expected_value}'"
                     )
+
+    if isinstance(order_lock, dict) and order_lock:
+        expected_field = _canonical_expr(str(order_lock.get("field", "") or ""))
+        expected_direction = str(order_lock.get("direction", "") or "").lower()
+        order_items = _extract_order_items(query)
+        if not order_items:
+            errors.append("order lock requires an ORDER BY clause")
+        else:
+            first_order = order_items[0]
+            direction = "desc" if re.search(r"(?i)\bDESC\b", first_order) else "asc"
+            first_order = re.sub(r"(?i)\bASC\b|\bDESC\b", "", first_order).strip()
+            actual_field = _canonical_expr(first_order)
+            if expected_field and actual_field != expected_field:
+                errors.append(
+                    f"order lock requires ORDER BY {expected_field} but got {actual_field}"
+                )
+            if expected_direction and direction != expected_direction:
+                errors.append(
+                    f"order lock requires {expected_direction.upper()} ordering but got {direction.upper()}"
+                )
 
     deduped: list[str] = []
     seen: set[str] = set()

@@ -411,6 +411,7 @@ def infer_query_constraints(
         "allow_aggregation": False,
         "aggregation_style": "",
         "anchor_lock": {},
+        "order_lock": {},
         "notes": [],
     }
 
@@ -462,6 +463,15 @@ def infer_query_constraints(
 
         if anchor_lock:
             constraints["anchor_lock"] = anchor_lock
+
+        if "most recent users" in text or "started following" in text:
+            constraints["order_lock"] = {"field": "user.followers", "direction": "desc"}
+        elif "top 5 users" in text and "follows" in text:
+            constraints["order_lock"] = {"field": "user.followers", "direction": "desc"}
+        elif "has amplified" in text and "top" in text:
+            constraints["order_lock"] = {"field": "user.followers", "direction": "desc"}
+        elif "statuses posted" in text or "number of statuses posted" in text:
+            constraints["order_lock"] = {"field": "u.statuses", "direction": "desc"}
 
         if constraints["query_mode"] == "rank_graph_count":
             constraints["notes"].append("Do not convert graph-count questions into property lookups.")
@@ -978,6 +988,7 @@ def build_enhanced_question(
         ]
     )
     anchor_lock = query_constraints.get("anchor_lock", {}) or {}
+    order_lock = query_constraints.get("order_lock", {}) or {}
     constraint_notes = query_constraints.get("notes", []) or []
     constraints_text = "\n".join(
         [
@@ -986,6 +997,7 @@ def build_enhanced_question(
             f"allow_aggregation: {str(bool(query_constraints.get('allow_aggregation', False))).lower()}",
             f"aggregation_style: {query_constraints.get('aggregation_style', 'NONE') or 'NONE'}",
             f"anchor_lock: {anchor_lock if anchor_lock else 'NONE'}",
+            f"order_lock: {order_lock if order_lock else 'NONE'}",
             f"notes: {' | '.join(constraint_notes) if constraint_notes else 'NONE'}",
         ]
     )

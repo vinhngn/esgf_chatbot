@@ -310,6 +310,7 @@ def get_raw_results(question: str) -> dict:
     intent: dict[str, Any] = pipe.get("intent", {})
     return_contract: dict[str, Any] = pipe.get("return_contract", {})
     path_hints: dict[str, Any] = pipe.get("path_hints", {})
+    query_constraints: dict[str, Any] = pipe.get("query_constraints", {})
 
     if isinstance(chain_result, dict):
         raw_result = chain_result.get("result")
