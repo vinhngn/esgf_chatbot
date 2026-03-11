@@ -99,7 +99,7 @@ def build_query_ir(
             limit = int(card_match.group(1))
         elif cardinality in {"top_1", "one", "single"}:
             limit = 1
-        elif any(token in question_text.lower() for token in (" most ", " most?", " most.", " most frequently", " highest ", " lowest ", " least ")) and "top " not in question_text.lower():
+        elif cardinality not in {"all"} and any(token in question_text.lower() for token in (" most ", " most?", " most.", " most frequently", " highest ", " lowest ", " least ")) and "top " not in question_text.lower():
             limit = 1
 
     return {
@@ -177,13 +177,19 @@ def render_cypher_from_ir(ir: dict[str, Any]) -> str | None:
 
 def _render_user_posts_mentions_count(ir: dict[str, Any], match_map: dict[str, list[str]]) -> str | None:
     triples = ir.get("verified_triples", []) or []
-    if len(triples) != 2:
-        return None
-    (s1, r1, o1), (s2, r2, o2) = triples
-    if (s1, r1, o1, s2, r2, o2) != ("User", "POSTS", "Tweet", "Tweet", "MENTIONS", "User"):
-        return None
+    relation_path = [str(item).upper() for item in (ir.get("relation_path") or [])]
+    query_family = str(ir.get("query_mode") or "")
     question_text = str(ir.get("question_text") or "").lower()
-    if "mentions most frequently" not in question_text:
+    shape_matches = (
+        len(triples) == 2
+        and (triples[0][0], triples[0][1], triples[0][2], triples[1][0], triples[1][1], triples[1][2])
+        == ("User", "POSTS", "Tweet", "Tweet", "MENTIONS", "User")
+    )
+    path_matches = relation_path == ["POSTS", "MENTIONS"]
+    family_matches = query_family in {"neo4j_mentions_users", "aggregate_projection"}
+    if not (shape_matches or path_matches or family_matches):
+        return None
+    if "mentions most frequently" not in question_text and "most frequently mentioned" not in question_text:
         return None
 
     match_clause = "MATCH (user:User)-[:POSTS]->(tweet:Tweet)-[:MENTIONS]->(mentioned:User)"

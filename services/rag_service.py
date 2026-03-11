@@ -190,25 +190,28 @@ def _run_pipeline(
     direct_cypher = render_cypher_from_ir(query_ir)
     if direct_cypher:
         logger.info("[RAGService] Answering via generic IR renderer.")
-        direct_result = graph.query(direct_cypher)
-        encoded_query = urllib.parse.quote(direct_cypher)
-        return {
-            "rewritten": rewritten,
-            "verified_triples": verified_triples,
-            "instance_triples": instance_triples,
-            "intent": intent,
-            "query_ir": query_ir,
-            "query_plan": query_plan,
-            "return_contract": return_contract,
-            "path_hints": path_hints,
-            "query_constraints": query_constraints,
-            "chain_result": {
-                "result": direct_result,
-                "intermediate_steps": [{"query": encoded_query}],
-            },
-            "encoded_query": encoded_query,
-            "decoded_query": direct_cypher,
-        }
+        try:
+            direct_result = graph.query(direct_cypher)
+            encoded_query = urllib.parse.quote(direct_cypher)
+            return {
+                "rewritten": rewritten,
+                "verified_triples": verified_triples,
+                "instance_triples": instance_triples,
+                "intent": intent,
+                "query_ir": query_ir,
+                "query_plan": query_plan,
+                "return_contract": return_contract,
+                "path_hints": path_hints,
+                "query_constraints": query_constraints,
+                "chain_result": {
+                    "result": direct_result,
+                    "intermediate_steps": [{"query": encoded_query}],
+                },
+                "encoded_query": encoded_query,
+                "decoded_query": direct_cypher,
+            }
+        except Exception as e:
+            logger.warning("[RAGService] Generic IR query failed, falling back to chain: %s", e)
 
     # --- Step 3: Invoke chain ---
     chain_result = invoke_chain(enhanced_question)
