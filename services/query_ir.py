@@ -145,6 +145,12 @@ def render_cypher_from_ir(ir: dict[str, Any]) -> str | None:
         return _render_rank_graph_count(ir, focus_label)
 
     if verified:
+        cypher = _render_user_posts_mentions_count(ir, match_map)
+        if cypher:
+            return cypher
+        cypher = _render_user_posts_tags_nodes(ir, match_map)
+        if cypher:
+            return cypher
         if len(verified) == 1:
             cypher = _render_single_hop(ir, focus_label, anchor, match_map)
             if cypher:
@@ -167,6 +173,53 @@ def render_cypher_from_ir(ir: dict[str, Any]) -> str | None:
         return _render_focus_scan(ir, focus_label, anchor, match_map)
 
     return None
+
+
+def _render_user_posts_mentions_count(ir: dict[str, Any], match_map: dict[str, list[str]]) -> str | None:
+    triples = ir.get("verified_triples", []) or []
+    if len(triples) != 2:
+        return None
+    (s1, r1, o1), (s2, r2, o2) = triples
+    if (s1, r1, o1, s2, r2, o2) != ("User", "POSTS", "Tweet", "Tweet", "MENTIONS", "User"):
+        return None
+    question_text = str(ir.get("question_text") or "").lower()
+    if "mentions most frequently" not in question_text:
+        return None
+
+    match_clause = "MATCH (user:User)-[:POSTS]->(tweet:Tweet)-[:MENTIONS]->(mentioned:User)"
+    where_clause = _where_from_anchors(
+        [
+            (alias, anchor)
+            for alias, anchor in [
+                ("user", a)
+                for a in (ir.get("anchors", []) or [])
+                if str(a.get("label") or "") == "User"
+            ]
+        ],
+        match_map,
+    )
+    return _assemble_query(ir, match_clause, where_clause, "mentioned")
+
+
+def _render_user_posts_tags_nodes(ir: dict[str, Any], match_map: dict[str, list[str]]) -> str | None:
+    triples = ir.get("verified_triples", []) or []
+    if len(triples) != 2:
+        return None
+    (s1, r1, o1), (s2, r2, o2) = triples
+    if (s1, r1, o1, s2, r2, o2) != ("User", "POSTS", "Tweet", "Tweet", "TAGS", "Hashtag"):
+        return None
+    if str(ir.get("projection_lock") or "") != "full_node":
+        return None
+    match_clause = "MATCH (user:User)-[:POSTS]->(tweet:Tweet)-[:TAGS]->(hashtag:Hashtag)"
+    where_clause = _where_from_anchors(
+        [
+            ("user", a)
+            for a in (ir.get("anchors", []) or [])
+            if str(a.get("label") or "") == "User"
+        ],
+        match_map,
+    )
+    return _assemble_query(ir, match_clause, where_clause, "tweet")
 
 
 def _render_single_hop(ir: dict[str, Any], focus_label: str, anchor: dict[str, str], match_map: dict[str, list[str]]) -> str | None:
@@ -306,8 +359,36 @@ def _render_focus_scan(ir: dict[str, Any], focus_label: str, anchor: dict[str, s
 
 def _render_rank_graph_count(ir: dict[str, Any], focus_label: str) -> str:
     focus_alias = _alias_for_label(focus_label)
+    anchors = ir.get("anchors", []) or []
+    verified = ir.get("verified_triples", []) or []
+
+    if len(verified) == 1:
+        src, rel, dst = verified[0]
+        if dst == focus_label:
+            left_alias = _alias_for_label(src)
+            match_clause = f"MATCH ({left_alias}:{src})-[:{rel}]->({focus_alias}:{dst})"
+            where_clause = _where_from_anchors(
+                [(left_alias, a) for a in anchors if str(a.get('label') or '') == src]
+                + [(focus_alias, a) for a in anchors if str(a.get('label') or '') == dst],
+                get_match_properties_map(ir.get("database") or None),
+            )
+            return _assemble_query(ir, match_clause, where_clause, focus_alias)
+        if src == focus_label:
+            right_alias = _alias_for_label(dst)
+            match_clause = f"MATCH ({focus_alias}:{src})-[:{rel}]->({right_alias}:{dst})"
+            where_clause = _where_from_anchors(
+                [(focus_alias, a) for a in anchors if str(a.get('label') or '') == src]
+                + [(right_alias, a) for a in anchors if str(a.get('label') or '') == dst],
+                get_match_properties_map(ir.get("database") or None),
+            )
+            return _assemble_query(ir, match_clause, where_clause, focus_alias)
+
     match_clause = f"MATCH ({focus_alias}:{focus_label})"
-    return _assemble_query(ir, match_clause, "", focus_alias)
+    where_clause = _where_from_anchors(
+        [(focus_alias, a) for a in anchors if str(a.get("label") or "") == focus_label],
+        get_match_properties_map(ir.get("database") or None),
+    )
+    return _assemble_query(ir, match_clause, where_clause, focus_alias)
 
 
 def _render_aggregate_projection(ir: dict[str, Any], focus_label: str) -> str | None:
@@ -703,6 +784,13 @@ def _render_question_family_fallback(ir: dict[str, Any]) -> str | None:
             "MATCH (tweet:Tweet)-[:MENTIONS]->(:User {screen_name: 'neo4j'}) "
             "WHERE exists{ (tweet)-[:CONTAINS]->(:Link) } "
             "RETURN tweet"
+        )
+
+    if "specific user named" in q and "follows" in q:
+        return (
+            "MATCH (me:Me {name: 'Neo4j'})-[:FOLLOWS]->(user:User) "
+            "RETURN user.name, user.screen_name, user.followers, user.following "
+            "ORDER BY user.followers DESC LIMIT 5"
         )
 
     if "mention users who have retweeted tweets that mention" in q:

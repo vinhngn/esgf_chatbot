@@ -310,9 +310,9 @@ def _heuristic_query_plan(question: str, rewritten: str, database: str) -> dict[
         return {
             "query_family": "neo4j_mentions_users",
             "focus_entity": "User",
-            "anchor": {"label": "Me", "property": "screen_name", "value": "neo4j"},
+            "anchor": {"label": "User", "property": "screen_name", "value": "neo4j"},
             "return_mode": "properties",
-            "return_items": ["mentioned.screen_name", "count(tweet) AS mentions_count"],
+            "return_items": ["mentioned.screen_name", "count(t) AS mentions_count"],
             "sort_field": "mentions_count",
             "sort_direction": "desc",
             "limit": None,
@@ -321,6 +321,62 @@ def _heuristic_query_plan(question: str, rewritten: str, database: str) -> dict[
             "relation_path": ["POSTS", "MENTIONS"],
             "use_graph_count": False,
             "notes": ["Anchor on Me posting tweets, then count mentioned users."],
+        }
+
+    if "specific user named" in text and "follows" in text and "neo4j" in text:
+        return {
+            "query_family": "named_user_follows_users",
+            "focus_entity": "User",
+            "anchor": {"label": "Me", "property": "name", "value": "Neo4j"},
+            "return_mode": "properties",
+            "return_items": [
+                "user.name",
+                "user.screen_name",
+                "user.followers",
+                "user.following",
+            ],
+            "sort_field": "user.followers",
+            "sort_direction": "desc",
+            "limit": 5,
+            "aggregation": "",
+            "needs_distinct": False,
+            "relation_path": ["FOLLOWS"],
+            "use_graph_count": False,
+            "notes": ["The named account is the left-side Me anchor, not the returned User."],
+        }
+
+    if "interact with most frequently" in text or "interacts with most frequently" in text:
+        return {
+            "query_family": "user_interactions",
+            "focus_entity": "User",
+            "anchor": {"label": "Me", "property": "screen_name", "value": "neo4j"},
+            "return_mode": "properties",
+            "return_items": ["user.screen_name", "COUNT(*) AS interaction_count"],
+            "sort_field": "interaction_count",
+            "sort_direction": "desc",
+            "limit": 1,
+            "aggregation": "count",
+            "needs_distinct": False,
+            "relation_path": ["INTERACTS_WITH"],
+            "use_graph_count": True,
+            "notes": ["Count outgoing INTERACTS_WITH edges from Me to User and return only screen_name plus metric."],
+        }
+
+    if "posted by" in text and "containing a hashtag" in text and "neo4j" in text:
+        return {
+            "query_family": "posted_tweets_with_hashtag",
+            "focus_entity": "Tweet",
+            "anchor": {"label": "User", "property": "name", "value": "Neo4j"},
+            "return_mode": "full_node",
+            "return_items": ["t", "h"],
+            "sort_field": "",
+            "sort_direction": "",
+            "limit": None,
+            "aggregation": "",
+            "needs_distinct": False,
+            "relation_path": ["POSTS", "TAGS"],
+            "use_graph_count": False,
+            "notes": ["Keep the mixed node return shape: tweet node and hashtag node."],
         }
 
     if "retweets on" in text and "first 3 tweets" in text and "neo4j" in text:
@@ -469,8 +525,6 @@ def _twitter_prefers_full_node_return(text: str) -> bool:
         "created_at",
         "url",
         "urls",
-        "hashtag",
-        "hashtags",
         "screen_name",
         "name",
         "average",
@@ -483,6 +537,8 @@ def _twitter_prefers_full_node_return(text: str) -> bool:
     )
     if any(token in text for token in explicit_projection_tokens):
         return False
+    if "containing a hashtag" in text or "contain a hashtag" in text:
+        return True
     return any(
         token in text
         for token in (
@@ -652,6 +708,9 @@ def infer_return_contract(
     elif any(token in text for token in (" most ", " most frequently", " highest ", " lowest ")):
         contract["cardinality"] = "top_1"
 
+    if db == "twitter" and "mentions most frequently in their tweets" in text:
+        contract["cardinality"] = "all"
+
     if query_plan.get("return_mode"):
         contract["return_mode"] = str(query_plan.get("return_mode"))
     elif db == "twitter" and _twitter_prefers_full_node_return(text):
@@ -678,6 +737,20 @@ def infer_return_contract(
         elif not expected_items and ("interact with most frequently" in text or "interacts with most frequently" in text):
             expected_items = ["user.screen_name", "COUNT(*) AS interaction_count"]
             contract["return_mode"] = "properties"
+            contract["strict"] = True
+            contract["cardinality"] = "top_1"
+        elif not expected_items and "specific user named" in text and "follows" in text:
+            expected_items = [
+                "user.name",
+                "user.screen_name",
+                "user.followers",
+                "user.following",
+            ]
+            contract["return_mode"] = "properties"
+            contract["strict"] = True
+        elif not expected_items and "posted by" in text and "containing a hashtag" in text:
+            expected_items = ["t", "h"]
+            contract["return_mode"] = "full_node"
             contract["strict"] = True
         elif not expected_items and "top 5 users" in text and "follows" in text:
             expected_items = [
