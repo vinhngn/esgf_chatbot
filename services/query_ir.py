@@ -404,7 +404,9 @@ def _render_aggregate_projection(ir: dict[str, Any], focus_label: str) -> str | 
     if not return_items:
         return None
 
-    rewritten = _inject_metric_items(return_items, ir, focus_alias)
+    rewritten = _normalize_return_items(return_items, focus_alias, focus_label)
+    rewritten = _inject_metric_items(rewritten, ir, focus_alias)
+    rewritten = _apply_projection_policy(rewritten, ir)
     clauses = [match_clause]
     if where_clause:
         clauses.append(where_clause)
