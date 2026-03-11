@@ -36,6 +36,7 @@ from templates.entity_definitions import get_entity_definitions
 from templates.match_properties_map import get_match_properties_map
 from utils.helpers import normalize_value
 
+from services.query_ir import build_query_ir, render_cypher_from_ir
 from services.triple_service import build_enhanced_question, extract_triples_with_retry
 
 logger = logging.getLogger(__name__)
@@ -174,6 +175,41 @@ def _run_pipeline(
         conversation_history=conversation_history,
     )
 
+    query_ir = build_query_ir(
+        database=db_name,
+        verified_triples=verified_triples,
+        instance_triples=instance_triples,
+        intent=intent,
+        query_plan=query_plan,
+        return_contract=return_contract,
+        path_hints=path_hints,
+        query_constraints=query_constraints,
+    )
+    logger.info("[RAGService] query_ir=%s", query_ir)
+
+    direct_cypher = render_cypher_from_ir(query_ir)
+    if direct_cypher:
+        logger.info("[RAGService] Answering via generic IR renderer.")
+        direct_result = graph.query(direct_cypher)
+        encoded_query = urllib.parse.quote(direct_cypher)
+        return {
+            "rewritten": rewritten,
+            "verified_triples": verified_triples,
+            "instance_triples": instance_triples,
+            "intent": intent,
+            "query_ir": query_ir,
+            "query_plan": query_plan,
+            "return_contract": return_contract,
+            "path_hints": path_hints,
+            "query_constraints": query_constraints,
+            "chain_result": {
+                "result": direct_result,
+                "intermediate_steps": [{"query": encoded_query}],
+            },
+            "encoded_query": encoded_query,
+            "decoded_query": direct_cypher,
+        }
+
     # --- Step 3: Invoke chain ---
     chain_result = invoke_chain(enhanced_question)
 
@@ -188,6 +224,7 @@ def _run_pipeline(
         "verified_triples": verified_triples,
         "instance_triples": instance_triples,
         "intent": intent,
+        "query_ir": query_ir,
         "query_plan": query_plan,
         "return_contract": return_contract,
         "path_hints": path_hints,
@@ -228,6 +265,7 @@ def process_question(
     verified_triples = pipe["verified_triples"]
     instance_triples = pipe["instance_triples"]
     intent: dict[str, Any] = pipe.get("intent", {})
+    query_ir: dict[str, Any] = pipe.get("query_ir", {})
     query_plan: dict[str, Any] = pipe.get("query_plan", {})
     return_contract: dict[str, Any] = pipe.get("return_contract", {})
     path_hints: dict[str, Any] = pipe.get("path_hints", {})
@@ -245,6 +283,7 @@ def process_question(
             "verified_triples": verified_triples,
             "instance_triples": instance_triples,
             "intent": intent,
+            "query_ir": query_ir,
             "query_plan": query_plan,
             "return_contract": return_contract,
             "path_hints": path_hints,
@@ -293,6 +332,7 @@ def process_question(
         "verified_triples": verified_triples,
         "instance_triples": instance_triples,
         "intent": intent,
+        "query_ir": query_ir,
         "query_plan": query_plan,
         "return_contract": return_contract,
         "path_hints": path_hints,
@@ -330,6 +370,7 @@ def get_raw_results(question: str) -> dict:
     verified_triples = pipe["verified_triples"]
     instance_triples = pipe["instance_triples"]
     intent: dict[str, Any] = pipe.get("intent", {})
+    query_ir: dict[str, Any] = pipe.get("query_ir", {})
     query_plan: dict[str, Any] = pipe.get("query_plan", {})
     return_contract: dict[str, Any] = pipe.get("return_contract", {})
     path_hints: dict[str, Any] = pipe.get("path_hints", {})
@@ -372,6 +413,7 @@ def get_raw_results(question: str) -> dict:
         "verified_triples": [list(t) for t in verified_triples],
         "instance_triples": [list(t) for t in instance_triples],
         "intent": intent,
+        "query_ir": query_ir,
         "query_plan": query_plan,
         "return_contract": return_contract,
         "path_hints": path_hints,

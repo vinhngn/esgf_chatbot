@@ -224,6 +224,7 @@ def _merge_intent_with_question(
         "sort": _normalize_slot_value(intent.get("sort", "")),
         "limit": _normalize_slot_value(intent.get("limit", "")),
         "aggregation": _normalize_slot_value(intent.get("aggregation", "")),
+        "_question_text": rewritten or "",
     }
 
     if not merged["operation"]:
@@ -582,6 +583,7 @@ Rewritten: {rewritten or question}
     try:
         plan = planner.invoke(prompt)
         plan_dict = _plan_to_dict(plan)
+        plan_dict["_source_question"] = question
         logger.info("[TripleService] query_plan=%s", plan_dict)
         return plan_dict
     except Exception as e:
