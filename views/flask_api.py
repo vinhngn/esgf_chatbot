@@ -78,6 +78,9 @@ def text2cypher():
                 "verified_triples": results.get("verified_triples", []),
                 "instance_triples": results.get("instance_triples", []),
                 "intent": results.get("intent", {}),
+                "return_contract": results.get("return_contract", {}),
+                "path_hints": results.get("path_hints", {}),
+                "query_constraints": results.get("query_constraints", {}),
             }
         )
 
@@ -92,6 +95,9 @@ def text2cypher():
                 "verified_triples": [],
                 "instance_triples": [],
                 "intent": {},
+                "return_contract": {},
+                "path_hints": {},
+                "query_constraints": {},
             }
         ), 500
 
@@ -127,6 +133,9 @@ def rag_endpoint():
                 "output": result.get("output", ""),
                 "cypher_query": result.get("cypher_query", ""),
                 "intent": result.get("intent", {}),
+                "return_contract": result.get("return_contract", {}),
+                "path_hints": result.get("path_hints", {}),
+                "query_constraints": result.get("query_constraints", {}),
                 "error": None,
             }
         )

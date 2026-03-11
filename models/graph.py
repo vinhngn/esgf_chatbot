@@ -8,6 +8,7 @@ GraphCypherQAChain which requires a GraphStore instance.
 from __future__ import annotations
 
 import logging
+import re
 import threading
 import time
 from collections import defaultdict
@@ -23,6 +24,7 @@ _graph_lock = threading.Lock()
 
 _schema_labels: set[str] = set()
 _schema_relationships: set[str] = set()
+_schema_patterns: set[tuple[str, str, str]] = set()
 _schema_node_properties: dict[str, list[str]] = {}
 _schema_relationship_properties: dict[str, list[str]] = {}
 _schema_sample_values: dict[str, list[str]] = {}
@@ -56,11 +58,14 @@ def get_graph() -> Neo4jGraph:
 def refresh_schema() -> None:
     """Refresh schema from Neo4j and parse labels/relationships."""
     global _schema_labels, _schema_relationships, _schema_last_refresh
+    global _schema_patterns
     global _schema_node_properties, _schema_relationship_properties
     global _schema_sample_values
     graph = get_graph()
     graph.refresh_schema()
-    _schema_labels, _schema_relationships = parse_schema(graph.get_schema)
+    schema_text = graph.get_schema
+    _schema_labels, _schema_relationships = parse_schema(schema_text)
+    _schema_patterns = _parse_schema_patterns(schema_text)
     _schema_node_properties = _load_node_properties(graph)
     _schema_relationship_properties = _load_relationship_properties(graph)
     _schema_sample_values = _load_sample_values(graph, _schema_node_properties)
@@ -98,6 +103,13 @@ def get_schema_node_properties() -> dict[str, list[str]]:
     if not _schema_node_properties:
         refresh_schema()
     return _schema_node_properties
+
+
+def get_schema_patterns() -> set[tuple[str, str, str]]:
+    """Return cached valid schema triples as (source_label, rel_type, target_label)."""
+    if not _schema_patterns:
+        refresh_schema()
+    return _schema_patterns
 
 
 def get_schema_relationship_properties() -> dict[str, list[str]]:
@@ -139,6 +151,12 @@ def get_schema_context() -> str:
         for rel in rels:
             props = ", ".join(rel_properties.get(rel, [])[:6]) or "no properties"
             lines.append(f"- {rel}: properties [{props}]")
+
+    patterns = sorted(get_schema_patterns())
+    if patterns:
+        lines.append("Valid patterns:")
+        for source, rel, target in patterns[:20]:
+            lines.append(f"- ({source})-[:{rel}]->({target})")
 
     return "\n".join(lines)
 
@@ -233,3 +251,14 @@ def _load_sample_values(
             )
 
     return sample_values
+
+
+def _parse_schema_patterns(schema_text: str) -> set[tuple[str, str, str]]:
+    """Extract valid directed label-relationship-label patterns from schema text."""
+    patterns: set[tuple[str, str, str]] = set()
+    regex = re.compile(
+        r"\(:([A-Za-z0-9_]+)\)\s*-\s*\[:([A-Za-z0-9_]+)\]\s*->\s*\(:([A-Za-z0-9_]+)\)"
+    )
+    for source, rel, target in regex.findall(schema_text):
+        patterns.add((source, rel, target))
+    return patterns

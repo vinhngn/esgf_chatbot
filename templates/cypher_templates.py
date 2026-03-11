@@ -94,6 +94,8 @@ _GENERALIZED_SUPPLEMENTS = {
   - ratings and summaries may live on review relationships.
   - roles may live on acted-in relationships.
   - the same person can participate in multiple roles across the same movie.
+- Important schema guard:
+  - do not invent movie properties such as budget, revenue, or imdbRating if they are absent from schema.
 """.strip(),
     "recommendations": """
 - Domain focus: movies, users, genres, actors, directors, and analytics-style metrics.

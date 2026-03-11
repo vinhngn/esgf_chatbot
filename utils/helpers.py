@@ -55,4 +55,30 @@ def clean_cypher_query(query_raw: str) -> str:
     query = re.sub(r"```cypher\s*", "", query_raw, flags=re.IGNORECASE)
     query = re.sub(r"```\s*", "", query)
     query = re.sub(r"^\s*cypher\s+", "", query, flags=re.IGNORECASE)
-    return query.rstrip(";").strip()
+    query = query.rstrip(";").strip()
+    return normalize_cypher_query(query)
+
+
+def normalize_cypher_query(query: str) -> str:
+    """Normalize a few common LLM Cypher mistakes without changing intent."""
+    if not query:
+        return ""
+
+    normalized = query
+
+    # Convert invalid COUNT(pattern) into Neo4j 5 count{} syntax.
+    normalized = re.sub(
+        r"COUNT\s*\(\s*(\([^)]+\)\s*-\s*\[[^]]+\]\s*->\s*\([^)]+\))\s*\)",
+        r"count{\1}",
+        normalized,
+        flags=re.IGNORECASE,
+    )
+
+    # Normalize COUNT(*) spacing/casing for downstream comparisons.
+    normalized = re.sub(r"\bCOUNT\s*\(\s*\*\s*\)", "COUNT(*)", normalized, flags=re.IGNORECASE)
+
+    # Remove accidental doubled whitespace introduced by repairs.
+    normalized = re.sub(r"[ \t]+", " ", normalized)
+    normalized = re.sub(r"\n{3,}", "\n\n", normalized)
+
+    return normalized.strip()

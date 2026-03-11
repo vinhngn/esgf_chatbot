@@ -139,6 +139,9 @@ if user_input:
                 verified_triples = result.get("verified_triples", [])
                 instance_triples = result.get("instance_triples", [])
                 intent = result.get("intent", {})
+                return_contract = result.get("return_contract", {})
+                path_hints = result.get("path_hints", {})
+                query_constraints = result.get("query_constraints", {})
                 cypher = result.get("cypher_query", "")
 
                 with st.expander("Pipeline debug", expanded=False):
@@ -152,6 +155,24 @@ if user_input:
                         st.json(intent)
                     else:
                         st.markdown("**Intent:** —")
+
+                    if return_contract:
+                        st.markdown("**Return contract:**")
+                        st.json(return_contract)
+                    else:
+                        st.markdown("**Return contract:** —")
+
+                    if path_hints:
+                        st.markdown("**Path hints:**")
+                        st.json(path_hints)
+                    else:
+                        st.markdown("**Path hints:** —")
+
+                    if query_constraints:
+                        st.markdown("**Query constraints:**")
+                        st.json(query_constraints)
+                    else:
+                        st.markdown("**Query constraints:** —")
 
                     if verified_triples:
                         st.markdown("**Verified triples:**")

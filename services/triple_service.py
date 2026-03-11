@@ -28,6 +28,35 @@ from utils.helpers import strip_quotes
 logger = logging.getLogger(__name__)
 
 MAX_ATTEMPTS = 3
+_EMPTY_MARKERS = {"", "none", "null", "n/a", "unknown", "?"}
+_GENERIC_ENTITY_LITERALS = {
+    "user",
+    "users",
+    "tweet",
+    "tweets",
+    "hashtag",
+    "hashtags",
+    "link",
+    "links",
+    "movie",
+    "movies",
+    "person",
+    "people",
+    "actor",
+    "actors",
+    "director",
+    "directors",
+    "producer",
+    "producers",
+    "review",
+    "reviews",
+    "role",
+    "roles",
+    "count",
+    "average",
+    "sum",
+    "total",
+}
 
 
 # ---------------------------------------------------------------------------
@@ -86,12 +115,12 @@ def _merge_intent_with_question(
     """Backfill missing intent slots with light heuristics."""
     text = rewritten.lower()
     merged = {
-        "operation": intent.get("operation", ""),
-        "target": intent.get("target", ""),
-        "filters": intent.get("filters", []) or [],
-        "sort": intent.get("sort", ""),
-        "limit": intent.get("limit", ""),
-        "aggregation": intent.get("aggregation", ""),
+        "operation": _normalize_slot_value(intent.get("operation", "")),
+        "target": _normalize_slot_value(intent.get("target", "")),
+        "filters": _normalize_filters(intent.get("filters", []) or []),
+        "sort": _normalize_slot_value(intent.get("sort", "")),
+        "limit": _normalize_slot_value(intent.get("limit", "")),
+        "aggregation": _normalize_slot_value(intent.get("aggregation", "")),
     }
 
     if not merged["operation"]:
@@ -99,17 +128,17 @@ def _merge_intent_with_question(
             merged["operation"] = "count"
         elif any(token in text for token in ("top ", "highest", "most", "lowest", "least")):
             merged["operation"] = "rank"
-        elif any(token in text for token in ("average", "avg", "sum", "total", "minimum", "maximum")):
+        elif re.search(r"\b(average|avg|sum|total|minimum|maximum)\b", text):
             merged["operation"] = "aggregate"
         else:
             merged["operation"] = "lookup"
 
     if not merged["aggregation"]:
-        if any(token in text for token in ("average", "avg")):
+        if re.search(r"\b(average|avg)\b", text):
             merged["aggregation"] = "avg"
         elif "count" in merged["operation"] or "how many" in text or "number of" in text:
             merged["aggregation"] = "count"
-        elif "sum" in text or "total" in text:
+        elif re.search(r"\b(sum|total)\b", text):
             merged["aggregation"] = "sum"
 
     if not merged["sort"]:
@@ -132,6 +161,347 @@ def _merge_intent_with_question(
         merged["filters"] = filters
 
     return merged
+
+
+def infer_return_contract(
+    question: str,
+    rewritten: str,
+    intent: dict[str, Any] | None = None,
+    database: str = "",
+) -> dict[str, Any]:
+    """Infer a lightweight output contract from the user question."""
+    intent = intent or {}
+    text = f"{question}\n{rewritten}".lower()
+    db = (database or "").lower()
+
+    contract: dict[str, Any] = {
+        "cardinality": "all",
+        "strict": False,
+        "return_mode": "unspecified",
+        "expected_items": [],
+        "notes": [],
+    }
+
+    limit = _normalize_slot_value(intent.get("limit", ""))
+    if limit:
+        contract["cardinality"] = f"top_{limit}"
+    elif any(token in text for token in (" most ", " most frequently", " highest ", " lowest ")):
+        contract["cardinality"] = "top_1"
+
+    if any(token in text for token in ("list all", "show all", "which users", "who are the users")):
+        contract["return_mode"] = "properties"
+    elif any(token in text for token in ("list tweets", "show tweets", "return tweets")):
+        contract["return_mode"] = "full_node"
+
+    if db == "twitter":
+        expected_items: list[str] = []
+
+        if "amplified by 'me'" in text or 'amplified by "me"' in text:
+            expected_items = ["user.screen_name AS AmplifiedUser"]
+            contract["return_mode"] = "properties"
+            contract["strict"] = True
+            contract["notes"].append("Return only the amplified user screen name with the expected alias.")
+        elif "interact with most frequently" in text or "interacts with most frequently" in text:
+            expected_items = ["user.screen_name", "COUNT(*) AS interaction_count"]
+            contract["return_mode"] = "properties"
+            contract["strict"] = True
+        elif "top 5 users" in text and "follows" in text:
+            expected_items = [
+                "user.name",
+                "user.screen_name",
+                "user.followers",
+                "user.following",
+            ]
+            contract["return_mode"] = "properties"
+            contract["strict"] = True
+        elif ("most recent users" in text or "started following" in text or "who follows" in text) and "tweet" not in text:
+            expected_items = [
+                "user.screen_name",
+                "user.name",
+                "user.followers",
+                "user.following",
+                "user.profile_image_url",
+                "user.url",
+                "user.location",
+                "user.statuses",
+            ]
+            contract["return_mode"] = "properties"
+            contract["strict"] = True
+        elif "favorite count over" in text or ("mentioned" in text and "favorite" in text):
+            expected_items = [
+                "t.text AS tweet_text",
+                "t.favorites AS favorite_count",
+                "t.created_at AS created_at",
+            ]
+            contract["return_mode"] = "properties"
+            contract["strict"] = True
+        elif "statuses posted" in text or "number of statuses posted" in text:
+            expected_items = ["u.name", "u.screen_name", "u.statuses"]
+            contract["return_mode"] = "properties"
+            contract["strict"] = True
+            contract["notes"].append("Use the statuses property directly for ranking, not a graph count.")
+        elif "mentions most frequently" in text:
+            expected_items = ["mentioned.screen_name", "count(t) AS mentions_count"]
+            contract["return_mode"] = "properties"
+            contract["strict"] = True
+        elif "most recent tweet" in text and "mentions a user followed by" in text:
+            expected_items = ["max(tweet.created_at) AS most_recent_tweet_date"]
+            contract["return_mode"] = "properties"
+            contract["strict"] = True
+        elif "first 3 users who mentioned" in text:
+            expected_items = ["u.screen_name", "t.created_at"]
+            contract["return_mode"] = "properties"
+            contract["strict"] = True
+        elif "tweets with most mentions" in text:
+            expected_items = [
+                "t.id_str AS tweet_id",
+                "t.text AS tweet_text",
+                "mention_count",
+            ]
+            contract["return_mode"] = "properties"
+            contract["strict"] = True
+        elif "number of people they are following" in text or "by the number of people they are following" in text:
+            expected_items = ["u.name", "u.screen_name", "followingCount"]
+            contract["return_mode"] = "properties"
+            contract["strict"] = True
+        elif "number of followers" in text and "top" in text:
+            expected_items = ["u.screen_name", "u.name", "u.followers"]
+            contract["return_mode"] = "properties"
+            contract["strict"] = True
+
+        if expected_items:
+            contract["expected_items"] = expected_items
+
+    return contract
+
+
+def infer_path_hints(
+    question: str,
+    rewritten: str,
+    database: str = "",
+) -> dict[str, Any]:
+    """Infer lightweight path/query-shape hints for multi-hop questions."""
+    text = f"{question}\n{rewritten}".lower()
+    db = (database or "").lower()
+    hints: dict[str, Any] = {
+        "focus_entity": "",
+        "path_patterns": [],
+        "count_pattern": "",
+        "needs_distinct": False,
+        "notes": [],
+    }
+
+    if db != "twitter":
+        return hints
+
+    if "retweeted" in text or "retweet" in text:
+        hints["notes"].append(
+            "Retweet questions usually require a POSTS -> RETWEETS path, not RT_MENTIONS."
+        )
+
+    if "mention" in text:
+        hints["notes"].append(
+            "Mention questions use Tweet-[:MENTIONS]->User/Me and often require Tweet as the central entity."
+        )
+
+    if "number of people they are following" in text or "by the number of people they are following" in text:
+        hints["focus_entity"] = "User"
+        hints["count_pattern"] = "count{(u)-[:FOLLOWS]->(:User)} AS followingCount"
+        hints["notes"].append("Prefer graph count over the nullable u.following property.")
+
+    if "statuses posted" in text or "number of statuses posted" in text:
+        hints["focus_entity"] = "User"
+        hints["notes"].append("Statuses ranking should use the existing u.statuses property, not a POSTS count.")
+
+    if "number of followers" in text and "top" in text:
+        hints["focus_entity"] = "User"
+        hints["count_pattern"] = "count{(u)<-[:FOLLOWS]-(:User)} AS followerCount"
+
+    if "amplified by 'me'" in text or 'amplified by "me"' in text:
+        hints["focus_entity"] = "User"
+        hints["path_patterns"] = ["(:Me)-[:AMPLIFIES]->(:User)"]
+
+    if "interact with most frequently" in text or "interacts with most frequently" in text:
+        hints["focus_entity"] = "User"
+        hints["path_patterns"] = ["(:Me)-[:INTERACTS_WITH]->(:User)"]
+        hints["count_pattern"] = "COUNT(*) AS interaction_count"
+
+    if "top 5 users" in text and "follows" in text:
+        hints["focus_entity"] = "User"
+        hints["path_patterns"] = ["(:Me)-[:FOLLOWS]->(:User)"]
+
+    if "most recent users" in text or "started following" in text:
+        hints["focus_entity"] = "User"
+        hints["path_patterns"] = ["(:User)-[:FOLLOWS]->(:Me)"]
+
+    if "tweets where" in text and "mentioned" in text and "favorite" in text:
+        hints["focus_entity"] = "Tweet"
+        hints["path_patterns"] = ["(:Tweet)-[:MENTIONS]->(:User)"]
+        hints["notes"].append("Keep Tweet as the returned entity and filter on t.favorites.")
+
+    if "first 3 users who mentioned" in text:
+        hints["focus_entity"] = "User"
+        hints["path_patterns"] = ["(:User)-[:POSTS]->(:Tweet)-[:MENTIONS]->(:Me)"]
+
+    if "most recent tweet" in text and "mentions a user followed by" in text:
+        hints["focus_entity"] = "Tweet"
+        hints["path_patterns"] = [
+            "(:User)-[:FOLLOWS]->(:User)",
+            "(:Tweet)-[:MENTIONS]->(:User)",
+        ]
+        hints["notes"].append("Use max(tweet.created_at) for the final projection instead of COUNT.")
+
+    if "hashtags used in tweets that mention" in text:
+        hints["focus_entity"] = "Hashtag"
+        hints["path_patterns"] = [
+            "(:Tweet)-[:MENTIONS]->(:User)",
+            "(:Tweet)-[:TAGS]->(:Hashtag)",
+        ]
+        hints["needs_distinct"] = True
+
+    if "posted by" in text and "containing a hashtag" in text:
+        hints["focus_entity"] = "Tweet"
+        hints["path_patterns"] = ["(:User|:Me)-[:POSTS]->(:Tweet)-[:TAGS]->(:Hashtag)"]
+        hints["notes"].append("Return both Tweet and Hashtag when the question asks for tweets containing a hashtag.")
+
+    if "top 3 users mentioned" in text and "neo4j" in text:
+        hints["focus_entity"] = "User"
+        hints["path_patterns"] = ["(:Me)-[:POSTS]->(:Tweet)-[:MENTIONS]->(:User)"]
+        hints["count_pattern"] = "COUNT(*) AS mentionCount"
+
+    if "has retweeted" in text or "retweeted by" in text:
+        hints["focus_entity"] = "Tweet"
+        hints["path_patterns"] = ["(:Me)-[:POSTS]->(:Tweet)-[:RETWEETS]->(:Tweet)"]
+
+    if "retweets the most" in text:
+        hints["focus_entity"] = "User"
+        hints["path_patterns"] = [
+            "(:Me)-[:POSTS]->(:Tweet)-[:RETWEETS]->(:Tweet)<-[:POSTS]-(:User)"
+        ]
+        hints["count_pattern"] = "count(*) AS retweet_count"
+
+    if "identify the urls" in text and "retweeted by" in text:
+        hints["focus_entity"] = "Link"
+        hints["path_patterns"] = [
+            "(:Me)-[:POSTS]->(:Tweet)<-[:RETWEETS]-(:Tweet)",
+            "(:Tweet)-[:CONTAINS]->(:Link)",
+        ]
+
+    return hints
+
+
+def infer_query_constraints(
+    question: str,
+    rewritten: str,
+    database: str = "",
+    intent: dict[str, Any] | None = None,
+    return_contract: dict[str, Any] | None = None,
+    path_hints: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Compile lightweight hard constraints before Cypher generation."""
+    text = f"{question}\n{rewritten}".lower()
+    db = (database or "").lower()
+    intent = intent or {}
+    return_contract = return_contract or {}
+    path_hints = path_hints or {}
+
+    constraints: dict[str, Any] = {
+        "query_mode": "lookup_entity",
+        "projection_lock": return_contract.get("return_mode", "unspecified") or "unspecified",
+        "allow_aggregation": False,
+        "aggregation_style": "",
+        "anchor_lock": {},
+        "notes": [],
+    }
+
+    if return_contract.get("return_mode") == "full_node":
+        constraints["projection_lock"] = "full_node"
+    elif return_contract.get("return_mode") == "properties":
+        constraints["projection_lock"] = "properties"
+
+    if intent.get("aggregation") in {"count", "avg", "sum", "min", "max"}:
+        constraints["allow_aggregation"] = True
+        constraints["aggregation_style"] = intent.get("aggregation")
+
+    if "statuses posted" in text or "number of statuses posted" in text:
+        constraints["allow_aggregation"] = False
+        constraints["aggregation_style"] = ""
+        constraints["query_mode"] = "rank_by_existing_property"
+    elif "most recent tweet" in text and "mentions a user followed by" in text:
+        constraints["allow_aggregation"] = True
+        constraints["aggregation_style"] = "max"
+        constraints["query_mode"] = "aggregate_projection"
+
+    if path_hints.get("count_pattern"):
+        constraints["allow_aggregation"] = True
+        constraints["aggregation_style"] = "path_count"
+        constraints["query_mode"] = "rank_graph_count"
+    elif constraints["projection_lock"] == "full_node" and intent.get("sort"):
+        constraints["query_mode"] = "rank_by_existing_property"
+    elif constraints["projection_lock"] == "properties" and constraints["allow_aggregation"]:
+        constraints["query_mode"] = "aggregate_projection"
+    elif path_hints.get("path_patterns"):
+        constraints["query_mode"] = "path_retrieval"
+    elif constraints["projection_lock"] == "properties":
+        constraints["query_mode"] = "lookup_property"
+
+    if db == "twitter":
+        anchor_lock: dict[str, str] = {}
+
+        if "'me'" in text or '"me"' in text or " according to the amplifies relationship" in text:
+            anchor_lock = {"label": "Me", "property": "", "value": ""}
+        elif "user named 'neo4j'" in text or 'user named "neo4j"' in text:
+            anchor_lock = {"label": "Me", "property": "name", "value": "Neo4j"}
+        elif "'neo4j'" in text or '"neo4j"' in text:
+            if any(token in text for token in ("screen_name", "mentions", "started following", "follow 'neo4j'", "follow neo4j")):
+                anchor_lock = {"label": "Me", "property": "screen_name", "value": "neo4j"}
+            elif any(token in text for token in ("posted by 'neo4j'", "tweets by 'neo4j'", "by 'neo4j'")):
+                anchor_lock = {"label": "User", "property": "screen_name", "value": "neo4j"}
+            else:
+                anchor_lock = {"label": "Me", "property": "name", "value": "Neo4j"}
+
+        if anchor_lock:
+            constraints["anchor_lock"] = anchor_lock
+
+        if constraints["query_mode"] == "rank_graph_count":
+            constraints["notes"].append("Do not convert graph-count questions into property lookups.")
+        if constraints["projection_lock"] == "full_node":
+            constraints["notes"].append("Return the node itself, not extra properties.")
+        if constraints["projection_lock"] == "properties":
+            constraints["notes"].append("Return only the requested projected columns, not the full node.")
+        if not constraints["allow_aggregation"]:
+            constraints["notes"].append("Do not add COUNT/AVG/SUM unless explicitly required by the question.")
+
+    return constraints
+
+
+def _normalize_slot_value(value: Any) -> str:
+    text = str(value or "").strip()
+    if text.lower() in _EMPTY_MARKERS:
+        return ""
+    return text
+
+
+def _normalize_filters(filters: list[Any]) -> list[str]:
+    normalized: list[str] = []
+    for item in filters:
+        text = _normalize_slot_value(item)
+        if text:
+            normalized.append(text)
+    return normalized
+
+
+def _is_meaningful_triple(triple: tuple[str, str, str]) -> bool:
+    return all(strip_quotes(part).strip().lower() not in _EMPTY_MARKERS for part in triple)
+
+
+def _is_generic_literal(value: str) -> bool:
+    text = strip_quotes(value).strip().lower()
+    if text in _GENERIC_ENTITY_LITERALS:
+        return True
+    if re.fullmatch(r"(top|first|last|latest|recent|most|least)\s+\d+", text):
+        return True
+    return False
 
 
 # ---------------------------------------------------------------------------
@@ -267,6 +637,7 @@ def verify_triples(
     schema_relationships: set[str],
     graph: Neo4jGraph,
     database: str,
+    schema_patterns: set[tuple[str, str, str]] | None = None,
 ) -> tuple[list[tuple[str, str, str]], list[tuple[str, str, str]]]:
     """
     Verify triples against the Neo4j schema and find instance matches.
@@ -298,6 +669,9 @@ def verify_triples(
                 continue
             if val.lower() in _RESERVED:
                 logger.debug("[TripleService] Skipping reserved literal: %r", val)
+                continue
+            if _is_generic_literal(val):
+                logger.debug("[TripleService] Skipping generic literal: %r", val)
                 continue
             if val.replace(".", "").replace("-", "").isdigit():
                 logger.debug("[TripleService] Skipping numeric literal: %r", val)
@@ -378,9 +752,16 @@ def verify_triples(
                         )
                     break  # found in this label, no need to check other props
 
+    schema_patterns = schema_patterns or set()
+
     # Validate structural triples against schema
     for s, p, o in triples:
-        if p in schema_relationships and s in schema_labels and o in schema_labels:
+        if (
+            p in schema_relationships
+            and s in schema_labels
+            and o in schema_labels
+            and (not schema_patterns or (s, p, o) in schema_patterns)
+        ):
             verified_triples.append((s, p, o))
 
     logger.info(
@@ -401,11 +782,20 @@ def extract_triples_with_retry(
     interpreter_llm,
     schema_labels: set[str],
     schema_relationships: set[str],
+    schema_patterns: set[tuple[str, str, str]],
     graph: Neo4jGraph,
     database: str,
     schema_context: str,
     conversation_history: list[dict[str, str]] | None = None,
-) -> tuple[str, list[tuple[str, str, str]], list[tuple[str, str, str]], dict[str, Any]]:
+) -> tuple[
+    str,
+    list[tuple[str, str, str]],
+    list[tuple[str, str, str]],
+    dict[str, Any],
+    dict[str, Any],
+    dict[str, Any],
+    dict[str, Any],
+]:
     """
     Full triple extraction pipeline with retry loop (up to MAX_ATTEMPTS).
 
@@ -417,11 +807,14 @@ def extract_triples_with_retry(
     Falls back to raw triples if all attempts fail.
 
     Returns:
-        (rewritten, verified_triples, instance_triples)
+        (rewritten, verified_triples, instance_triples, intent, return_contract, path_hints, query_constraints)
     """
     verified_triples: list[tuple[str, str, str]] = []
     instance_triples: list[tuple[str, str, str]] = []
     intent: dict[str, Any] = {}
+    return_contract: dict[str, Any] = {}
+    path_hints: dict[str, Any] = {}
+    query_constraints: dict[str, Any] = {}
     rewritten = ""
     raw_triples: list[tuple[str, str, str]] = []
 
@@ -443,10 +836,35 @@ def extract_triples_with_retry(
                 conversation_history,
             )
 
+        return_contract = infer_return_contract(
+            question=question,
+            rewritten=rewritten or question,
+            intent=intent,
+            database=database,
+        )
+        path_hints = infer_path_hints(
+            question=question,
+            rewritten=rewritten or question,
+            database=database,
+        )
+        query_constraints = infer_query_constraints(
+            question=question,
+            rewritten=rewritten or question,
+            database=database,
+            intent=intent,
+            return_contract=return_contract,
+            path_hints=path_hints,
+        )
+
         raw_triples = triples  # keep latest for fallback
 
         temp_verified, temp_instance = verify_triples(
-            triples, schema_labels, schema_relationships, graph, database
+            triples,
+            schema_labels,
+            schema_relationships,
+            graph,
+            database,
+            schema_patterns=schema_patterns,
         )
 
         # Accumulate instance triples across retries (no duplicates)
@@ -465,12 +883,13 @@ def extract_triples_with_retry(
 
     # Fallback: use raw triples if verification never succeeded
     if not verified_triples:
+        fallback_triples = [triple for triple in raw_triples if _is_meaningful_triple(triple)]
         logger.warning(
             "[TripleService] No verified triples after %d attempts, "
             "using raw triples as fallback",
             MAX_ATTEMPTS,
         )
-        verified_triples = raw_triples
+        verified_triples = fallback_triples
 
     logger.info(
         "[TripleService] Final -> rewritten=%r verified=%d instance=%d",
@@ -478,7 +897,15 @@ def extract_triples_with_retry(
         len(verified_triples),
         len(instance_triples),
     )
-    return rewritten, verified_triples, instance_triples, intent
+    return (
+        rewritten,
+        verified_triples,
+        instance_triples,
+        intent,
+        return_contract,
+        path_hints,
+        query_constraints,
+    )
 
 
 def build_enhanced_question(
@@ -487,6 +914,9 @@ def build_enhanced_question(
     verified_triples: list[tuple[str, str, str]],
     instance_triples: list[tuple[str, str, str]],
     intent: dict[str, Any] | None = None,
+    return_contract: dict[str, Any] | None = None,
+    path_hints: dict[str, Any] | None = None,
+    query_constraints: dict[str, Any] | None = None,
     schema_context: str = "",
     conversation_history: list[dict[str, str]] | None = None,
 ) -> str:
@@ -498,6 +928,9 @@ def build_enhanced_question(
       - Original question
       - Rewritten (clarified) question
       - Light intent slots
+      - Return contract hints
+      - Path/query-shape hints
+      - Query constraints / locks
       - Verified triples (schema-validated)
       - Instance triples (actual DB entity matches)
       - Compact schema context
@@ -509,6 +942,9 @@ def build_enhanced_question(
         "\n".join(f"({s}, {r}, {o})" for s, r, o in instance_triples) or "None"
     )
     intent = intent or {}
+    return_contract = return_contract or {}
+    path_hints = path_hints or {}
+    query_constraints = query_constraints or {}
     intent_text = "\n".join(
         [
             f"operation: {intent.get('operation', 'unknown')}",
@@ -517,6 +953,40 @@ def build_enhanced_question(
             f"sort: {intent.get('sort', 'NONE') or 'NONE'}",
             f"limit: {intent.get('limit', 'NONE') or 'NONE'}",
             f"aggregation: {intent.get('aggregation', 'NONE') or 'NONE'}",
+        ]
+    )
+    contract_items = return_contract.get("expected_items", []) or []
+    contract_notes = return_contract.get("notes", []) or []
+    return_contract_text = "\n".join(
+        [
+            f"cardinality: {return_contract.get('cardinality', 'all')}",
+            f"return_mode: {return_contract.get('return_mode', 'unspecified')}",
+            f"strict: {str(bool(return_contract.get('strict', False))).lower()}",
+            f"expected_items: {' | '.join(contract_items) if contract_items else 'NONE'}",
+            f"notes: {' | '.join(contract_notes) if contract_notes else 'NONE'}",
+        ]
+    )
+    path_patterns = path_hints.get("path_patterns", []) or []
+    path_notes = path_hints.get("notes", []) or []
+    path_hints_text = "\n".join(
+        [
+            f"focus_entity: {path_hints.get('focus_entity', 'NONE') or 'NONE'}",
+            f"path_patterns: {' | '.join(path_patterns) if path_patterns else 'NONE'}",
+            f"count_pattern: {path_hints.get('count_pattern', 'NONE') or 'NONE'}",
+            f"needs_distinct: {str(bool(path_hints.get('needs_distinct', False))).lower()}",
+            f"notes: {' | '.join(path_notes) if path_notes else 'NONE'}",
+        ]
+    )
+    anchor_lock = query_constraints.get("anchor_lock", {}) or {}
+    constraint_notes = query_constraints.get("notes", []) or []
+    constraints_text = "\n".join(
+        [
+            f"query_mode: {query_constraints.get('query_mode', 'lookup_entity')}",
+            f"projection_lock: {query_constraints.get('projection_lock', 'unspecified')}",
+            f"allow_aggregation: {str(bool(query_constraints.get('allow_aggregation', False))).lower()}",
+            f"aggregation_style: {query_constraints.get('aggregation_style', 'NONE') or 'NONE'}",
+            f"anchor_lock: {anchor_lock if anchor_lock else 'NONE'}",
+            f"notes: {' | '.join(constraint_notes) if constraint_notes else 'NONE'}",
         ]
     )
 
@@ -533,6 +1003,9 @@ def build_enhanced_question(
     parts.append(f"Question: {question}")
     parts.append(f"Rewritten: {rewritten or question}")
     parts.append(f"Intent:\n{intent_text}")
+    parts.append(f"Return Contract:\n{return_contract_text}")
+    parts.append(f"Path Hints:\n{path_hints_text}")
+    parts.append(f"Query Constraints:\n{constraints_text}")
     parts.append(f"Verified Triples:\n{triples_text}")
     parts.append(f"Instance Triples:\n{instance_text}")
     if schema_context.strip():

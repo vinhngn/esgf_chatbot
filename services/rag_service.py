@@ -24,6 +24,7 @@ from models.graph import (
     get_graph,
     get_schema_context,
     get_schema_labels,
+    get_schema_patterns,
     get_schema_relationships,
 )
 from models.llm import get_interpreter_llm, get_main_llm
@@ -110,14 +111,24 @@ def _run_pipeline(
     graph = get_graph()
     schema_labels = get_schema_labels()
     schema_relationships = get_schema_relationships()
+    schema_patterns = get_schema_patterns()
     schema_context = get_schema_context()
 
     # --- Step 1: Triple extraction with retry ---
-    rewritten, verified_triples, instance_triples, intent = extract_triples_with_retry(
+    (
+        rewritten,
+        verified_triples,
+        instance_triples,
+        intent,
+        return_contract,
+        path_hints,
+        query_constraints,
+    ) = extract_triples_with_retry(
         question=question,
         interpreter_llm=interpreter_llm,
         schema_labels=schema_labels,
         schema_relationships=schema_relationships,
+        schema_patterns=schema_patterns,
         graph=graph,
         database=db_name,
         schema_context=schema_context,
@@ -126,6 +137,9 @@ def _run_pipeline(
 
     logger.info("[RAGService] rewritten=%r", rewritten)
     logger.info("[RAGService] intent=%s", intent)
+    logger.info("[RAGService] return_contract=%s", return_contract)
+    logger.info("[RAGService] path_hints=%s", path_hints)
+    logger.info("[RAGService] query_constraints=%s", query_constraints)
     logger.info("[RAGService] verified_triples=%s", verified_triples)
     logger.info("[RAGService] instance_triples=%s", instance_triples)
 
@@ -136,6 +150,9 @@ def _run_pipeline(
         verified_triples=verified_triples,
         instance_triples=instance_triples,
         intent=intent,
+        return_contract=return_contract,
+        path_hints=path_hints,
+        query_constraints=query_constraints,
         schema_context=schema_context,
         conversation_history=conversation_history,
     )
@@ -154,6 +171,9 @@ def _run_pipeline(
         "verified_triples": verified_triples,
         "instance_triples": instance_triples,
         "intent": intent,
+        "return_contract": return_contract,
+        "path_hints": path_hints,
+        "query_constraints": query_constraints,
         "chain_result": chain_result,
         "encoded_query": encoded_query,
         "decoded_query": decoded_query,
@@ -190,6 +210,9 @@ def process_question(
     verified_triples = pipe["verified_triples"]
     instance_triples = pipe["instance_triples"]
     intent: dict[str, Any] = pipe.get("intent", {})
+    return_contract: dict[str, Any] = pipe.get("return_contract", {})
+    path_hints: dict[str, Any] = pipe.get("path_hints", {})
+    query_constraints: dict[str, Any] = pipe.get("query_constraints", {})
 
     neo4j_link = _build_neo4j_link(encoded_query)
 
@@ -203,6 +226,9 @@ def process_question(
             "verified_triples": verified_triples,
             "instance_triples": instance_triples,
             "intent": intent,
+            "return_contract": return_contract,
+            "path_hints": path_hints,
+            "query_constraints": query_constraints,
         }
 
     # Normalize Neo4j result
@@ -226,6 +252,9 @@ def process_question(
             f"Current question: {question}\n"
             f"Rewritten question: {rewritten or question}\n\n"
             f"Intent hints: {intent}\n\n"
+            f"Return contract hints: {return_contract}\n\n"
+            f"Path hints: {path_hints}\n\n"
+            f"Query constraints: {query_constraints}\n\n"
             f"Here is the output from the database:\n{raw_result}\n\n"
             "Please process the output and answer the user question clearly.\n"
             "Always end your answer with the exact phrase:\n"
@@ -243,6 +272,9 @@ def process_question(
         "verified_triples": verified_triples,
         "instance_triples": instance_triples,
         "intent": intent,
+        "return_contract": return_contract,
+        "path_hints": path_hints,
+        "query_constraints": query_constraints,
     }
 
 
@@ -276,6 +308,8 @@ def get_raw_results(question: str) -> dict:
     verified_triples = pipe["verified_triples"]
     instance_triples = pipe["instance_triples"]
     intent: dict[str, Any] = pipe.get("intent", {})
+    return_contract: dict[str, Any] = pipe.get("return_contract", {})
+    path_hints: dict[str, Any] = pipe.get("path_hints", {})
 
     if isinstance(chain_result, dict):
         raw_result = chain_result.get("result")
@@ -314,6 +348,9 @@ def get_raw_results(question: str) -> dict:
         "verified_triples": [list(t) for t in verified_triples],
         "instance_triples": [list(t) for t in instance_triples],
         "intent": intent,
+        "return_contract": return_contract,
+        "path_hints": path_hints,
+        "query_constraints": query_constraints,
     }
 
 
