@@ -26,8 +26,9 @@ class Settings:
 
     # OpenAI
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
-    OPENAI_TIMEOUT_SECONDS: int = int(os.getenv("OPENAI_TIMEOUT_SECONDS", "60"))
+    OPENAI_TIMEOUT_SECONDS: int = int(os.getenv("OPENAI_TIMEOUT_SECONDS", "30"))
     OPENAI_MAX_RETRIES: int = int(os.getenv("OPENAI_MAX_RETRIES", "1"))
+    PIPELINE_TIME_BUDGET_SECONDS: int = int(os.getenv("PIPELINE_TIME_BUDGET_SECONDS", "25"))
 
     # App
     FREE_QUESTIONS_PER_SESSION: int = int(
