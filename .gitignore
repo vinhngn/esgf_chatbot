@@ -9,3 +9,4 @@ build/
 .streamlit/
 nul
 *.md
+tools/

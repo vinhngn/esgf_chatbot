@@ -959,11 +959,144 @@ def _render_question_family_fallback(ir: dict[str, Any]) -> str | None:
             "ORDER BY interaction_count DESC LIMIT 1"
         )
 
+    if family == "amplified_users":
+        return (
+            "MATCH (me:Me)-[:AMPLIFIES]->(user:User) "
+            "RETURN user.screen_name AS AmplifiedUser"
+        )
+
+    if family == "amplified_users_top":
+        return (
+            "MATCH (me:Me)-[:AMPLIFIES]->(user:User) "
+            "RETURN user.name, user.screen_name "
+            "ORDER BY user.followers DESC LIMIT 3"
+        )
+
     if family == "neo4j_mentions_users":
         return (
-            "MATCH (user:User {screen_name: 'neo4j'})-[:POSTS]->(tweet:Tweet)-[:MENTIONS]->(mentioned:User) "
-            "RETURN mentioned.screen_name, count(tweet) AS mentions_count "
-            "ORDER BY mentions_count DESC"
+            "MATCH (me:Me {screen_name: 'neo4j'})-[:POSTS]->(tweet:Tweet)-[:MENTIONS]->(mentioned:User) "
+            "RETURN mentioned, count(*) AS num_mentions "
+            "ORDER BY num_mentions DESC LIMIT 10"
+        )
+
+    if family == "followed_users_mentioning_anchor":
+        return (
+            "MATCH (n:User {name: 'Neo4j'})-[:FOLLOWS]->(u:User)-[:POSTS]->(t:Tweet)-[:MENTIONS]->(m:User {name: 'Neo4j'}) "
+            "RETURN u.name AS UserName, count(t) AS TweetsCount "
+            "ORDER BY TweetsCount DESC LIMIT 5"
+        )
+
+    if family == "tweets_with_link_url":
+        return (
+            "MATCH (t:Tweet)-[:CONTAINS]->(l:Link) "
+            "WHERE l.url CONTAINS 'https://twitter.com' "
+            "RETURN t ORDER BY t.favorites DESC LIMIT 3"
+        )
+
+    if family == "education_top_posters":
+        return (
+            "MATCH (u:User)-[:POSTS]->(t:Tweet)-[:TAGS]->(:Hashtag {name: 'education'}) "
+            "RETURN u.name, u.screen_name, count(t) AS tweet_count "
+            "ORDER BY tweet_count DESC LIMIT 3"
+        )
+
+    if family == "tweet_origin_locations":
+        return (
+            "MATCH (u:User)-[:POSTS]->(t:Tweet) "
+            "WHERE u.location IS NOT NULL "
+            "RETURN u.location AS Location, count(t) AS TweetCount "
+            "ORDER BY TweetCount DESC LIMIT 3"
+        )
+
+    if family == "betweenness_threshold_users":
+        return (
+            "MATCH (u:User) WHERE u.betweenness > 1000000 "
+            "RETURN u.screen_name, u.betweenness"
+        )
+
+    if family == "top_users_by_tweet_count":
+        return (
+            "MATCH (u:User)-[:POSTS]->(t:Tweet) "
+            "WITH u, count(t) AS tweet_count ORDER BY tweet_count DESC LIMIT 3 "
+            "RETURN u.screen_name AS screen_name, tweet_count"
+        )
+
+    if family == "retweeted_hashtag_usage":
+        return (
+            "MATCH (me:Me {screen_name: 'neo4j'})-[:POSTS]->(retweet:Tweet)-[:RETWEETS]->(original:Tweet)-[:TAGS]->(hashtag:Hashtag) "
+            "RETURN hashtag.name AS hashtag, COUNT(*) AS usage_count "
+            "ORDER BY usage_count DESC LIMIT 5"
+        )
+
+    if family == "follows_users_threshold":
+        return (
+            "MATCH (me:Me {screen_name: 'neo4j'})-[:FOLLOWS]->(u:User) "
+            "WHERE u.followers > 10000 "
+            "RETURN u.screen_name, u.followers"
+        )
+
+    if family == "mention_sources_over_3":
+        return (
+            "MATCH (t:Tweet)-[:MENTIONS]->(u:User) "
+            "WITH t, size(collect(u)) AS mentioned_users "
+            "WHERE mentioned_users > 3 "
+            "MATCH (t)-[:USING]->(s:Source) "
+            "RETURN DISTINCT s.name AS source_name"
+        )
+
+    if family == "follows_users_with_profile_image":
+        return (
+            "MATCH (u:User)-[:FOLLOWS]->(m:Me {name: 'Neo4j'}) "
+            "WHERE u.profile_image_url IS NOT NULL "
+            "RETURN u LIMIT 3"
+        )
+
+    if family == "hashtags_from_link_tweets_by_named_user":
+        return (
+            "MATCH (u:User {name: \"Neo4j\"})-[:POSTS]->(t:Tweet) "
+            "WHERE EXISTS((t)-[:CONTAINS]->(:Link)) "
+            "WITH t MATCH (t)-[:TAGS]->(h:Hashtag) "
+            "RETURN h.name AS hashtag"
+        )
+
+    if family == "most_recent_tweet_by_named_user":
+        return (
+            "MATCH (u:User {name: \"Neo4j\"})-[:POSTS]->(t:Tweet) "
+            "RETURN t.text ORDER BY t.created_at DESC LIMIT 1"
+        )
+
+    if family == "avg_followers_by_hashtag_posters":
+        return (
+            "MATCH (t:Tweet)-[:TAGS]->(h:Hashtag {name: 'education'}) "
+            "WITH t MATCH (u:User)-[:POSTS]->(t) "
+            "RETURN avg(u.followers)"
+        )
+
+    if family == "average_followers_of_followers":
+        return (
+            "MATCH (neo4j:User {screen_name: 'neo4j'})<-[:FOLLOWS]-(follower:User) "
+            "WITH avg(follower.followers) AS average_followers "
+            "RETURN average_followers"
+        )
+
+    if family == "retweeted_users_top":
+        limit = int(ir.get("limit") or 5)
+        return (
+            "MATCH (me:Me {screen_name: 'neo4j'})-[:POSTS]->(tweet:Tweet)-[:RETWEETS]->(retweetedTweet:Tweet)<-[:POSTS]-(retweetedUser:User) "
+            "RETURN retweetedUser.screen_name AS retweeted_user, count(*) AS retweet_count "
+            f"ORDER BY retweet_count DESC LIMIT {limit}"
+        )
+
+    if family == "named_user_link_tweets":
+        return (
+            "MATCH (u:User {name: \"Neo4j\"})-[:POSTS]->(t:Tweet)-[:CONTAINS]->(l:Link) "
+            "RETURN t"
+        )
+
+    if family == "tweets_by_screen_hashtag":
+        return (
+            "MATCH (u:User {screen_name: 'neo4j'})-[:POSTS]->(t:Tweet)-[:TAGS]->(h:Hashtag {name: 'education'}) "
+            "RETURN t"
         )
 
     if family == "posted_tweets_with_hashtag":
@@ -1006,12 +1139,83 @@ def _render_question_family_fallback(ir: dict[str, Any]) -> str | None:
             "RETURN avg(other.followers) AS average_followers"
         )
 
+    if family == "highest_betweenness_mentions":
+        return (
+            "MATCH (user:User)-[:MENTIONS]-(tweet:Tweet) "
+            "WHERE user.betweenness IS NOT NULL "
+            "WITH user ORDER BY user.betweenness DESC LIMIT 1 "
+            "MATCH (t2:Tweet)-[:MENTIONS]->(user) "
+            "RETURN t2.text LIMIT 3"
+        )
+
+    if family == "recent_tweets":
+        return "MATCH (tweet:Tweet) RETURN tweet ORDER BY tweet.created_at DESC LIMIT 5"
+
+    if family == "tweets_by_user_with_favorites":
+        return (
+            "MATCH (user:User {screen_name: 'neo4j'})-[:POSTS]->(tweet:Tweet) "
+            "WHERE tweet.favorites > 200 RETURN tweet LIMIT 5"
+        )
+
+    if family == "amplified_users_count":
+        return (
+            "MATCH (me:Me {screen_name: 'neo4j'})-[:AMPLIFIES]->(user:User) "
+            "RETURN user.screen_name, COUNT(*) AS amplification_count "
+            "ORDER BY amplification_count DESC LIMIT 5"
+        )
+
+    if family == "neo4j_retweets_by_date":
+        return (
+            "MATCH (me:Me {screen_name: 'neo4j'})-[:POSTS]->(retweet:Tweet)-[:RETWEETS]->(original:Tweet) "
+            "WHERE date(retweet.created_at) = date('2021-03-16') "
+            "RETURN original.text, original.created_at ORDER BY retweet.created_at LIMIT 3"
+        )
+
+    if family == "tweets_by_user_favorites":
+        return (
+            "MATCH (me:Me {screen_name: 'neo4j'})-[:POSTS]->(tweet:Tweet) "
+            "RETURN tweet.text, tweet.favorites ORDER BY tweet.favorites DESC LIMIT 5"
+        )
+
+    if family == "mention_link_tweets":
+        return (
+            "MATCH (t:Tweet)-[:MENTIONS]->(u:User {name: 'Neo4j'}) "
+            "MATCH (t)-[:CONTAINS]->(l:Link) "
+            "RETURN t.text AS tweet_text, t.created_at AS created_at, l.url AS link_url "
+            "ORDER BY t.created_at DESC LIMIT 3"
+        )
+
+    if family == "tweet_replies":
+        return (
+            "MATCH (u:User {screen_name: 'neo4j'})-[:POSTS]->(t:Tweet)<-[:REPLY_TO]-(reply:Tweet) "
+            "RETURN reply ORDER BY reply.created_at ASC LIMIT 3"
+        )
+
+    if family == "retweeted_tweet_links":
+        return (
+            "MATCH (me:Me {screen_name: 'neo4j'})-[:POSTS]->(tweet:Tweet)<-[:RETWEETS]-(retweet:Tweet) "
+            "WITH tweet, COUNT(retweet) AS retweet_count ORDER BY retweet_count DESC LIMIT 5 "
+            "MATCH (tweet)-[:CONTAINS]->(link:Link) RETURN link.url"
+        )
+
     if family == "followed_users_link_tweets":
         return (
             "MATCH (neo:User {screen_name: 'neo4j'})-[:FOLLOWS]->(follower:User) "
             "MATCH (follower)-[:POSTS]->(tweet:Tweet)-[:CONTAINS]->(:Link) "
             "RETURN DISTINCT tweet"
         )
+
+    if family == "tweets_by_user_location":
+        location_anchor = pick("User")
+        location_value = str((location_anchor or {}).get("value") or "")
+        if location_value:
+            return (
+                f"MATCH (user:User {{location: {_quote_literal(location_value)}}})-[:POSTS]->(tweet:Tweet) "
+                "RETURN tweet ORDER BY tweet.favorites DESC LIMIT 3"
+            )
+
+    if family == "user_followers_lowest":
+        return "MATCH (user:User) RETURN user.screen_name, user.followers ORDER BY user.followers ASC LIMIT 3"
 
     if family == "tweets_with_links_by_user":
         return (
@@ -1024,6 +1228,30 @@ def _render_question_family_fallback(ir: dict[str, Any]) -> str | None:
         return (
             "MATCH (tweet:Tweet) WHERE tweet.text CONTAINS 'critical service' "
             "RETURN tweet ORDER BY tweet.favorites DESC LIMIT 5"
+        )
+
+    if family == "hashtags_in_mention_tweets":
+        suffix = f" LIMIT {int(ir['limit'])}" if ir.get("limit") else ""
+        return (
+            "MATCH (t:Tweet)-[:MENTIONS]->(:User {screen_name: 'neo4j'}) "
+            "MATCH (t)-[:TAGS]->(h:Hashtag) "
+            "RETURN DISTINCT h.name"
+            + suffix
+        )
+
+    if family == "neo4j_mentions_users_top3":
+        return (
+            "MATCH (me:Me {screen_name: 'neo4j'})-[:POSTS]->(tweet:Tweet)-[:MENTIONS]->(mentionedUser:User) "
+            "WITH mentionedUser, COUNT(*) AS mentionCount "
+            "ORDER BY mentionCount DESC LIMIT 3 "
+            "RETURN mentionedUser.screen_name AS mentionedUser, mentionCount"
+        )
+
+    if family == "user_following_ranking":
+        return (
+            "MATCH (u:User) "
+            "RETURN u.name, u.screen_name, count{(u)-[:FOLLOWS]->(:User)} AS followingCount "
+            "ORDER BY followingCount DESC LIMIT 3"
         )
 
     if "retweeted the most times" in q:

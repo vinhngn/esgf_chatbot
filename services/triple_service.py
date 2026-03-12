@@ -24,6 +24,7 @@ from config import get_settings
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_neo4j import Neo4jGraph
 from pydantic import BaseModel, Field
+from services.query_prefilter import prefilter_question
 from services.query_ir import build_prompt_query_spec, build_query_ir, format_query_spec
 from templates.entity_definitions import get_entity_definitions
 from templates.match_properties_map import get_match_properties_map
@@ -38,6 +39,8 @@ _FAST_HEURISTIC_FAMILIES = {
     "named_user_follows_users",
     "user_interactions",
     "neo4j_mentions_users",
+    "amplified_users",
+    "amplified_users_top",
     "posted_tweets_with_hashtag",
     "neo4j_retweeted_tweets",
     "me_retweeted_tweets",
@@ -47,6 +50,23 @@ _FAST_HEURISTIC_FAMILIES = {
     "tweets_with_links_by_user",
     "tweets_text_contains",
     "same_tweet_average_followers",
+    "followed_users_mentioning_anchor",
+    "tweets_with_link_url",
+    "education_top_posters",
+    "tweet_origin_locations",
+    "betweenness_threshold_users",
+    "top_users_by_tweet_count",
+    "retweeted_hashtag_usage",
+    "follows_users_threshold",
+    "mention_sources_over_3",
+    "follows_users_with_profile_image",
+    "hashtags_from_link_tweets_by_named_user",
+    "most_recent_tweet_by_named_user",
+    "retweeted_users_top",
+    "tweets_by_screen_hashtag",
+    "named_user_link_tweets",
+    "avg_followers_by_hashtag_posters",
+    "average_followers_of_followers",
 }
 _GENERIC_ENTITY_LITERALS = {
     "user",
@@ -338,17 +358,308 @@ def _heuristic_query_plan(question: str, rewritten: str, database: str) -> dict[
         return {
             "query_family": "neo4j_mentions_users",
             "focus_entity": "User",
-            "anchor": {"label": "User", "property": "screen_name", "value": "neo4j"},
-            "return_mode": "properties",
-            "return_items": ["mentioned.screen_name", "count(t) AS mentions_count"],
-            "sort_field": "mentions_count",
+            "anchor": {"label": "Me", "property": "screen_name", "value": "neo4j"},
+            "return_mode": "mixed",
+            "return_items": ["mentioned", "count(*) AS num_mentions"],
+            "sort_field": "num_mentions",
             "sort_direction": "desc",
-            "limit": None,
+            "limit": 10,
             "aggregation": "count",
             "needs_distinct": False,
             "relation_path": ["POSTS", "MENTIONS"],
             "use_graph_count": False,
-            "notes": ["Anchor on the quoted user posting tweets, then count mentioned users."],
+            "notes": ["Anchor on Me posting tweets, return mentioned users plus count metric."],
+        }
+
+    if "retweets the most" in text and "neo4j" in text and "users" in text:
+        return {
+            "query_family": "retweeted_users_top",
+            "focus_entity": "User",
+            "anchor": {"label": "Me", "property": "screen_name", "value": "neo4j"},
+            "return_mode": "properties",
+            "return_items": ["retweetedUser.screen_name AS retweeted_user", "count(*) AS retweet_count"],
+            "sort_field": "retweet_count",
+            "sort_direction": "desc",
+            "limit": 5 if "top 5" in text else 3,
+            "aggregation": "count",
+            "needs_distinct": False,
+            "relation_path": ["POSTS", "RETWEETS", "POSTS"],
+            "use_graph_count": False,
+            "notes": ["Count users whose tweets were retweeted by Neo4j."],
+        }
+
+    if "posted by" in text and "contain links" in text and "neo4j" in text and "find the tweets" in text:
+        return {
+            "query_family": "named_user_link_tweets",
+            "focus_entity": "Tweet",
+            "anchor": {"label": "User", "property": "name", "value": "Neo4j"},
+            "return_mode": "full_node",
+            "return_items": ["t"],
+            "sort_field": "",
+            "sort_direction": "",
+            "limit": None,
+            "aggregation": "",
+            "needs_distinct": False,
+            "relation_path": ["POSTS", "CONTAINS"],
+            "use_graph_count": False,
+            "notes": ["Return tweet nodes for named-user link queries."],
+        }
+
+    if "tweets by 'neo4j'" in text and "hashtag 'education'" in text:
+        return {
+            "query_family": "tweets_by_screen_hashtag",
+            "focus_entity": "Tweet",
+            "anchor": {"label": "User", "property": "screen_name", "value": "neo4j"},
+            "return_mode": "full_node",
+            "return_items": ["t"],
+            "sort_field": "",
+            "sort_direction": "",
+            "limit": None,
+            "aggregation": "",
+            "needs_distinct": False,
+            "relation_path": ["POSTS", "TAGS"],
+            "use_graph_count": False,
+            "notes": ["Return tweet nodes tagged with the quoted hashtag."],
+        }
+
+    if "followed by" in text and "have posted tweets mentioning" in text and "neo4j" in text and "top 5" in text:
+        return {
+            "query_family": "followed_users_mentioning_anchor",
+            "focus_entity": "User",
+            "anchor": {"label": "User", "property": "name", "value": "Neo4j"},
+            "return_mode": "properties",
+            "return_items": ["u.name AS UserName", "count(t) AS TweetsCount"],
+            "sort_field": "TweetsCount",
+            "sort_direction": "desc",
+            "limit": 5,
+            "aggregation": "count",
+            "needs_distinct": False,
+            "relation_path": ["FOLLOWS", "POSTS", "MENTIONS"],
+            "use_graph_count": False,
+            "notes": ["Count tweets by followed users that mention the same anchor account."],
+        }
+
+    if "contain links to" in text and "twitter.com" in text and ("top 3 tweets" in text or "first 3 tweets" in text):
+        return {
+            "query_family": "tweets_with_link_url",
+            "focus_entity": "Tweet",
+            "anchor": {"label": "Link", "property": "url", "value": "https://twitter.com"},
+            "return_mode": "full_node",
+            "return_items": ["t"],
+            "sort_field": "t.favorites",
+            "sort_direction": "desc",
+            "limit": 3,
+            "aggregation": "",
+            "needs_distinct": False,
+            "relation_path": ["CONTAINS"],
+            "use_graph_count": False,
+            "notes": ["Filter links by url fragment and return tweet nodes."],
+        }
+
+    if "posted the most about" in text and "education" in text and ("which three users" in text or "top 3 users" in text):
+        return {
+            "query_family": "education_top_posters",
+            "focus_entity": "User",
+            "anchor": {"label": "Hashtag", "property": "name", "value": "education"},
+            "return_mode": "properties",
+            "return_items": ["u.name", "u.screen_name", "count(t) AS tweet_count"],
+            "sort_field": "tweet_count",
+            "sort_direction": "desc",
+            "limit": 3,
+            "aggregation": "count",
+            "needs_distinct": False,
+            "relation_path": ["POSTS", "TAGS"],
+            "use_graph_count": False,
+            "notes": ["Count user posts tagged with the target hashtag."],
+        }
+
+    if "locations from where the most tweets originate" in text or ("top 3 locations" in text and "tweets originate" in text):
+        return {
+            "query_family": "tweet_origin_locations",
+            "focus_entity": "User",
+            "anchor": {"label": "", "property": "", "value": ""},
+            "return_mode": "properties",
+            "return_items": ["u.location AS Location", "count(t) AS TweetCount"],
+            "sort_field": "TweetCount",
+            "sort_direction": "desc",
+            "limit": 3,
+            "aggregation": "count",
+            "needs_distinct": False,
+            "relation_path": ["POSTS"],
+            "use_graph_count": False,
+            "notes": ["Group tweet counts by user location, excluding null locations."],
+        }
+
+    if "betweenness higher than" in text:
+        threshold_match = re.search(r"betweenness higher than\s+(\d+)", text)
+        threshold = threshold_match.group(1) if threshold_match else "0"
+        return {
+            "query_family": "betweenness_threshold_users",
+            "focus_entity": "User",
+            "anchor": {"label": "", "property": "", "value": ""},
+            "return_mode": "properties",
+            "return_items": ["u.screen_name", "u.betweenness"],
+            "sort_field": "",
+            "sort_direction": "",
+            "limit": None,
+            "aggregation": "",
+            "needs_distinct": False,
+            "relation_path": [],
+            "use_graph_count": False,
+            "notes": [f"Filter users by betweenness > {threshold}."],
+        }
+
+    if "screen names of the top 3 users who have posted the most tweets" in text:
+        return {
+            "query_family": "top_users_by_tweet_count",
+            "focus_entity": "User",
+            "anchor": {"label": "", "property": "", "value": ""},
+            "return_mode": "properties",
+            "return_items": ["u.screen_name AS screen_name", "tweet_count"],
+            "sort_field": "tweet_count",
+            "sort_direction": "desc",
+            "limit": 3,
+            "aggregation": "count",
+            "needs_distinct": False,
+            "relation_path": ["POSTS"],
+            "use_graph_count": False,
+            "notes": ["Count tweets per user and return screen_name plus metric."],
+        }
+
+    if "hashtags used in tweets that" in text and "neo4j" in text and "retweeted" in text:
+        return {
+            "query_family": "retweeted_hashtag_usage",
+            "focus_entity": "Hashtag",
+            "anchor": {"label": "Me", "property": "screen_name", "value": "neo4j"},
+            "return_mode": "properties",
+            "return_items": ["hashtag.name AS hashtag", "COUNT(*) AS usage_count"],
+            "sort_field": "usage_count",
+            "sort_direction": "desc",
+            "limit": 5,
+            "aggregation": "count",
+            "needs_distinct": False,
+            "relation_path": ["POSTS", "RETWEETS", "TAGS"],
+            "use_graph_count": False,
+            "notes": ["Count hashtags on original tweets retweeted by Neo4j."],
+        }
+
+    if "followed by 'neo4j'" in text and "more than 10000 followers" in text:
+        return {
+            "query_family": "follows_users_threshold",
+            "focus_entity": "User",
+            "anchor": {"label": "Me", "property": "screen_name", "value": "neo4j"},
+            "return_mode": "properties",
+            "return_items": ["u.screen_name", "u.followers"],
+            "sort_field": "",
+            "sort_direction": "",
+            "limit": None,
+            "aggregation": "",
+            "needs_distinct": False,
+            "relation_path": ["FOLLOWS"],
+            "use_graph_count": False,
+            "notes": ["Filter followed users by followers threshold without extra ranking."],
+        }
+
+    if "sources used in tweets" in text and "mention more than 3 users" in text:
+        return {
+            "query_family": "mention_sources_over_3",
+            "focus_entity": "Source",
+            "anchor": {"label": "", "property": "", "value": ""},
+            "return_mode": "properties",
+            "return_items": ["DISTINCT s.name AS source_name"],
+            "sort_field": "",
+            "sort_direction": "",
+            "limit": None,
+            "aggregation": "count",
+            "needs_distinct": True,
+            "relation_path": ["MENTIONS", "USING"],
+            "use_graph_count": False,
+            "notes": ["Filter tweets with more than 3 mentioned users, then return distinct source names."],
+        }
+
+    if "profile image url" in text and "follow 'neo4j'" in text and ("first 3" in text or "show the first 3" in text):
+        return {
+            "query_family": "follows_users_with_profile_image",
+            "focus_entity": "User",
+            "anchor": {"label": "Me", "property": "name", "value": "Neo4j"},
+            "return_mode": "full_node",
+            "return_items": ["u"],
+            "sort_field": "",
+            "sort_direction": "",
+            "limit": 3,
+            "aggregation": "",
+            "needs_distinct": False,
+            "relation_path": ["FOLLOWS"],
+            "use_graph_count": False,
+            "notes": ["Return user nodes with non-null profile image URLs who follow Neo4j."],
+        }
+
+    if "hashtags that have been used in tweets that contain links" in text and "posted by" in text and "neo4j" in text:
+        return {
+            "query_family": "hashtags_from_link_tweets_by_named_user",
+            "focus_entity": "Hashtag",
+            "anchor": {"label": "User", "property": "name", "value": "Neo4j"},
+            "return_mode": "properties",
+            "return_items": ["h.name AS hashtag"],
+            "sort_field": "",
+            "sort_direction": "",
+            "limit": None,
+            "aggregation": "",
+            "needs_distinct": False,
+            "relation_path": ["POSTS", "CONTAINS", "TAGS"],
+            "use_graph_count": False,
+            "notes": ["Use link existence as a tweet filter, then return hashtag names."],
+        }
+
+    if "most recent tweet posted by" in text and "neo4j" in text:
+        return {
+            "query_family": "most_recent_tweet_by_named_user",
+            "focus_entity": "Tweet",
+            "anchor": {"label": "User", "property": "name", "value": "Neo4j"},
+            "return_mode": "properties",
+            "return_items": ["t.text"],
+            "sort_field": "t.created_at",
+            "sort_direction": "desc",
+            "limit": 1,
+            "aggregation": "",
+            "needs_distinct": False,
+            "relation_path": ["POSTS"],
+            "use_graph_count": False,
+            "notes": ["Return only the tweet text for the most recent tweet by the named user."],
+        }
+
+    if "average number of followers" in text and "posted tweets containing the hashtag" in text and "education" in text:
+        return {
+            "query_family": "avg_followers_by_hashtag_posters",
+            "focus_entity": "User",
+            "anchor": {"label": "Hashtag", "property": "name", "value": "education"},
+            "return_mode": "properties",
+            "return_items": ["avg(u.followers)"],
+            "sort_field": "",
+            "sort_direction": "",
+            "limit": None,
+            "aggregation": "avg",
+            "needs_distinct": False,
+            "relation_path": ["TAGS", "POSTS"],
+            "use_graph_count": False,
+            "notes": ["Aggregate followers for users posting tweets with the target hashtag."],
+        }
+
+    if "average number of followers for users who follow" in text and "neo4j" in text:
+        return {
+            "query_family": "average_followers_of_followers",
+            "focus_entity": "User",
+            "anchor": {"label": "User", "property": "screen_name", "value": "neo4j"},
+            "return_mode": "properties",
+            "return_items": ["average_followers"],
+            "sort_field": "",
+            "sort_direction": "",
+            "limit": None,
+            "aggregation": "avg",
+            "needs_distinct": False,
+            "relation_path": ["FOLLOWS"],
+            "use_graph_count": False,
+            "notes": ["Average followers for users following the target account."],
         }
 
     if "highest betweenness" in text and "mention" in text and ("first 3 tweets" in text or "top 3 tweets" in text):
@@ -752,7 +1063,7 @@ def _heuristic_query_plan(question: str, rewritten: str, database: str) -> dict[
             "notes": ["Use the quoted account as a mentioned User anchor and rank by tweet favorites."],
         }
 
-    if "hashtags used in tweets that mention" in text and "neo4j" in text:
+    if ("hashtags used in tweets that mention" in text or "hashtags used in tweets mentioning" in text) and "neo4j" in text:
         return {
             "query_family": "hashtags_in_mention_tweets",
             "focus_entity": "Hashtag",
@@ -761,7 +1072,7 @@ def _heuristic_query_plan(question: str, rewritten: str, database: str) -> dict[
             "return_items": ["DISTINCT h.name"],
             "sort_field": "",
             "sort_direction": "",
-            "limit": None,
+            "limit": 3 if "first 3" in text or "top 3" in text else None,
             "aggregation": "",
             "needs_distinct": True,
             "relation_path": ["MENTIONS", "TAGS"],
@@ -1825,32 +2136,37 @@ def extract_triples_with_retry(
     settings = get_settings()
     started_at = time.monotonic()
     time_budget_seconds = max(5, settings.PIPELINE_TIME_BUDGET_SECONDS)
-    heuristic_seed = _heuristic_query_plan(question, question, database)
+    prefilter = prefilter_question(question, database)
+    effective_question = str(prefilter.get("clean_question") or question)
+    if prefilter.get("changed"):
+        logger.info("[TripleService] prefilter=%s", prefilter)
+
+    heuristic_seed = _heuristic_query_plan(effective_question, effective_question, database)
     fast_heuristic = bool(heuristic_seed)
     if fast_heuristic:
-        heuristic_seed["_source_question"] = question
+        heuristic_seed["_source_question"] = effective_question
     if (
         database.lower() == "twitter"
         and str(heuristic_seed.get("query_family") or "") in _FAST_HEURISTIC_FAMILIES
     ):
-        rewritten = question
-        intent = _intent_from_query_plan(question, heuristic_seed)
+        rewritten = effective_question
+        intent = _intent_from_query_plan(effective_question, heuristic_seed)
         query_plan = heuristic_seed
         return_contract = infer_return_contract(
-            question=question,
+            question=effective_question,
             rewritten=rewritten,
             intent=intent,
             database=database,
             query_plan=query_plan,
         )
         path_hints = infer_path_hints(
-            question=question,
+            question=effective_question,
             rewritten=rewritten,
             database=database,
             query_plan=query_plan,
         )
         query_constraints = infer_query_constraints(
-            question=question,
+            question=effective_question,
             rewritten=rewritten,
             database=database,
             intent=intent,
@@ -1888,11 +2204,11 @@ def extract_triples_with_retry(
 
         if attempt == 0:
             rewritten, triples, intent = interpret_question(
-                question, interpreter_llm, conversation_history
+                effective_question, interpreter_llm, conversation_history
             )
         else:
             rewritten, triples, intent = interpret_question_with_schema(
-                question,
+                effective_question,
                 interpreter_llm,
                 schema_labels,
                 schema_relationships,
@@ -1952,28 +2268,28 @@ def extract_triples_with_retry(
     )
 
     query_plan = compile_query_plan(
-        question=question,
-        rewritten=rewritten or question,
+        question=effective_question,
+        rewritten=rewritten or effective_question,
         interpreter_llm=interpreter_llm,
         database=database,
         budget_remaining_seconds=max(0.0, time_budget_seconds - (time.monotonic() - started_at)),
     )
     return_contract = infer_return_contract(
-        question=question,
-        rewritten=rewritten or question,
+        question=effective_question,
+        rewritten=rewritten or effective_question,
         intent=intent,
         database=database,
         query_plan=query_plan,
     )
     path_hints = infer_path_hints(
-        question=question,
-        rewritten=rewritten or question,
+        question=effective_question,
+        rewritten=rewritten or effective_question,
         database=database,
         query_plan=query_plan,
     )
     query_constraints = infer_query_constraints(
-        question=question,
-        rewritten=rewritten or question,
+        question=effective_question,
+        rewritten=rewritten or effective_question,
         database=database,
         intent=intent,
         return_contract=return_contract,

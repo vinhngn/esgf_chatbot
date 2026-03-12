@@ -15,6 +15,7 @@ get_raw_results()   calls _run_pipeline() then returns raw DB result only.
 from __future__ import annotations
 
 import logging
+import re
 import urllib.parse
 from typing import Any
 
@@ -26,6 +27,7 @@ from models.graph import (
     get_graph,
     get_schema_context,
     get_schema_labels,
+    get_schema_node_properties,
     get_schema_patterns,
     get_schema_relationships,
 )
@@ -54,6 +56,10 @@ RETRYABLE_EXCEPTIONS = (
 
 # Neo4j browser base URL
 NEO4J_BROWSER_URL = "https://neoforjcmip.templeuni.com/browser/"
+_LABEL_ALIAS_RE = re.compile(r"\(\s*([A-Za-z_][A-Za-z0-9_]*)\s*:\s*([A-Za-z][A-Za-z0-9_]*)")
+_MAP_LABEL_RE = re.compile(r"\(\s*([A-Za-z_][A-Za-z0-9_]*)\s*:\s*([A-Za-z][A-Za-z0-9_]*)\s*\{([^}]*)\}")
+_REL_PATTERN_RE = re.compile(r"\[:([A-Z_]+)\]")
+_PROP_REF_RE = re.compile(r"\b([A-Za-z_][A-Za-z0-9_]*)\.([A-Za-z_][A-Za-z0-9_]*)\b")
 
 
 # ---------------------------------------------------------------------------
@@ -95,6 +101,42 @@ def _is_empty_result(result) -> bool:
     return False
 
 
+def _validate_direct_cypher_against_schema(
+    cypher: str,
+    schema_relationships: set[str],
+    schema_node_properties: dict[str, list[str]],
+) -> list[str]:
+    issues: list[str] = []
+    alias_to_label: dict[str, str] = {}
+    for alias, label in _LABEL_ALIAS_RE.findall(cypher or ""):
+        alias_to_label[alias] = label
+    for alias, label, body in _MAP_LABEL_RE.findall(cypher or ""):
+        alias_to_label[alias] = label
+        for raw in body.split(","):
+            if ":" not in raw:
+                continue
+            prop = raw.split(":", 1)[0].strip()
+            if prop and prop not in schema_node_properties.get(label, []):
+                issues.append(f"unknown property {label}.{prop}")
+    for rel in _REL_PATTERN_RE.findall(cypher or ""):
+        if rel not in schema_relationships:
+            issues.append(f"unknown relationship {rel}")
+    for alias, prop in _PROP_REF_RE.findall(cypher or ""):
+        label = alias_to_label.get(alias)
+        if not label:
+            continue
+        if prop not in schema_node_properties.get(label, []):
+            issues.append(f"unknown property {label}.{prop}")
+    deduped: list[str] = []
+    seen: set[str] = set()
+    for issue in issues:
+        if issue in seen:
+            continue
+        seen.add(issue)
+        deduped.append(issue)
+    return deduped
+
+
 # ---------------------------------------------------------------------------
 # Core shared pipeline (steps 1-3)
 # ---------------------------------------------------------------------------
@@ -125,6 +167,7 @@ def _run_pipeline(
     graph = get_graph()
     schema_labels = get_schema_labels()
     schema_relationships = get_schema_relationships()
+    schema_node_properties = get_schema_node_properties()
     schema_patterns = get_schema_patterns()
     schema_context = get_schema_context()
 
@@ -190,29 +233,41 @@ def _run_pipeline(
 
     direct_cypher = render_cypher_from_ir(query_ir)
     if direct_cypher:
-        logger.info("[RAGService] Answering via generic IR renderer.")
-        try:
-            direct_result = graph.query(direct_cypher)
-            encoded_query = urllib.parse.quote(direct_cypher)
-            return {
-                "rewritten": rewritten,
-                "verified_triples": verified_triples,
-                "instance_triples": instance_triples,
-                "intent": intent,
-                "query_ir": query_ir,
-                "query_plan": query_plan,
-                "return_contract": return_contract,
-                "path_hints": path_hints,
-                "query_constraints": query_constraints,
-                "chain_result": {
-                    "result": direct_result,
-                    "intermediate_steps": [{"query": encoded_query}],
-                },
-                "encoded_query": encoded_query,
-                "decoded_query": direct_cypher,
-            }
-        except Exception as e:
-            logger.warning("[RAGService] Generic IR query failed, falling back to chain: %s", e)
+        schema_issues = _validate_direct_cypher_against_schema(
+            direct_cypher,
+            schema_relationships,
+            schema_node_properties,
+        )
+        if schema_issues:
+            logger.warning(
+                "[RAGService] Skipping generic IR query due to schema issues: %s | cypher=%s",
+                schema_issues,
+                direct_cypher,
+            )
+        else:
+            logger.info("[RAGService] Answering via generic IR renderer.")
+            try:
+                direct_result = graph.query(direct_cypher)
+                encoded_query = urllib.parse.quote(direct_cypher)
+                return {
+                    "rewritten": rewritten,
+                    "verified_triples": verified_triples,
+                    "instance_triples": instance_triples,
+                    "intent": intent,
+                    "query_ir": query_ir,
+                    "query_plan": query_plan,
+                    "return_contract": return_contract,
+                    "path_hints": path_hints,
+                    "query_constraints": query_constraints,
+                    "chain_result": {
+                        "result": direct_result,
+                        "intermediate_steps": [{"query": encoded_query}],
+                    },
+                    "encoded_query": encoded_query,
+                    "decoded_query": direct_cypher,
+                }
+            except Exception as e:
+                logger.warning("[RAGService] Generic IR query failed, falling back to chain: %s", e)
 
     # --- Step 3: Invoke chain ---
     chain_result = invoke_chain(enhanced_question)
