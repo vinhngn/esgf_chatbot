@@ -159,22 +159,6 @@ def _run_pipeline(
     logger.info("[RAGService] verified_triples=%s", verified_triples)
     logger.info("[RAGService] instance_triples=%s", instance_triples)
 
-    # --- Step 2: Build enriched question ---
-    enhanced_question = build_enhanced_question(
-        question=question,
-        rewritten=rewritten,
-        verified_triples=verified_triples,
-        instance_triples=instance_triples,
-        intent=intent,
-        query_plan=query_plan,
-        return_contract=return_contract,
-        path_hints=path_hints,
-        query_constraints=query_constraints,
-        database=db_name,
-        schema_context=schema_context,
-        conversation_history=conversation_history,
-    )
-
     query_ir = build_query_ir(
         database=db_name,
         verified_triples=verified_triples,
@@ -186,6 +170,23 @@ def _run_pipeline(
         query_constraints=query_constraints,
     )
     logger.info("[RAGService] query_ir=%s", query_ir)
+
+    # --- Step 2: Build enriched question ---
+    enhanced_question = build_enhanced_question(
+        question=question,
+        rewritten=rewritten,
+        verified_triples=verified_triples,
+        instance_triples=instance_triples,
+        intent=intent,
+        query_plan=query_plan,
+        return_contract=return_contract,
+        path_hints=path_hints,
+        query_constraints=query_constraints,
+        query_ir=query_ir,
+        database=db_name,
+        schema_context=schema_context,
+        conversation_history=conversation_history,
+    )
 
     direct_cypher = render_cypher_from_ir(query_ir)
     if direct_cypher:

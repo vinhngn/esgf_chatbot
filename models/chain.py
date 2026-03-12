@@ -8,6 +8,7 @@ Thread-safe singleton with double-checked locking.
 from __future__ import annotations
 
 import ast
+import json
 import logging
 import re
 import threading
@@ -287,6 +288,9 @@ def _find_invalid_property_references(query: str) -> list[str]:
 
 def _extract_return_contract(question: str) -> dict[str, object]:
     """Parse the lightweight return contract embedded in the enhanced question."""
+    spec = _extract_query_spec(question)
+    if spec:
+        return _return_contract_from_query_spec(spec)
     match = re.search(
         r"Return Contract:\s*(.*?)(?:\n[A-Z][A-Za-z ]+:\n|\nVerified Triples:|\nInstance Triples:|\Z)",
         question,
@@ -314,6 +318,9 @@ def _extract_return_contract(question: str) -> dict[str, object]:
 
 def _extract_query_constraints(question: str) -> dict[str, object]:
     """Parse the lightweight query constraints embedded in the enhanced question."""
+    spec = _extract_query_spec(question)
+    if spec:
+        return _query_constraints_from_query_spec(spec)
     match = re.search(
         r"Query Constraints:\s*(.*?)(?:\n[A-Z][A-Za-z ]+:\n|\nVerified Triples:|\nInstance Triples:|\Z)",
         question,
@@ -359,6 +366,9 @@ def _extract_query_constraints(question: str) -> dict[str, object]:
 
 def _extract_path_hints(question: str) -> dict[str, object]:
     """Parse the lightweight path hints embedded in the enhanced question."""
+    spec = _extract_query_spec(question)
+    if spec:
+        return _path_hints_from_query_spec(spec)
     match = re.search(
         r"Path Hints:\s*(.*?)(?:\n[A-Z][A-Za-z ]+:\n|\nVerified Triples:|\nInstance Triples:|\Z)",
         question,
@@ -382,6 +392,113 @@ def _extract_path_hints(question: str) -> dict[str, object]:
         else:
             hints[key] = value
     return hints
+
+
+def _extract_query_spec(question: str) -> dict[str, object]:
+    """Parse the compact query spec embedded in the enhanced question."""
+    header = "Query Spec:"
+    start = question.find(header)
+    if start == -1:
+        return {}
+    payload = question[start + len(header):]
+    brace_start = payload.find("{")
+    if brace_start == -1:
+        return {}
+
+    raw = payload[brace_start:]
+    depth = 0
+    in_string = False
+    escape = False
+    collected: list[str] = []
+    for char in raw:
+        collected.append(char)
+        if in_string:
+            if escape:
+                escape = False
+            elif char == "\\":
+                escape = True
+            elif char == '"':
+                in_string = False
+            continue
+        if char == '"':
+            in_string = True
+        elif char == "{":
+            depth += 1
+        elif char == "}":
+            depth -= 1
+            if depth == 0:
+                break
+
+    if depth != 0:
+        return {}
+
+    raw = "".join(collected).strip()
+    for parser in (json.loads, ast.literal_eval):
+        try:
+            parsed = parser(raw)
+            if isinstance(parsed, dict):
+                return parsed
+        except Exception:
+            continue
+    return {}
+
+
+def _return_contract_from_query_spec(spec: dict[str, object]) -> dict[str, object]:
+    projection = spec.get("projection", {}) if isinstance(spec.get("projection"), dict) else {}
+    expected_items = projection.get("items", []) if isinstance(projection, dict) else []
+    return {
+        "cardinality": str(spec.get("cardinality") or "all"),
+        "return_mode": str(projection.get("mode") or "unspecified"),
+        "strict": bool(projection.get("strict", False)),
+        "expected_items": [str(item) for item in expected_items if str(item).strip()],
+        "notes": [],
+    }
+
+
+def _query_constraints_from_query_spec(spec: dict[str, object]) -> dict[str, object]:
+    projection = spec.get("projection", {}) if isinstance(spec.get("projection"), dict) else {}
+    aggregation = spec.get("aggregation", {}) if isinstance(spec.get("aggregation"), dict) else {}
+    ordering = spec.get("ordering", {}) if isinstance(spec.get("ordering"), dict) else {}
+    anchors = spec.get("anchors", [])
+    anchor_lock: dict[str, object] = {}
+    if isinstance(anchors, list) and anchors and isinstance(anchors[0], dict):
+        anchor_lock = {
+            "label": str(anchors[0].get("label") or ""),
+            "property": str(anchors[0].get("property") or ""),
+            "value": str(anchors[0].get("value") or ""),
+        }
+    order_lock: dict[str, object] = {}
+    if ordering:
+        order_lock = {
+            "field": str(ordering.get("field") or ""),
+            "direction": str(ordering.get("direction") or ""),
+        }
+    return {
+        "query_mode": str(spec.get("family") or "lookup_entity"),
+        "projection_lock": str(projection.get("mode") or "unspecified"),
+        "allow_aggregation": bool(aggregation.get("allowed", False)),
+        "aggregation_style": str(aggregation.get("style") or ""),
+        "anchor_lock": anchor_lock,
+        "order_lock": order_lock,
+        "notes": [],
+    }
+
+
+def _path_hints_from_query_spec(spec: dict[str, object]) -> dict[str, object]:
+    aggregation = spec.get("aggregation", {}) if isinstance(spec.get("aggregation"), dict) else {}
+    path_patterns = spec.get("path_patterns", [])
+    if not isinstance(path_patterns, list):
+        path_patterns = []
+    relation_path = spec.get("path", [])
+    if not path_patterns and isinstance(relation_path, list):
+        path_patterns = [f"[:{str(item).strip()}]" for item in relation_path if str(item).strip()]
+    return {
+        "focus_entity": str(spec.get("focus") or "NONE"),
+        "path_patterns": [str(item) for item in path_patterns if str(item).strip()],
+        "count_pattern": str(aggregation.get("count_pattern") or ""),
+        "needs_distinct": bool(spec.get("distinct", False)),
+        "notes": [],
+    }
 
 
 def _split_top_level_commas(text: str) -> list[str]:

@@ -24,6 +24,7 @@ from config import get_settings
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_neo4j import Neo4jGraph
 from pydantic import BaseModel, Field
+from services.query_ir import build_prompt_query_spec, build_query_ir, format_query_spec
 from templates.entity_definitions import get_entity_definitions
 from templates.match_properties_map import get_match_properties_map
 from utils.helpers import strip_quotes
@@ -1859,6 +1860,7 @@ def build_enhanced_question(
     return_contract: dict[str, Any] | None = None,
     path_hints: dict[str, Any] | None = None,
     query_constraints: dict[str, Any] | None = None,
+    query_ir: dict[str, Any] | None = None,
     database: str = "",
     schema_context: str = "",
     conversation_history: list[dict[str, str]] | None = None,
@@ -1870,10 +1872,8 @@ def build_enhanced_question(
       - Recent conversation history (last 3 turns)
       - Original question
       - Rewritten (clarified) question
-      - Light intent slots
-      - Return contract hints
-      - Path/query-shape hints
-      - Query constraints / locks
+      - Compact query spec (single source of truth for the chain prompt)
+      - A few dynamic examples when available
       - Verified triples (schema-validated)
       - Instance triples (actual DB entity matches)
       - Compact schema context
@@ -1889,77 +1889,37 @@ def build_enhanced_question(
     return_contract = return_contract or {}
     path_hints = path_hints or {}
     query_constraints = query_constraints or {}
-    intent_text = "\n".join(
-        [
-            f"operation: {intent.get('operation', 'unknown')}",
-            f"target: {intent.get('target', 'unknown')}",
-            f"filters: {'; '.join(intent.get('filters', [])) or 'NONE'}",
-            f"sort: {intent.get('sort', 'NONE') or 'NONE'}",
-            f"limit: {intent.get('limit', 'NONE') or 'NONE'}",
-            f"aggregation: {intent.get('aggregation', 'NONE') or 'NONE'}",
-        ]
-    )
-    contract_items = return_contract.get("expected_items", []) or []
-    contract_notes = return_contract.get("notes", []) or []
-    query_plan_text = "\n".join(
-        [
-            f"query_family: {query_plan.get('query_family', 'generic')}",
-            f"focus_entity: {query_plan.get('focus_entity', 'NONE') or 'NONE'}",
-            f"anchor: {query_plan.get('anchor', {}) or 'NONE'}",
-            f"return_mode: {query_plan.get('return_mode', 'unspecified')}",
-            f"return_items: {' | '.join(query_plan.get('return_items', []) or []) or 'NONE'}",
-            f"sort_field: {query_plan.get('sort_field', 'NONE') or 'NONE'}",
-            f"sort_direction: {query_plan.get('sort_direction', 'NONE') or 'NONE'}",
-            f"limit: {query_plan.get('limit', 'NONE') if query_plan.get('limit') is not None else 'NONE'}",
-            f"aggregation: {query_plan.get('aggregation', 'NONE') or 'NONE'}",
-            f"relation_path: {' | '.join(query_plan.get('relation_path', []) or []) or 'NONE'}",
-            f"use_graph_count: {str(bool(query_plan.get('use_graph_count', False))).lower()}",
-            f"needs_distinct: {str(bool(query_plan.get('needs_distinct', False))).lower()}",
-            f"notes: {' | '.join(query_plan.get('notes', []) or []) or 'NONE'}",
-        ]
-    )
-    return_contract_text = "\n".join(
-        [
-            f"cardinality: {return_contract.get('cardinality', 'all')}",
-            f"return_mode: {return_contract.get('return_mode', 'unspecified')}",
-            f"strict: {str(bool(return_contract.get('strict', False))).lower()}",
-            f"expected_items: {' | '.join(contract_items) if contract_items else 'NONE'}",
-            f"notes: {' | '.join(contract_notes) if contract_notes else 'NONE'}",
-        ]
-    )
-    path_patterns = path_hints.get("path_patterns", []) or []
-    path_notes = path_hints.get("notes", []) or []
-    path_hints_text = "\n".join(
-        [
-            f"focus_entity: {path_hints.get('focus_entity', 'NONE') or 'NONE'}",
-            f"path_patterns: {' | '.join(path_patterns) if path_patterns else 'NONE'}",
-            f"count_pattern: {path_hints.get('count_pattern', 'NONE') or 'NONE'}",
-            f"needs_distinct: {str(bool(path_hints.get('needs_distinct', False))).lower()}",
-            f"notes: {' | '.join(path_notes) if path_notes else 'NONE'}",
-        ]
-    )
-    anchor_lock = query_constraints.get("anchor_lock", {}) or {}
-    order_lock = query_constraints.get("order_lock", {}) or {}
-    constraint_notes = query_constraints.get("notes", []) or []
-    dynamic_examples = select_dynamic_examples(
-        question=question,
+    query_ir = query_ir or build_query_ir(
         database=database,
+        verified_triples=verified_triples,
+        instance_triples=instance_triples,
+        intent=intent,
         query_plan=query_plan,
+        return_contract=return_contract,
+        path_hints=path_hints,
+        query_constraints=query_constraints,
     )
-    dynamic_examples_text = "\n\n".join(
-        f"Q: {example['question']}\nCypher: {example['cypher']}" for example in dynamic_examples
-    ) or "NONE"
-    constraints_text = "\n".join(
-        [
-            f"query_mode: {query_constraints.get('query_mode', 'lookup_entity')}",
-            f"projection_lock: {query_constraints.get('projection_lock', 'unspecified')}",
-            f"allow_aggregation: {str(bool(query_constraints.get('allow_aggregation', False))).lower()}",
-            f"aggregation_style: {query_constraints.get('aggregation_style', 'NONE') or 'NONE'}",
-            f"anchor_lock: {anchor_lock if anchor_lock else 'NONE'}",
-            f"order_lock: {order_lock if order_lock else 'NONE'}",
-            f"notes: {' | '.join(constraint_notes) if constraint_notes else 'NONE'}",
-        ]
-    )
+    query_spec_text = format_query_spec(build_prompt_query_spec(query_ir))
+    evidence_score = 0
+    if query_ir.get("focus_label"):
+        evidence_score += 1
+    if query_ir.get("return_items"):
+        evidence_score += 1
+    if query_ir.get("relation_path") or verified_triples:
+        evidence_score += 1
+    if query_ir.get("anchor") or instance_triples:
+        evidence_score += 1
+    dynamic_examples_text = "NONE"
+    if evidence_score < 3:
+        dynamic_examples = select_dynamic_examples(
+            question=question,
+            database=database,
+            query_plan=query_plan,
+            max_examples=2,
+        )
+        dynamic_examples_text = "\n\n".join(
+            f"Q: {example['question']}\nCypher: {example['cypher']}" for example in dynamic_examples
+        ) or "NONE"
 
     parts: list[str] = []
 
@@ -1973,12 +1933,9 @@ def build_enhanced_question(
 
     parts.append(f"Question: {question}")
     parts.append(f"Rewritten: {rewritten or question}")
-    parts.append(f"Intent:\n{intent_text}")
-    parts.append(f"Query Plan:\n{query_plan_text}")
-    parts.append(f"Dynamic Examples:\n{dynamic_examples_text}")
-    parts.append(f"Return Contract:\n{return_contract_text}")
-    parts.append(f"Path Hints:\n{path_hints_text}")
-    parts.append(f"Query Constraints:\n{constraints_text}")
+    parts.append(f"Query Spec:\n{query_spec_text}")
+    if dynamic_examples_text != "NONE":
+        parts.append(f"Dynamic Examples:\n{dynamic_examples_text}")
     parts.append(f"Verified Triples:\n{triples_text}")
     parts.append(f"Instance Triples:\n{instance_text}")
     if schema_context.strip():

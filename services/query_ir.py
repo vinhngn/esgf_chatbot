@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import ast
+import json
 import re
 from typing import Any
 
@@ -91,12 +92,10 @@ def build_query_ir(
     if not relation_path and verified_triples:
         relation_path = [triple[1] for triple in verified_triples]
 
-    question_text = " ".join(
-        part for part in [
-            str(intent.get("_question_text") or ""),
-            str(query_plan.get("_source_question") or ""),
-        ] if part
-    ).strip()
+    question_text = _combine_question_text(
+        str(intent.get("_question_text") or ""),
+        str(query_plan.get("_source_question") or ""),
+    )
 
     cardinality = str(return_contract.get("cardinality") or "").strip().lower()
     limit = query_plan.get("limit") or _safe_int(intent.get("limit"))
@@ -108,6 +107,7 @@ def build_query_ir(
             limit = 1
         elif cardinality not in {"all"} and any(token in question_text.lower() for token in (" most ", " most?", " most.", " most frequently", " highest ", " lowest ", " least ")) and "top " not in question_text.lower():
             limit = 1
+    resolved_cardinality = cardinality or (f"top_{limit}" if limit else "all")
 
     return {
         "database": database,
@@ -119,19 +119,124 @@ def build_query_ir(
         "query_mode": str(query_constraints.get("query_mode", "")),
         "projection_lock": str(query_constraints.get("projection_lock", "")),
         "return_mode": str(return_contract.get("return_mode", "")),
+        "strict_return": bool(return_contract.get("strict", False)),
+        "cardinality": resolved_cardinality,
         "return_items": return_items,
         "relation_path": relation_path,
+        "path_patterns": [
+            str(item).strip()
+            for item in (path_hints.get("path_patterns") or [])
+            if str(item).strip()
+        ],
         "sort_field": str(query_plan.get("sort_field") or ""),
         "sort_direction": str(query_plan.get("sort_direction") or ""),
         "limit": limit,
         "aggregation": str(query_plan.get("aggregation") or intent.get("aggregation") or ""),
         "allow_aggregation": bool(query_constraints.get("allow_aggregation", False)),
+        "aggregation_style": str(query_constraints.get("aggregation_style") or ""),
         "count_pattern": str(path_hints.get("count_pattern") or ""),
         "needs_distinct": bool(query_plan.get("needs_distinct") or path_hints.get("needs_distinct")),
         "order_lock": query_constraints.get("order_lock", {}) or {},
-        "filters": intent.get("filters", []) or [],
+        "filters": _clean_filters(intent.get("filters", []) or []),
         "question_text": question_text,
     }
+
+
+def build_prompt_query_spec(ir: dict[str, Any]) -> dict[str, Any]:
+    """Collapse all upstream signals into one compact prompt-facing spec."""
+    anchors = [
+        {
+            "label": str(anchor.get("label") or ""),
+            "property": str(anchor.get("property") or ""),
+            "value": str(anchor.get("value") or ""),
+        }
+        for anchor in (ir.get("anchors", []) or [])
+        if isinstance(anchor, dict) and str(anchor.get("label") or "").strip()
+    ]
+    projection = {
+        "mode": str(ir.get("projection_lock") or ir.get("return_mode") or "unspecified"),
+        "strict": bool(ir.get("strict_return", False)),
+        "items": [str(item) for item in (ir.get("return_items", []) or []) if str(item).strip()],
+    }
+    aggregation = {
+        "allowed": bool(ir.get("allow_aggregation", False)),
+        "kind": str(ir.get("aggregation") or ""),
+        "style": str(ir.get("aggregation_style") or ""),
+        "count_pattern": str(ir.get("count_pattern") or ""),
+    }
+    ordering = {
+        "field": str((ir.get("order_lock", {}) or {}).get("field") or ir.get("sort_field") or ""),
+        "direction": str((ir.get("order_lock", {}) or {}).get("direction") or ir.get("sort_direction") or ""),
+    }
+    spec = {
+        "family": str(ir.get("query_mode") or "lookup_entity"),
+        "focus": str(ir.get("focus_label") or ""),
+        "anchors": anchors,
+        "path": [str(item) for item in (ir.get("relation_path", []) or []) if str(item).strip()],
+        "path_patterns": [str(item) for item in (ir.get("path_patterns", []) or []) if str(item).strip()],
+        "filters": [str(item) for item in (ir.get("filters", []) or []) if str(item).strip()],
+        "projection": projection,
+        "aggregation": aggregation,
+        "ordering": ordering,
+        "limit": ir.get("limit"),
+        "cardinality": str(ir.get("cardinality") or "all"),
+        "distinct": bool(ir.get("needs_distinct", False)),
+    }
+    return _prune_prompt_spec(spec)
+
+
+def format_query_spec(spec: dict[str, Any]) -> str:
+    """Serialize the compact prompt-facing spec."""
+    return json.dumps(spec, indent=2, ensure_ascii=True)
+
+
+def _prune_prompt_spec(value: Any) -> Any:
+    if isinstance(value, dict):
+        cleaned: dict[str, Any] = {}
+        for key, item in value.items():
+            pruned = _prune_prompt_spec(item)
+            if pruned in ("", None, [], {}):
+                continue
+            cleaned[key] = pruned
+        return cleaned
+    if isinstance(value, list):
+        cleaned_list = [_prune_prompt_spec(item) for item in value]
+        return [item for item in cleaned_list if item not in ("", None, [], {})]
+    return value
+
+
+def _combine_question_text(*parts: str) -> str:
+    cleaned: list[str] = []
+    seen: set[str] = set()
+    for part in parts:
+        value = str(part or "").strip()
+        if not value:
+            continue
+        key = value.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        cleaned.append(value)
+    return " ".join(cleaned).strip()
+
+
+def _clean_filters(raw_filters: list[Any]) -> list[str]:
+    cleaned: list[str] = []
+    seen: set[str] = set()
+    junk = {"", "none", "unknown", "scope", "context"}
+    for raw in raw_filters:
+        value = str(raw or "").strip()
+        lowered = value.lower()
+        if lowered in junk:
+            continue
+        if re.fullmatch(r"[A-Z_]+", value):
+            continue
+        if lowered in {"follows", "posts", "mentions", "contains", "tags", "retweeted", "retweets"}:
+            continue
+        if value not in seen:
+            seen.add(value)
+            cleaned.append(value)
+    return cleaned
 
 
 def render_cypher_from_ir(ir: dict[str, Any]) -> str | None:
