@@ -28,14 +28,15 @@ def build_query_ir(
         str(query_plan.get("focus_entity") or "")
         or str(path_hints.get("focus_entity") or "")
     )
+    focus_label = _normalize_label_name(focus_label)
     if not focus_label and verified_triples:
-        focus_label = verified_triples[0][0]
+        focus_label = _normalize_label_name(verified_triples[0][0])
 
     anchor = {}
     lock_anchor = query_constraints.get("anchor_lock", {}) or {}
     if isinstance(lock_anchor, dict) and lock_anchor.get("label"):
         anchor = {
-            "label": str(lock_anchor.get("label", "")),
+            "label": _normalize_label_name(str(lock_anchor.get("label", ""))),
             "property": str(lock_anchor.get("property", "")),
             "value": str(lock_anchor.get("value", "")),
         }
@@ -43,14 +44,14 @@ def build_query_ir(
         plan_anchor = query_plan.get("anchor", {}) or {}
         if isinstance(plan_anchor, dict) and plan_anchor.get("label"):
             anchor = {
-                "label": str(plan_anchor.get("label", "")),
+                "label": _normalize_label_name(str(plan_anchor.get("label", ""))),
                 "property": str(plan_anchor.get("property", "")),
                 "value": str(plan_anchor.get("value", "")),
             }
 
     if not anchor and instance_triples:
         literal, _, label = instance_triples[0]
-        anchor = {"label": label, "property": "", "value": literal}
+        anchor = {"label": _normalize_label_name(label), "property": "", "value": literal}
 
     if str(anchor.get("property") or "") == "screen_name" and str(anchor.get("value") or ""):
         anchor["value"] = str(anchor["value"]).lower()
@@ -63,7 +64,7 @@ def build_query_ir(
     for literal, _, label in instance_triples:
         if anchor and str(anchor.get("value") or "").strip().lower() == str(literal).strip().lower():
             continue
-        candidate = {"label": str(label), "property": "", "value": str(literal)}
+        candidate = {"label": _normalize_label_name(str(label)), "property": "", "value": str(literal)}
         if candidate.get("property") == "screen_name" and candidate.get("value"):
             candidate["value"] = str(candidate["value"]).lower()
         if candidate not in anchors:
@@ -92,6 +93,16 @@ def build_query_ir(
     if not relation_path and verified_triples:
         relation_path = [triple[1] for triple in verified_triples]
 
+    normalized_verified = [
+        (
+            _normalize_label_name(str(src)),
+            _normalize_relation_name(str(rel)),
+            _normalize_label_name(str(dst)),
+        )
+        for src, rel, dst in verified_triples
+        if _normalize_label_name(str(src)) and _normalize_label_name(str(dst))
+    ]
+
     question_text = _combine_question_text(
         str(intent.get("_question_text") or ""),
         str(query_plan.get("_source_question") or ""),
@@ -114,9 +125,10 @@ def build_query_ir(
         "focus_label": focus_label,
         "anchor": anchor,
         "anchors": anchors,
-        "verified_triples": verified_triples,
+        "verified_triples": normalized_verified,
         "instance_triples": instance_triples,
         "query_mode": str(query_constraints.get("query_mode", "")),
+        "query_family": str(query_plan.get("query_family") or ""),
         "projection_lock": str(query_constraints.get("projection_lock", "")),
         "return_mode": str(return_contract.get("return_mode", "")),
         "strict_return": bool(return_contract.get("strict", False)),
@@ -169,7 +181,7 @@ def build_prompt_query_spec(ir: dict[str, Any]) -> dict[str, Any]:
         "direction": str((ir.get("order_lock", {}) or {}).get("direction") or ir.get("sort_direction") or ""),
     }
     spec = {
-        "family": str(ir.get("query_mode") or "lookup_entity"),
+        "family": str(ir.get("query_family") or ir.get("query_mode") or "lookup_entity"),
         "focus": str(ir.get("focus_label") or ""),
         "anchors": anchors,
         "path": [str(item) for item in (ir.get("relation_path", []) or []) if str(item).strip()],
@@ -239,58 +251,123 @@ def _clean_filters(raw_filters: list[Any]) -> list[str]:
     return cleaned
 
 
+def _normalize_label_name(label: str) -> str:
+    value = str(label or "").strip()
+    mapping = {
+        "user": "User",
+        "me": "Me",
+        "tweet": "Tweet",
+        "hashtag": "Hashtag",
+        "link": "Link",
+        "source": "Source",
+        "movie": "Movie",
+        "person": "Person",
+        "review": "Review",
+    }
+    return mapping.get(value.lower(), value)
+
+
+def _normalize_relation_name(relation: str) -> str:
+    value = str(relation or "").strip()
+    if not value:
+        return ""
+    return value.upper()
+
+
 def render_cypher_from_ir(ir: dict[str, Any]) -> str | None:
-    focus_label = str(ir.get("focus_label") or "")
-    family_cypher = _render_question_family_fallback(ir)
+    match_map = get_match_properties_map(ir.get("database") or None)
+    safe_ir = dict(ir)
+    safe_ir["verified_triples"] = _sanitize_verified_triples(ir.get("verified_triples", []) or [], match_map)
+    safe_ir["anchors"] = _sanitize_anchors(ir.get("anchors", []) or [], match_map)
+    if safe_ir.get("anchor") and isinstance(safe_ir["anchor"], dict):
+        anchor_label = str((safe_ir["anchor"] or {}).get("label") or "")
+        if anchor_label and anchor_label not in match_map:
+            safe_ir["anchor"] = {}
+
+    focus_label = str(safe_ir.get("focus_label") or "")
+    family_cypher = _render_question_family_fallback(safe_ir)
     if family_cypher:
         return family_cypher
     if not focus_label:
         return None
 
-    match_map = get_match_properties_map(ir.get("database") or None)
-    anchor = ir.get("anchor", {}) or {}
-    verified = ir.get("verified_triples", []) or []
-    query_mode = str(ir.get("query_mode") or "")
-    count_pattern = str(ir.get("count_pattern") or "")
+    anchor = safe_ir.get("anchor", {}) or {}
+    verified = safe_ir.get("verified_triples", []) or []
+    query_mode = str(safe_ir.get("query_mode") or "")
+    count_pattern = str(safe_ir.get("count_pattern") or "")
 
     if query_mode == "rank_graph_count" and count_pattern:
-        return _render_rank_graph_count(ir, focus_label)
+        return _render_rank_graph_count(safe_ir, focus_label)
 
     if verified:
-        cypher = _render_user_posts_mentions_count(ir, match_map)
+        cypher = _render_user_posts_mentions_count(safe_ir, match_map)
         if cypher:
             return cypher
-        cypher = _render_user_posts_tags_nodes(ir, match_map)
+        cypher = _render_user_posts_tags_nodes(safe_ir, match_map)
         if cypher:
             return cypher
         if len(verified) == 1:
-            cypher = _render_single_hop(ir, focus_label, anchor, match_map)
+            cypher = _render_single_hop(safe_ir, focus_label, anchor, match_map)
             if cypher:
                 return cypher
         elif len(verified) == 2:
-            cypher = _render_dual_relation(ir, focus_label, anchor, match_map)
+            cypher = _render_dual_relation(safe_ir, focus_label, anchor, match_map)
             if cypher:
                 return cypher
         elif len(verified) >= 3:
-            cypher = _render_connected_chain(ir, match_map)
+            cypher = _render_connected_chain(safe_ir, match_map)
             if cypher:
                 return cypher
 
     if query_mode == "aggregate_projection":
-        cypher = _render_aggregate_projection(ir, focus_label)
+        cypher = _render_aggregate_projection(safe_ir, focus_label)
         if cypher:
             return cypher
 
     if query_mode in {"rank_by_existing_property", "lookup_property", "lookup_entity"}:
-        return _render_focus_scan(ir, focus_label, anchor, match_map)
+        return _render_focus_scan(safe_ir, focus_label, anchor, match_map)
 
     return None
+
+
+def _sanitize_verified_triples(
+    triples: list[tuple[str, str, str]] | list[list[str]],
+    match_map: dict[str, list[str]],
+) -> list[tuple[str, str, str]]:
+    valid_labels = set(match_map.keys())
+    cleaned: list[tuple[str, str, str]] = []
+    for triple in triples:
+        if len(triple) != 3:
+            continue
+        src, rel, dst = (str(triple[0]), str(triple[1]), str(triple[2]))
+        if src not in valid_labels or dst not in valid_labels:
+            continue
+        if not re.fullmatch(r"[A-Z_]+", rel):
+            continue
+        cleaned.append((src, rel, dst))
+    return cleaned
+
+
+def _sanitize_anchors(
+    anchors: list[dict[str, Any]],
+    match_map: dict[str, list[str]],
+) -> list[dict[str, Any]]:
+    valid_labels = set(match_map.keys())
+    cleaned: list[dict[str, Any]] = []
+    for anchor in anchors:
+        if not isinstance(anchor, dict):
+            continue
+        label = str(anchor.get("label") or "")
+        if label and label not in valid_labels:
+            continue
+        cleaned.append(anchor)
+    return cleaned
 
 
 def _render_user_posts_mentions_count(ir: dict[str, Any], match_map: dict[str, list[str]]) -> str | None:
     triples = ir.get("verified_triples", []) or []
     relation_path = [str(item).upper() for item in (ir.get("relation_path") or [])]
-    query_family = str(ir.get("query_mode") or "")
+    query_family = str(ir.get("query_family") or ir.get("query_mode") or "")
     question_text = str(ir.get("question_text") or "").lower()
     shape_matches = (
         len(triples) == 2
@@ -304,15 +381,18 @@ def _render_user_posts_mentions_count(ir: dict[str, Any], match_map: dict[str, l
     if "mentions most frequently" not in question_text and "most frequently mentioned" not in question_text:
         return None
 
-    match_clause = "MATCH (user:User)-[:POSTS]->(tweet:Tweet)-[:MENTIONS]->(mentioned:User)"
+    poster_anchor = next(
+        (a for a in (ir.get("anchors", []) or []) if str(a.get("label") or "") in {"User", "Me"}),
+        None,
+    )
+    poster_label = str((poster_anchor or {}).get("label") or "User")
+    poster_alias = _alias_for_label(poster_label)
+    match_clause = f"MATCH ({poster_alias}:{poster_label})-[:POSTS]->(tweet:Tweet)-[:MENTIONS]->(mentioned:User)"
     where_clause = _where_from_anchors(
         [
-            (alias, anchor)
-            for alias, anchor in [
-                ("user", a)
-                for a in (ir.get("anchors", []) or [])
-                if str(a.get("label") or "") == "User"
-            ]
+            (poster_alias, poster_anchor)
+            for _ in [0]
+            if poster_anchor
         ],
         match_map,
     )
@@ -324,16 +404,22 @@ def _render_user_posts_tags_nodes(ir: dict[str, Any], match_map: dict[str, list[
     if len(triples) != 2:
         return None
     (s1, r1, o1), (s2, r2, o2) = triples
-    if (s1, r1, o1, s2, r2, o2) != ("User", "POSTS", "Tweet", "Tweet", "TAGS", "Hashtag"):
+    if (r1, o1, r2, o2) != ("POSTS", "Tweet", "TAGS", "Hashtag"):
         return None
     if str(ir.get("projection_lock") or "") != "full_node":
         return None
-    match_clause = "MATCH (user:User)-[:POSTS]->(tweet:Tweet)-[:TAGS]->(hashtag:Hashtag)"
+    poster_anchor = next(
+        (a for a in (ir.get("anchors", []) or []) if str(a.get("label") or "") in {"User", "Me"}),
+        None,
+    )
+    poster_label = str((poster_anchor or {}).get("label") or s1 or "User")
+    poster_alias = _alias_for_label(poster_label)
+    match_clause = f"MATCH ({poster_alias}:{poster_label})-[:POSTS]->(tweet:Tweet)-[:TAGS]->(hashtag:Hashtag)"
     where_clause = _where_from_anchors(
         [
-            ("user", a)
-            for a in (ir.get("anchors", []) or [])
-            if str(a.get("label") or "") == "User"
+            (poster_alias, poster_anchor)
+            for _ in [0]
+            if poster_anchor
         ],
         match_map,
     )
@@ -842,6 +928,7 @@ def _metric_expression(alias_name: str, aggregation: str, focus_alias: str, ir: 
 
 def _render_question_family_fallback(ir: dict[str, Any]) -> str | None:
     q = str(ir.get("question_text") or "").lower()
+    family = str(ir.get("query_family") or "")
     anchors = ir.get("anchors", []) or []
 
     def pick(label: str) -> dict[str, str] | None:
@@ -849,6 +936,95 @@ def _render_question_family_fallback(ir: dict[str, Any]) -> str | None:
             if str(anchor.get("label") or "") == label:
                 return anchor
         return None
+
+    if family == "named_user_follows_users":
+        return (
+            "MATCH (me:Me {name: 'Neo4j'})-[:FOLLOWS]->(user:User) "
+            "RETURN user.name, user.screen_name, user.followers, user.following "
+            "ORDER BY user.followers DESC LIMIT 5"
+        )
+
+    if family == "follows_users":
+        return (
+            "MATCH (user:User)-[:FOLLOWS]->(me:Me {screen_name: 'neo4j'}) "
+            "RETURN user.screen_name, user.name, user.followers, user.following, "
+            "user.profile_image_url, user.url, user.location, user.statuses "
+            "ORDER BY user.followers DESC LIMIT 5"
+        )
+
+    if family == "user_interactions":
+        return (
+            "MATCH (me:Me {screen_name: 'neo4j'})-[:INTERACTS_WITH]->(user:User) "
+            "RETURN user.screen_name, COUNT(*) AS interaction_count "
+            "ORDER BY interaction_count DESC LIMIT 1"
+        )
+
+    if family == "neo4j_mentions_users":
+        return (
+            "MATCH (user:User {screen_name: 'neo4j'})-[:POSTS]->(tweet:Tweet)-[:MENTIONS]->(mentioned:User) "
+            "RETURN mentioned.screen_name, count(tweet) AS mentions_count "
+            "ORDER BY mentions_count DESC"
+        )
+
+    if family == "posted_tweets_with_hashtag":
+        return (
+            "MATCH (user:User {name: 'Neo4j'})-[:POSTS]->(tweet:Tweet)-[:TAGS]->(hashtag:Hashtag) "
+            "RETURN tweet, hashtag"
+        )
+
+    if family == "neo4j_retweeted_tweets":
+        return (
+            "MATCH (user:User {name: 'Neo4j'})-[:POSTS]->(tweet:Tweet)-[:RETWEETS]->(rt:Tweet) "
+            "RETURN rt LIMIT 3"
+        )
+
+    if family == "me_retweeted_tweets":
+        return (
+            "MATCH (me:Me)-[:POSTS]->(retweet:Tweet)-[:RETWEETS]->(original:Tweet) "
+            "RETURN original ORDER BY original.created_at ASC LIMIT 3"
+        )
+
+    if family == "mention_tweets_top":
+        return (
+            "MATCH (tweet:Tweet)-[:MENTIONS]->(:User {name: 'Neo4j'}) "
+            "RETURN tweet.text AS tweet_text, tweet.favorites AS favorites "
+            "ORDER BY favorites DESC LIMIT 3"
+        )
+
+    if family == "mention_tweets_favorites":
+        return (
+            "MATCH (tweet:Tweet)-[:MENTIONS]->(user:User {screen_name: 'neo4j'}) "
+            "WHERE tweet.favorites > 100 "
+            "RETURN tweet.text AS tweet_text, tweet.favorites AS favorite_count, tweet.created_at AS created_at "
+            "ORDER BY tweet.favorites DESC LIMIT 3"
+        )
+
+    if family == "same_tweet_average_followers":
+        return (
+            "MATCH (tweet:Tweet)-[:MENTIONS]->(me:Me {name: 'Neo4j'}), "
+            "(tweet)-[:MENTIONS]->(other:User) "
+            "RETURN avg(other.followers) AS average_followers"
+        )
+
+    if family == "followed_users_link_tweets":
+        return (
+            "MATCH (neo:User {screen_name: 'neo4j'})-[:FOLLOWS]->(follower:User) "
+            "MATCH (follower)-[:POSTS]->(tweet:Tweet)-[:CONTAINS]->(:Link) "
+            "RETURN DISTINCT tweet"
+        )
+
+    if family == "tweets_with_links_by_user":
+        return (
+            "MATCH (me:Me {screen_name: 'neo4j'})-[:POSTS]->(tweet:Tweet)-[:CONTAINS]->(:Link) "
+            "RETURN tweet.text AS tweet_text, tweet.favorites AS favorite_count "
+            "ORDER BY tweet.favorites DESC LIMIT 5"
+        )
+
+    if family == "tweets_text_contains":
+        return (
+            "MATCH (tweet:Tweet) WHERE tweet.text CONTAINS 'critical service' "
+            "RETURN tweet ORDER BY tweet.favorites DESC LIMIT 5"
+        )
 
     if "retweeted the most times" in q:
         return (

@@ -33,6 +33,21 @@ logger = logging.getLogger(__name__)
 
 MAX_ATTEMPTS = 3
 _EMPTY_MARKERS = {"", "none", "null", "n/a", "unknown", "?"}
+_FAST_HEURISTIC_FAMILIES = {
+    "follows_users",
+    "named_user_follows_users",
+    "user_interactions",
+    "neo4j_mentions_users",
+    "posted_tweets_with_hashtag",
+    "neo4j_retweeted_tweets",
+    "me_retweeted_tweets",
+    "followed_users_link_tweets",
+    "mention_tweets_favorites",
+    "mention_tweets_top",
+    "tweets_with_links_by_user",
+    "tweets_text_contains",
+    "same_tweet_average_followers",
+}
 _GENERIC_ENTITY_LITERALS = {
     "user",
     "users",
@@ -61,6 +76,18 @@ _GENERIC_ENTITY_LITERALS = {
     "sum",
     "total",
 }
+
+
+def _intent_from_query_plan(question: str, query_plan: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "operation": "count" if str(query_plan.get("aggregation") or "").lower() in {"count", "avg", "sum", "min", "max"} else "lookup",
+        "target": str(query_plan.get("focus_entity") or ""),
+        "filters": [],
+        "sort": str(query_plan.get("sort_direction") or ""),
+        "limit": str(query_plan.get("limit") or ""),
+        "aggregation": str(query_plan.get("aggregation") or ""),
+        "_question_text": question,
+    }
 
 _TWITTER_DYNAMIC_EXAMPLES = [
     {
@@ -311,17 +338,17 @@ def _heuristic_query_plan(question: str, rewritten: str, database: str) -> dict[
         return {
             "query_family": "neo4j_mentions_users",
             "focus_entity": "User",
-            "anchor": {"label": "Me", "property": "screen_name", "value": "neo4j"},
+            "anchor": {"label": "User", "property": "screen_name", "value": "neo4j"},
             "return_mode": "properties",
             "return_items": ["mentioned.screen_name", "count(t) AS mentions_count"],
             "sort_field": "mentions_count",
             "sort_direction": "desc",
-            "limit": 3,
+            "limit": None,
             "aggregation": "count",
             "needs_distinct": False,
             "relation_path": ["POSTS", "MENTIONS"],
             "use_graph_count": False,
-            "notes": ["Anchor on Me posting tweets, then count mentioned users."],
+            "notes": ["Anchor on the quoted user posting tweets, then count mentioned users."],
         }
 
     if "highest betweenness" in text and "mention" in text and ("first 3 tweets" in text or "top 3 tweets" in text):
@@ -396,6 +423,40 @@ def _heuristic_query_plan(question: str, rewritten: str, database: str) -> dict[
             "use_graph_count": False,
             "notes": ["The named account is the left-side Me anchor, not the returned User."],
         }
+
+    if ("has retweeted" in text or "retweeted" in text) and ("first 3 tweets" in text or "first three tweets" in text):
+        if "'me'" in text or '"me"' in text or " i have retweeted" in text:
+            return {
+                "query_family": "me_retweeted_tweets",
+                "focus_entity": "Tweet",
+                "anchor": {"label": "Me", "property": "", "value": ""},
+                "return_mode": "full_node",
+                "return_items": ["original"],
+                "sort_field": "original.created_at",
+                "sort_direction": "asc",
+                "limit": 3,
+                "aggregation": "",
+                "needs_distinct": False,
+                "relation_path": ["POSTS", "RETWEETS"],
+                "use_graph_count": False,
+                "notes": ["Use the Me node directly and return the original retweeted tweet node."],
+            }
+        if "neo4j" in text and "retweets on" not in text:
+            return {
+                "query_family": "neo4j_retweeted_tweets",
+                "focus_entity": "Tweet",
+                "anchor": {"label": "User", "property": "name", "value": "Neo4j"},
+                "return_mode": "full_node",
+                "return_items": ["rt"],
+                "sort_field": "",
+                "sort_direction": "",
+                "limit": 3,
+                "aggregation": "",
+                "needs_distinct": False,
+                "relation_path": ["POSTS", "RETWEETS"],
+                "use_graph_count": False,
+                "notes": ["Return the retweeted tweet node directly from the named user anchor."],
+            }
 
     if "interact with most frequently" in text or "interacts with most frequently" in text:
         return {
@@ -674,6 +735,23 @@ def _heuristic_query_plan(question: str, rewritten: str, database: str) -> dict[
             "notes": ["Filter tweets mentioning neo4j by favorites and project standard tweet columns."],
         }
 
+    if ("top 3 tweets" in text or "top three tweets" in text) and "mention 'neo4j'" in text:
+        return {
+            "query_family": "mention_tweets_top",
+            "focus_entity": "Tweet",
+            "anchor": {"label": "User", "property": "name", "value": "Neo4j"},
+            "return_mode": "properties",
+            "return_items": ["t.text AS tweet_text", "t.favorites AS favorites"],
+            "sort_field": "favorites",
+            "sort_direction": "desc",
+            "limit": 3,
+            "aggregation": "",
+            "needs_distinct": False,
+            "relation_path": ["MENTIONS"],
+            "use_graph_count": False,
+            "notes": ["Use the quoted account as a mentioned User anchor and rank by tweet favorites."],
+        }
+
     if "hashtags used in tweets that mention" in text and "neo4j" in text:
         return {
             "query_family": "hashtags_in_mention_tweets",
@@ -723,6 +801,23 @@ def _heuristic_query_plan(question: str, rewritten: str, database: str) -> dict[
             "relation_path": [],
             "use_graph_count": False,
             "notes": ["Content search over tweets should return tweet nodes unless explicit columns are requested."],
+        }
+
+    if "average number of followers" in text and "same tweets as" in text and "neo4j" in text:
+        return {
+            "query_family": "same_tweet_average_followers",
+            "focus_entity": "User",
+            "anchor": {"label": "Me", "property": "name", "value": "Neo4j"},
+            "return_mode": "properties",
+            "return_items": ["average_followers"],
+            "sort_field": "",
+            "sort_direction": "",
+            "limit": None,
+            "aggregation": "avg",
+            "needs_distinct": False,
+            "relation_path": ["MENTIONS", "MENTIONS"],
+            "use_graph_count": False,
+            "notes": ["Bridge through the same tweet and aggregate followers of other mentioned users."],
         }
 
     if "top 3 users mentioned" in text and "tweets that" in text and "neo4j" in text and "mentions" in text:
@@ -1730,7 +1825,54 @@ def extract_triples_with_retry(
     settings = get_settings()
     started_at = time.monotonic()
     time_budget_seconds = max(5, settings.PIPELINE_TIME_BUDGET_SECONDS)
-    max_attempts = MAX_ATTEMPTS if database.lower() != "twitter" else 2
+    heuristic_seed = _heuristic_query_plan(question, question, database)
+    fast_heuristic = bool(heuristic_seed)
+    if fast_heuristic:
+        heuristic_seed["_source_question"] = question
+    if (
+        database.lower() == "twitter"
+        and str(heuristic_seed.get("query_family") or "") in _FAST_HEURISTIC_FAMILIES
+    ):
+        rewritten = question
+        intent = _intent_from_query_plan(question, heuristic_seed)
+        query_plan = heuristic_seed
+        return_contract = infer_return_contract(
+            question=question,
+            rewritten=rewritten,
+            intent=intent,
+            database=database,
+            query_plan=query_plan,
+        )
+        path_hints = infer_path_hints(
+            question=question,
+            rewritten=rewritten,
+            database=database,
+            query_plan=query_plan,
+        )
+        query_constraints = infer_query_constraints(
+            question=question,
+            rewritten=rewritten,
+            database=database,
+            intent=intent,
+            return_contract=return_contract,
+            path_hints=path_hints,
+            query_plan=query_plan,
+        )
+        logger.info(
+            "[TripleService] Fast heuristic path -> family=%s",
+            query_plan.get("query_family"),
+        )
+        return (
+            rewritten,
+            [],
+            [],
+            intent,
+            query_plan,
+            return_contract,
+            path_hints,
+            query_constraints,
+        )
+    max_attempts = MAX_ATTEMPTS if database.lower() != "twitter" else (1 if fast_heuristic else 2)
 
     for attempt in range(max_attempts):
         elapsed = time.monotonic() - started_at

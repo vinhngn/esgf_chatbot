@@ -16,12 +16,14 @@ from __future__ import annotations
 import logging
 import os
 import sys
+import threading
 
 # Ensure project root is on the path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from config import get_settings
 from flask import Flask, jsonify, request
+from models.llm import get_interpreter_llm
 from models.graph import get_schema_labels, get_schema_relationships
 from services.rag_service import (
     get_available_databases,
@@ -64,6 +66,17 @@ class QuietWSGIRequestHandler(WSGIRequestHandler):
         if str(code) == "400" and "\\x16\\x03" in request_line.encode("unicode_escape").decode():
             return
         super().log_request(code, size)
+
+
+def _warm_up_runtime() -> None:
+    """Preload cached schema and the interpreter LLM to reduce cold-start latency."""
+    try:
+        get_interpreter_llm()
+        get_schema_labels()
+        get_schema_relationships()
+        logger.info("[FlaskAPI] Warm-up completed.")
+    except Exception as exc:
+        logger.warning("[FlaskAPI] Warm-up failed: %s", exc)
 
 
 # ---------------------------------------------------------------------------
@@ -276,6 +289,7 @@ if __name__ == "__main__":
     print("  GET  /api/schema       — schema info")
     print("  GET  /health           — health check")
 
+    threading.Thread(target=_warm_up_runtime, daemon=True).start()
     app.run(
         host=host,
         port=port,
