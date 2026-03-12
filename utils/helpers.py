@@ -85,6 +85,14 @@ def normalize_cypher_query(query: str) -> str:
     # Normalize COUNT(*) spacing/casing for downstream comparisons.
     normalized = re.sub(r"\bCOUNT\s*\(\s*\*\s*\)", "COUNT(*)", normalized, flags=re.IGNORECASE)
 
+    # screen_name values are case-sensitive in this dataset; normalize quoted literals to lowercase.
+    normalized = re.sub(
+        r"(\bscreen_name\s*[:=]\s*['\"])([^'\"]+)(['\"])",
+        lambda m: f"{m.group(1)}{m.group(2).lower()}{m.group(3)}",
+        normalized,
+        flags=re.IGNORECASE,
+    )
+
     # Remove accidental doubled whitespace introduced by repairs.
     normalized = re.sub(r"[ \t]+", " ", normalized)
     normalized = re.sub(r"\n{3,}", "\n\n", normalized)

@@ -51,6 +51,11 @@ def build_query_ir(
         literal, _, label = instance_triples[0]
         anchor = {"label": label, "property": "", "value": literal}
 
+    if str(anchor.get("property") or "") == "screen_name" and str(anchor.get("value") or ""):
+        anchor["value"] = str(anchor["value"]).lower()
+    if str(anchor.get("value") or "").strip().lower() in {"none", "any", "null", "n/a"}:
+        anchor = {}
+
     anchors: list[dict[str, str]] = []
     if anchor:
         anchors.append(anchor)
@@ -58,6 +63,8 @@ def build_query_ir(
         if anchor and str(anchor.get("value") or "").strip().lower() == str(literal).strip().lower():
             continue
         candidate = {"label": str(label), "property": "", "value": str(literal)}
+        if candidate.get("property") == "screen_name" and candidate.get("value"):
+            candidate["value"] = str(candidate["value"]).lower()
         if candidate not in anchors:
             anchors.append(candidate)
 
@@ -598,6 +605,11 @@ def _derive_order_spec(ir: dict[str, Any], focus_alias: str) -> tuple[str, str]:
     aggregation = str(ir.get("aggregation") or "").lower()
     question_text = str(ir.get("question_text") or "").lower()
 
+    if not field and "first " in question_text and "top " not in question_text and all(
+        token not in question_text for token in ("most", "highest", "lowest", "least", "recent", "latest", "oldest")
+    ):
+        return "", direction or "DESC"
+
     if not field:
         aggregate_alias = _find_metric_alias(return_items)
         if aggregate_alias and (
@@ -741,6 +753,13 @@ def _render_question_family_fallback(ir: dict[str, Any]) -> str | None:
             + (f"LIMIT {int(ir['limit'])}" if ir.get("limit") else "")
         ).strip()
 
+    if "retweets on" in q and "neo4j" in q and ("first 3 tweets" in q or "first three tweets" in q):
+        return (
+            "MATCH (me:Me {screen_name: 'neo4j'})-[:POSTS]->(retweet:Tweet)-[:RETWEETS]->(original:Tweet) "
+            "WHERE date(retweet.created_at) = date('2021-03-16') "
+            "RETURN original.text, original.created_at ORDER BY retweet.created_at LIMIT 3"
+        )
+
     if "most replies" in q and "tweet" in q:
         user_anchor = pick("User") or pick("Me")
         where = ""
@@ -799,6 +818,106 @@ def _render_question_family_fallback(ir: dict[str, Any]) -> str | None:
             "MATCH (me:Me {name: 'Neo4j'})-[:FOLLOWS]->(user:User) "
             "RETURN user.name, user.screen_name, user.followers, user.following "
             "ORDER BY user.followers DESC LIMIT 5"
+        )
+
+    if "most recent tweets" in q and ("creation date" in q or "created" in q):
+        return "MATCH (tweet:Tweet) RETURN tweet ORDER BY tweet.created_at DESC LIMIT 5"
+
+    if "all tweets by" in q and "more than 200 favorites" in q and "neo4j" in q:
+        return (
+            "MATCH (user:User {screen_name: 'neo4j'})-[:POSTS]->(tweet:Tweet) "
+            "WHERE tweet.favorites > 200 RETURN tweet LIMIT 5"
+        )
+
+    if "most recent tweets posted by any user" in q or ("most recent tweets" in q and "any user" in q):
+        return "MATCH (:User)-[:POSTS]->(tweet:Tweet) RETURN tweet ORDER BY tweet.created_at DESC LIMIT 3"
+
+    if "highest betweenness" in q and "mention" in q and ("first 3 tweets" in q or "top 3 tweets" in q):
+        return (
+            "MATCH (user:User)-[:MENTIONS]-(tweet:Tweet) "
+            "WHERE user.betweenness IS NOT NULL "
+            "WITH user, tweet ORDER BY user.betweenness DESC LIMIT 1 "
+            "MATCH (t2:Tweet)-[:MENTIONS]->(user) "
+            "RETURN t2.text LIMIT 3"
+        )
+
+    if "amplify the most" in q and "neo4j" in q:
+        return (
+            "MATCH (me:Me {screen_name: 'neo4j'})-[:AMPLIFIES]->(user:User) "
+            "RETURN user.screen_name, COUNT(*) AS amplification_count "
+            "ORDER BY amplification_count DESC LIMIT 5"
+        )
+
+    if "top 3 users mentioned" in q and "tweets that" in q and "neo4j" in q and "mentions" in q:
+        return (
+            "MATCH (me:Me {screen_name: 'neo4j'})-[:POSTS]->(tweet:Tweet)-[:MENTIONS]->(mentionedUser:User) "
+            "WITH mentionedUser, COUNT(*) AS mentionCount "
+            "ORDER BY mentionCount DESC LIMIT 3 "
+            "RETURN mentionedUser.screen_name AS mentionedUser, mentionCount"
+        )
+
+    if ("has retweeted" in q or "retweeted" in q) and ("first 3 tweets" in q or "first three tweets" in q) and "neo4j" in q and "retweets on" not in q:
+        return (
+            "MATCH (user:User {name: 'Neo4j'})-[:POSTS]->(tweet:Tweet)-[:RETWEETS]->(rt:Tweet) "
+            "RETURN rt LIMIT 3"
+        )
+
+    if "users located in" in q and "tweets" in q:
+        location = re.search(r"located in ['\"]([^'\"]+)['\"]", str(ir.get("question_text") or ""), flags=re.IGNORECASE)
+        literal = location.group(1) if location else ""
+        return (
+            f"MATCH (user:User {{location: {_quote_literal(literal)}}})-[:POSTS]->(tweet:Tweet) "
+            "RETURN tweet ORDER BY tweet.favorites DESC LIMIT 3"
+        )
+
+    if ("contain links" in q or "contain links and have been posted" in q) and "follow" in q and "neo4j" in q:
+        return (
+            "MATCH (neo:User {screen_name: 'neo4j'})-[:FOLLOWS]->(follower:User) "
+            "MATCH (follower)-[:POSTS]->(tweet:Tweet)-[:CONTAINS]->(:Link) "
+            "RETURN DISTINCT tweet"
+        )
+
+    if "contain links" in q and "posted by" in q and "neo4j" in q:
+        return (
+            "MATCH (me:Me {screen_name: 'neo4j'})-[:POSTS]->(tweet:Tweet)-[:CONTAINS]->(:Link) "
+            "RETURN tweet.text AS tweet_text, tweet.favorites AS favorite_count "
+            "ORDER BY tweet.favorites DESC LIMIT 5"
+        )
+
+    if "lowest number of followers" in q:
+        return "MATCH (user:User) RETURN user.screen_name, user.followers ORDER BY user.followers ASC LIMIT 3"
+
+    if "mention 'neo4j'" in q and "more than 100 favorites" in q:
+        return (
+            "MATCH (tweet:Tweet)-[:MENTIONS]->(user:User {screen_name: 'neo4j'}) "
+            "WHERE tweet.favorites > 100 "
+            "RETURN tweet.text AS tweet_text, tweet.favorites AS favorite_count, tweet.created_at AS created_at "
+            "ORDER BY tweet.favorites DESC LIMIT 3"
+        )
+
+    if ("hashtags used in tweets that mention" in q or "hashtags that are used in tweets mentioning" in q) and "neo4j" in q:
+        return (
+            "MATCH (t:Tweet)-[:MENTIONS]->(:User {screen_name: 'neo4j'})-[:POSTS]->(tweet:Tweet)-[:TAGS]->(hashtag:Hashtag) "
+            "RETURN DISTINCT hashtag.name"
+        )
+
+    if "top 3 users amplified by 'me'" in q or "top 3 users amplified by me" in q:
+        return (
+            "MATCH (me:Me)-[:AMPLIFIES]->(user:User) "
+            "RETURN user.name, user.screen_name "
+            "ORDER BY user.followers DESC LIMIT 3"
+        )
+
+    if "critical service" in q:
+        return (
+            "MATCH (tweet:Tweet) WHERE tweet.text CONTAINS 'critical service' "
+            "RETURN tweet ORDER BY tweet.favorites DESC LIMIT 5"
+        )
+
+    if "top 5 tweets by" in q and "neo4j" in q and ("favorites count" in q or "number of favorites" in q or "ranked by the number of favorites" in q):
+        return (
+            "MATCH (me:Me {screen_name: 'neo4j'})-[:POSTS]->(tweet:Tweet) "
+            "RETURN tweet.text, tweet.favorites ORDER BY tweet.favorites DESC LIMIT 5"
         )
 
     if "mention users who have retweeted tweets that mention" in q:

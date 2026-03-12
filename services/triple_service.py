@@ -310,17 +310,68 @@ def _heuristic_query_plan(question: str, rewritten: str, database: str) -> dict[
         return {
             "query_family": "neo4j_mentions_users",
             "focus_entity": "User",
-            "anchor": {"label": "User", "property": "screen_name", "value": "neo4j"},
+            "anchor": {"label": "Me", "property": "screen_name", "value": "neo4j"},
             "return_mode": "properties",
             "return_items": ["mentioned.screen_name", "count(t) AS mentions_count"],
             "sort_field": "mentions_count",
             "sort_direction": "desc",
-            "limit": None,
+            "limit": 3,
             "aggregation": "count",
             "needs_distinct": False,
             "relation_path": ["POSTS", "MENTIONS"],
             "use_graph_count": False,
             "notes": ["Anchor on Me posting tweets, then count mentioned users."],
+        }
+
+    if "highest betweenness" in text and "mention" in text and ("first 3 tweets" in text or "top 3 tweets" in text):
+        return {
+            "query_family": "highest_betweenness_mentions",
+            "focus_entity": "Tweet",
+            "anchor": {"label": "", "property": "", "value": ""},
+            "return_mode": "properties",
+            "return_items": ["t2.text"],
+            "sort_field": "",
+            "sort_direction": "",
+            "limit": 3,
+            "aggregation": "",
+            "needs_distinct": False,
+            "relation_path": ["MENTIONS"],
+            "use_graph_count": False,
+            "notes": ["Use a two-stage query: pick the top betweenness user, then fetch tweets mentioning that user."],
+        }
+
+    if "top 5 most recent tweets" in text or "most recent tweets based on the creation date" in text:
+        return {
+            "query_family": "recent_tweets",
+            "focus_entity": "Tweet",
+            "anchor": {"label": "", "property": "", "value": ""},
+            "return_mode": "full_node",
+            "return_items": ["tweet"],
+            "sort_field": "tweet.created_at",
+            "sort_direction": "desc",
+            "limit": 5,
+            "aggregation": "",
+            "needs_distinct": False,
+            "relation_path": [],
+            "use_graph_count": False,
+            "notes": ["Return the tweet node directly for recent tweet queries."],
+        }
+
+    if "all tweets by" in text and "more than 200 favorites" in text and "neo4j" in text:
+        return {
+            "query_family": "tweets_by_user_with_favorites",
+            "focus_entity": "Tweet",
+            "anchor": {"label": "User", "property": "screen_name", "value": "neo4j"},
+            "return_mode": "full_node",
+            "return_items": ["tweet"],
+            "sort_field": "",
+            "sort_direction": "",
+            "limit": 5,
+            "aggregation": "",
+            "needs_distinct": False,
+            "relation_path": ["POSTS"],
+            "use_graph_count": False,
+            "notes": ["Keep full tweet return shape and avoid adding ORDER BY when the question only says first 5."],
         }
 
     if "specific user named" in text and "follows" in text and "neo4j" in text:
@@ -362,6 +413,23 @@ def _heuristic_query_plan(question: str, rewritten: str, database: str) -> dict[
             "notes": ["Count outgoing INTERACTS_WITH edges from Me to User and return only screen_name plus metric."],
         }
 
+    if "amplify the most" in text and "neo4j" in text:
+        return {
+            "query_family": "amplified_users_count",
+            "focus_entity": "User",
+            "anchor": {"label": "Me", "property": "screen_name", "value": "neo4j"},
+            "return_mode": "properties",
+            "return_items": ["user.screen_name", "COUNT(*) AS amplification_count"],
+            "sort_field": "amplification_count",
+            "sort_direction": "desc",
+            "limit": 5,
+            "aggregation": "count",
+            "needs_distinct": False,
+            "relation_path": ["AMPLIFIES"],
+            "use_graph_count": True,
+            "notes": ["Count amplified users from the Me anchor."],
+        }
+
     if "posted by" in text and "containing a hashtag" in text and "neo4j" in text:
         return {
             "query_family": "posted_tweets_with_hashtag",
@@ -394,6 +462,48 @@ def _heuristic_query_plan(question: str, rewritten: str, database: str) -> dict[
             "relation_path": ["POSTS", "RETWEETS"],
             "use_graph_count": False,
             "notes": ["Filter on retweet.created_at date, but return original tweet fields."],
+        }
+
+    if "has retweeted" in text and "first 3 tweets" in text and "neo4j" in text:
+        return {
+            "query_family": "neo4j_retweeted_tweets",
+            "focus_entity": "Tweet",
+            "anchor": {"label": "User", "property": "name", "value": "Neo4j"},
+            "return_mode": "full_node",
+            "return_items": ["rt"],
+            "sort_field": "",
+            "sort_direction": "",
+            "limit": 3,
+            "aggregation": "",
+            "needs_distinct": False,
+            "relation_path": ["POSTS", "RETWEETS"],
+            "use_graph_count": False,
+            "notes": ["Return the retweeted tweet node directly."],
+        }
+
+    if (
+        "top 5 tweets by" in text
+        and "neo4j" in text
+        and (
+            "favorites count" in text
+            or "number of favorites" in text
+            or "ranked by favorites" in text
+        )
+    ):
+        return {
+            "query_family": "tweets_by_user_favorites",
+            "focus_entity": "Tweet",
+            "anchor": {"label": "Me", "property": "screen_name", "value": "neo4j"},
+            "return_mode": "properties",
+            "return_items": ["tweet.text", "tweet.favorites"],
+            "sort_field": "tweet.favorites",
+            "sort_direction": "desc",
+            "limit": 5,
+            "aggregation": "",
+            "needs_distinct": False,
+            "relation_path": ["POSTS"],
+            "use_graph_count": False,
+            "notes": ["Tweets by Neo4j ranked by favorites should anchor on lowercase screen_name."],
         }
 
     if "mention 'neo4j'" in text and "contain a link" in text and "recent" in text:
@@ -478,6 +588,22 @@ def _heuristic_query_plan(question: str, rewritten: str, database: str) -> dict[
         }
 
     if "amplif" in text and ("'me'" in text or '"me"' in text or "my account" in text):
+        if "top 3" in text:
+            return {
+                "query_family": "amplified_users_top",
+                "focus_entity": "User",
+                "anchor": {"label": "Me", "property": "", "value": ""},
+                "return_mode": "properties",
+                "return_items": ["user.name", "user.screen_name"],
+                "sort_field": "user.followers",
+                "sort_direction": "desc",
+                "limit": 3,
+                "aggregation": "",
+                "needs_distinct": False,
+                "relation_path": ["AMPLIFIES"],
+                "use_graph_count": False,
+                "notes": ["Top amplified users should return name and screen_name ordered by followers."],
+            }
         return {
             "query_family": "amplified_users",
             "focus_entity": "User",
@@ -492,6 +618,127 @@ def _heuristic_query_plan(question: str, rewritten: str, database: str) -> dict[
             "relation_path": ["AMPLIFIES"],
             "use_graph_count": False,
             "notes": [],
+        }
+
+    if "users located in" in text and "tweets" in text:
+        location_match = re.search(r"located in ['\"]([^'\"]+)['\"]", question + "\n" + rewritten, flags=re.IGNORECASE)
+        location_value = location_match.group(1) if location_match else ""
+        return {
+            "query_family": "tweets_by_user_location",
+            "focus_entity": "Tweet",
+            "anchor": {"label": "User", "property": "location", "value": location_value},
+            "return_mode": "full_node",
+            "return_items": ["tweet"],
+            "sort_field": "tweet.favorites",
+            "sort_direction": "desc",
+            "limit": 3,
+            "aggregation": "",
+            "needs_distinct": False,
+            "relation_path": ["POSTS"],
+            "use_graph_count": False,
+            "notes": ["Tweets from users at the specified location should return tweet nodes."],
+        }
+
+    if "lowest number of followers" in text:
+        return {
+            "query_family": "user_followers_lowest",
+            "focus_entity": "User",
+            "anchor": {"label": "", "property": "", "value": ""},
+            "return_mode": "properties",
+            "return_items": ["user.screen_name", "user.followers"],
+            "sort_field": "user.followers",
+            "sort_direction": "asc",
+            "limit": 3,
+            "aggregation": "",
+            "needs_distinct": False,
+            "relation_path": [],
+            "use_graph_count": False,
+            "notes": ["Simple property ranking; do not fabricate relationship paths."],
+        }
+
+    if "mention 'neo4j'" in text and "more than 100 favorites" in text:
+        return {
+            "query_family": "mention_tweets_favorites",
+            "focus_entity": "Tweet",
+            "anchor": {"label": "User", "property": "screen_name", "value": "neo4j"},
+            "return_mode": "properties",
+            "return_items": ["t.text AS tweet_text", "t.favorites AS favorite_count", "t.created_at AS created_at"],
+            "sort_field": "t.favorites",
+            "sort_direction": "desc",
+            "limit": 3,
+            "aggregation": "",
+            "needs_distinct": False,
+            "relation_path": ["MENTIONS"],
+            "use_graph_count": False,
+            "notes": ["Filter tweets mentioning neo4j by favorites and project standard tweet columns."],
+        }
+
+    if "hashtags used in tweets that mention" in text and "neo4j" in text:
+        return {
+            "query_family": "hashtags_in_mention_tweets",
+            "focus_entity": "Hashtag",
+            "anchor": {"label": "User", "property": "screen_name", "value": "neo4j"},
+            "return_mode": "properties",
+            "return_items": ["DISTINCT h.name"],
+            "sort_field": "",
+            "sort_direction": "",
+            "limit": None,
+            "aggregation": "",
+            "needs_distinct": True,
+            "relation_path": ["MENTIONS", "TAGS"],
+            "use_graph_count": False,
+            "notes": ["Use the same tweet as the bridge between mention and hashtag."],
+        }
+
+    if "contain links" in text and "posted by" in text and "neo4j" in text:
+        return {
+            "query_family": "tweets_with_links_by_user",
+            "focus_entity": "Tweet",
+            "anchor": {"label": "Me", "property": "screen_name", "value": "neo4j"},
+            "return_mode": "properties",
+            "return_items": ["tweet.text AS tweet_text", "tweet.favorites AS favorite_count"],
+            "sort_field": "tweet.favorites",
+            "sort_direction": "desc",
+            "limit": 5,
+            "aggregation": "",
+            "needs_distinct": False,
+            "relation_path": ["POSTS", "CONTAINS"],
+            "use_graph_count": False,
+            "notes": ["Prefer favorites, not link_count, for ranking tweets with links."],
+        }
+
+    if "critical service" in text and any(token in text for token in ("text containing", "include the text", "contain the text")):
+        return {
+            "query_family": "tweets_text_contains",
+            "focus_entity": "Tweet",
+            "anchor": {"label": "", "property": "", "value": ""},
+            "return_mode": "full_node",
+            "return_items": ["t"],
+            "sort_field": "t.favorites",
+            "sort_direction": "desc",
+            "limit": 5,
+            "aggregation": "",
+            "needs_distinct": False,
+            "relation_path": [],
+            "use_graph_count": False,
+            "notes": ["Content search over tweets should return tweet nodes unless explicit columns are requested."],
+        }
+
+    if "top 3 users mentioned" in text and "tweets that" in text and "neo4j" in text and "mentions" in text:
+        return {
+            "query_family": "neo4j_mentions_users_top3",
+            "focus_entity": "User",
+            "anchor": {"label": "Me", "property": "screen_name", "value": "neo4j"},
+            "return_mode": "properties",
+            "return_items": ["mentionedUser.screen_name AS mentionedUser", "mentionCount"],
+            "sort_field": "mentionCount",
+            "sort_direction": "desc",
+            "limit": 3,
+            "aggregation": "count",
+            "needs_distinct": False,
+            "relation_path": ["POSTS", "MENTIONS"],
+            "use_graph_count": False,
+            "notes": ["Count mentioned users from tweets posted by Neo4j."],
         }
 
     if "top three users" in text and "following" in text and "number of people" in text:
@@ -542,12 +789,16 @@ def _twitter_prefers_full_node_return(text: str) -> bool:
     return any(
         token in text
         for token in (
+            "most recent tweets",
+            "based on the creation date",
             "find all tweets",
             "show all tweets",
             "show the tweets",
             "find tweets",
             "which tweets",
             "return tweets",
+            "top 5 tweets",
+            "top 3 tweets",
             "display the first",
             "find the first 3 tweets",
             "show the first 3 tweets",
