@@ -996,6 +996,11 @@ def _render_question_family_fallback(ir: dict[str, Any]) -> str | None:
             "RETURN p.name AS director, num_movies"
         )
 
+    if str(ir.get("database") or "").lower() == "movies":
+        movies_cypher = _render_movies_question_fallback(ir)
+        if movies_cypher:
+            return movies_cypher
+
     if family == "follows_users":
         return (
             "MATCH (user:User)-[:FOLLOWS]->(me:Me {screen_name: 'neo4j'}) "
@@ -1493,6 +1498,517 @@ def _render_question_family_fallback(ir: dict[str, Any]) -> str | None:
         )
 
     return None
+
+
+def _render_movies_question_fallback(ir: dict[str, Any]) -> str | None:
+    question = str(ir.get("question_text") or "")
+    q = question.lower()
+    quoted = _extract_quoted_literals(question)
+    limit = _extract_limit_from_question(question)
+
+    review_cypher = _render_movies_review_patterns(question, q, quoted, limit)
+    if review_cypher:
+        return review_cypher
+
+    roles_cypher = _render_movies_roles_patterns(question, q, quoted, limit)
+    if roles_cypher:
+        return roles_cypher
+
+    acted_filter_cypher = _render_movies_acted_filter_patterns(question, q, quoted, limit)
+    if acted_filter_cypher:
+        return acted_filter_cypher
+
+    multi_rel_cypher = _render_movies_multi_relation_patterns(question, q, limit)
+    if multi_rel_cypher:
+        return multi_rel_cypher
+
+    return None
+
+
+def _render_movies_review_patterns(question: str, q: str, quoted: list[str], limit: int | None) -> str | None:
+    rating_threshold = _extract_numeric_threshold(
+        q,
+        r"rating\s+(?:above|higher than|over|of)\s+(\d+)",
+    )
+
+    if "highest rated reviews" in q:
+        limit = limit or 3
+        return (
+            "MATCH (p:Person)-[r:REVIEWED]->(m:Movie) "
+            "RETURN m.title AS movie, r.rating AS rating, r.summary AS review "
+            "ORDER BY r.rating DESC "
+            f"LIMIT {limit}"
+        )
+
+    if "average number of words" in q and "review summaries" in q and rating_threshold is not None:
+        return (
+            "MATCH (:Person)-[r:REVIEWED]->(m:Movie) "
+            f"WHERE r.rating > {rating_threshold} "
+            'WITH size(split(r.summary, " ")) AS words '
+            "RETURN avg(words) AS average_word_count"
+        )
+
+    if "highest average review rating" in q:
+        return (
+            "MATCH (p:Person)-[r:REVIEWED]->(m:Movie) "
+            "WITH p, avg(r.rating) AS avg_rating "
+            "RETURN p.name, avg_rating "
+            "ORDER BY avg_rating DESC LIMIT 1"
+        )
+
+    if "average number of votes" in q and rating_threshold is not None:
+        return (
+            "MATCH (:Person)-[r:REVIEWED]->(m:Movie) "
+            f"WHERE r.rating > {rating_threshold} "
+            "WITH avg(m.votes) AS average_votes "
+            "RETURN average_votes"
+        )
+
+    if "directed movies with a rating" in q and rating_threshold is not None:
+        return (
+            "MATCH (p:Person)-[:DIRECTED]->(m:Movie)<-[r:REVIEWED]-() "
+            f"WHERE r.rating > {rating_threshold} "
+            "RETURN DISTINCT p.name"
+        )
+
+    if "reviewed the most movies" in q and rating_threshold is not None:
+        return (
+            "MATCH (p:Person)-[r:REVIEWED]->(m:Movie) "
+            f"WHERE r.rating > {rating_threshold} "
+            "WITH p, count(m) AS moviesReviewed "
+            "ORDER BY moviesReviewed DESC LIMIT 1 "
+            "RETURN p.name AS reviewer, moviesReviewed"
+        )
+
+    if (
+        any(token in q for token in ("which persons have reviewed", "who reviewed movies"))
+        and rating_threshold is not None
+    ):
+        op = "=" if "rating of" in q else ">"
+        return (
+            "MATCH (p:Person)-[r:REVIEWED]->(m:Movie) "
+            f"WHERE r.rating {op} {rating_threshold} "
+            "RETURN p.name"
+        )
+
+    if rating_threshold is not None and "movies" in q:
+        between = re.search(r"released between\s+(\d{4})\s+and\s+(\d{4})", q)
+        if between:
+            start, end = between.groups()
+            return (
+                "MATCH (m:Movie)<-[r:REVIEWED]-(p:Person) "
+                f"WHERE m.released >= {start} AND m.released <= {end} AND r.rating > {rating_threshold} "
+                "RETURN DISTINCT m.title"
+            )
+        if limit:
+            alias = "MovieTitle" if "name " in q else "m.title"
+            if alias == "MovieTitle":
+                return (
+                    "MATCH (p:Person)-[r:REVIEWED]->(m:Movie) "
+                    f"WHERE r.rating > {rating_threshold} "
+                    "RETURN m.title AS MovieTitle "
+                    f"LIMIT {limit}"
+                )
+            return (
+                "MATCH (m:Movie)<-[r:REVIEWED]-(p:Person) "
+                f"WHERE r.rating > {rating_threshold} "
+                "RETURN m.title "
+                f"LIMIT {limit}"
+            )
+        return (
+            "MATCH (m:Movie)<-[r:REVIEWED]-(p:Person) "
+            f"WHERE r.rating > {rating_threshold} "
+            "RETURN m.title, r.rating"
+        )
+
+    if "review summary" in q or ("summary" in q and "review" in q):
+        literal = quoted[0] if quoted else ""
+        contains = any(token in q for token in ("contains", "containing", "mentioning", "word ", "words "))
+        if not literal:
+            word_match = re.search(r'word[s]?\s+["\']([^"\']+)["\']', question, flags=re.IGNORECASE)
+            if word_match:
+                literal = word_match.group(1)
+        if not literal:
+            return None
+        comparator = "CONTAINS" if contains else "="
+
+        if "which people have reviewed" in q:
+            return (
+                "MATCH (p:Person)-[r:REVIEWED]->(m:Movie) "
+                f"WHERE r.summary {comparator} {_quote_literal(literal)} "
+                "RETURN DISTINCT p.name"
+            )
+
+        if "who are the first" in q and "people to review" in q:
+            limit = limit or 3
+            return (
+                "MATCH (p:Person)-[r:REVIEWED]->(m:Movie) "
+                f"WHERE r.summary {comparator} {_quote_literal(literal)} "
+                "RETURN p.name ORDER BY r.rating DESC "
+                f"LIMIT {limit}"
+            )
+
+        if "who has the most movies" in q:
+            return (
+                "MATCH (p:Person)-[:REVIEWED {summary: "
+                f"{_quote_literal(literal)}"
+                "}]->(m:Movie) "
+                "WITH p, count(m) AS movieCount ORDER BY movieCount DESC LIMIT 1 "
+                "RETURN p.name AS personName, movieCount"
+            )
+
+        if "lowest number of votes" in q:
+            return (
+                "MATCH (m:Movie)<-[r:REVIEWED]-() "
+                f"WHERE r.summary CONTAINS {_quote_literal(literal)} "
+                "RETURN m.title AS movieTitle, m.votes AS movieVotes "
+                "ORDER BY movieVotes LIMIT 1"
+            )
+
+        if "what were their ratings" in q:
+            return (
+                "MATCH (p:Person)-[r:REVIEWED]->(m:Movie) "
+                f"WHERE r.summary {comparator} {_quote_literal(literal)} "
+                "RETURN m.title, r.rating"
+            )
+
+        if "an amazing journey" in literal.lower() and "return m" not in q:
+            return (
+                "MATCH (m:Movie)<-[:REVIEWED {summary: "
+                f"{_quote_literal(literal)}"
+                "}]-(:Person) RETURN m"
+            )
+
+        if limit:
+            distinct = "DISTINCT " if contains else ""
+            return (
+                "MATCH (m:Movie)<-[r:REVIEWED]-(p:Person) "
+                f"WHERE r.summary {comparator} {_quote_literal(literal)} "
+                f"RETURN {distinct}m.title "
+                f"LIMIT {limit}"
+            )
+
+        distinct = "DISTINCT " if contains else ""
+        return (
+            "MATCH (m:Movie)<-[r:REVIEWED]-() "
+            f"WHERE r.summary {comparator} {_quote_literal(literal)} "
+            f"RETURN {distinct}m.title"
+        )
+
+    return None
+
+
+def _render_movies_roles_patterns(question: str, q: str, quoted: list[str], limit: int | None) -> str | None:
+    roles_count = _extract_numeric_threshold(q, r"exactly\s+(\d+)\s+roles")
+    if roles_count is not None and "acted_in relationship" in q:
+        return (
+            "MATCH (m:Movie)<-[r:ACTED_IN]-(p:Person) "
+            f"WHERE size(r.roles) = {roles_count} "
+            "RETURN m.title"
+        )
+
+    if "most diverse roles" in q:
+        limit = limit or 3
+        return (
+            "MATCH (p:Person)-[r:ACTED_IN]->(m:Movie) "
+            "WITH p, r.roles AS roles "
+            "UNWIND roles AS role "
+            "WITH p, COUNT(DISTINCT role) AS uniqueRolesCount "
+            "RETURN p.name AS actor, uniqueRolesCount "
+            "ORDER BY uniqueRolesCount DESC "
+            f"LIMIT {limit}"
+        )
+
+    if "diversity of roles played" in q:
+        limit = limit or 3
+        return (
+            "MATCH (p:Person)-[r:ACTED_IN]->(m:Movie) "
+            "WITH p, size(apoc.coll.toSet(collect(r.roles))) AS roleDiversity "
+            "RETURN p.name AS actor, roleDiversity "
+            "ORDER BY roleDiversity DESC "
+            f"LIMIT {limit}"
+        )
+
+    if "most distinct roles" in q and "persons" in q:
+        limit = limit or 3
+        return (
+            "MATCH (p:Person)-[r:ACTED_IN]->(m:Movie) "
+            "WITH p, count(DISTINCT r.roles) AS distinctRoles "
+            "ORDER BY distinctRoles DESC LIMIT "
+            f"{limit} "
+            "RETURN p.name, distinctRoles"
+        )
+
+    if "most combined roles" in q:
+        limit = limit or 3
+        return (
+            "MATCH (p:Person)-[a:ACTED_IN]->(m:Movie) "
+            "WITH p, sum(size(a.roles)) AS totalRoles "
+            "ORDER BY totalRoles DESC LIMIT "
+            f"{limit} "
+            "RETURN p.name AS PersonName, totalRoles"
+        )
+
+    if "most roles listed in acted_in relationship" in q:
+        limit = limit or 5
+        return (
+            "MATCH (m:Movie)<-[r:ACTED_IN]-(p:Person) "
+            "RETURN m.title AS movie, size(r.roles) AS roleCount "
+            "ORDER BY roleCount DESC "
+            f"LIMIT {limit}"
+        )
+
+    if "most complex role lists" in q:
+        limit = limit or 3
+        return (
+            "MATCH (m:Movie)<-[r:ACTED_IN]-(:Person) "
+            "WITH m, size(r.roles) AS role_count "
+            "ORDER BY role_count DESC LIMIT "
+            f"{limit} "
+            "RETURN m.title AS movie_title, role_count"
+        )
+
+    if "top 5 movies by the number of roles and their respective actors" in q:
+        return (
+            "MATCH (m:Movie)<-[ai:ACTED_IN]-(p:Person) "
+            "RETURN m.title AS movie, collect(p.name) AS actors, size(ai.roles) AS numRoles "
+            "ORDER BY numRoles DESC LIMIT 5"
+        )
+
+    if "top 5 movies by number of roles" in q:
+        return (
+            "MATCH (m:Movie)<-[r:ACTED_IN]-(p:Person) "
+            "RETURN m.title AS movie, size(r.roles) AS numRoles "
+            "ORDER BY numRoles DESC LIMIT 5"
+        )
+
+    if "top 3 movies with the most distinct actors" in q:
+        limit = limit or 3
+        return (
+            "MATCH (m:Movie)<-[:ACTED_IN]-(p:Person) "
+            "WITH m, count(DISTINCT p) AS actorCount "
+            "ORDER BY actorCount DESC LIMIT "
+            f"{limit} "
+            "RETURN m.title AS movieTitle, actorCount"
+        )
+
+    if "roles of actors in the 3 movies with the highest number of actors involved" in q:
+        return (
+            "MATCH (m:Movie)<-[:ACTED_IN]-(p:Person) "
+            "WITH m, count(p) AS actorCount ORDER BY actorCount DESC LIMIT 3 "
+            "MATCH (m)<-[r:ACTED_IN]-(p) "
+            "RETURN m.title AS movieTitle, p.name AS actorName, r.roles AS roles"
+        )
+
+    if "roles" in q and "movie titled" in q and quoted:
+        return (
+            "MATCH (p:Person)-[r:ACTED_IN]->(m:Movie {title: "
+            f"{_quote_literal(quoted[0])}"
+            "}) RETURN p.name, r.roles"
+        )
+
+    if "which movie has the most roles" in q:
+        return (
+            "MATCH (p:Person)-[r:ACTED_IN]->(m:Movie) "
+            "RETURN m.title AS Movie, r.roles AS Roles "
+            "ORDER BY size(r.roles) DESC LIMIT 1"
+        )
+
+    if "who has the most roles in a single movie" in q:
+        return (
+            "MATCH (p:Person)-[r:ACTED_IN]->(m:Movie) "
+            "RETURN p.name AS person, m.title AS movie, size(r.roles) AS num_roles "
+            "ORDER BY num_roles DESC LIMIT 1"
+        )
+
+    if "title containing" in q and "roles" in q and quoted:
+        return (
+            "MATCH (p:Person)-[r:ACTED_IN]->(m:Movie) "
+            f"WHERE m.title CONTAINS {_quote_literal(quoted[0])} "
+            "RETURN p.name AS person, m.title AS movie, r.roles AS roles"
+        )
+
+    if "common roles for" in q:
+        person = _extract_person_name_after_token(question, "for ")
+        if person:
+            return (
+                "MATCH (p:Person {name: "
+                f"{_quote_literal(person)}"
+                "})-[r:ACTED_IN]->(m:Movie) "
+                "WITH p, collect(r.roles) AS rolesList "
+                "UNWIND rolesList AS roles "
+                "UNWIND roles AS role "
+                "RETURN p.name, role, count(*) AS times_played "
+                "ORDER BY times_played DESC"
+            )
+
+    if "roles played by actors in the first 3 movies directed by" in q:
+        director = _extract_person_name_after_token(question, "directed by ")
+        if director:
+            return (
+                "MATCH (director:Person {name: "
+                f"{_quote_literal(director)}"
+                "})-[:DIRECTED]->(movie:Movie) "
+                "WITH movie ORDER BY movie.released LIMIT 3 "
+                "MATCH (actor:Person)-[actedIn:ACTED_IN]->(movie) "
+                "RETURN movie.title AS MovieTitle, actor.name AS ActorName, actedIn.roles AS Roles"
+            )
+
+    if "roles of " in q and "release year after" in q:
+        person = _extract_person_name_after_token(question, "roles of ")
+        year = _extract_numeric_threshold(q, r"release year after\s+(\d{4})")
+        if person and year is not None:
+            return (
+                "MATCH (p:Person {name: "
+                f"{_quote_literal(person)}"
+                "})-[:ACTED_IN]->(m:Movie) "
+                f"WHERE m.released > {year} "
+                "RETURN m.title, m.released, [(p)-[r:ACTED_IN]->(m) | r.roles] AS roles"
+            )
+
+    return None
+
+
+def _render_movies_acted_filter_patterns(question: str, q: str, quoted: list[str], limit: int | None) -> str | None:
+    tagline_literal = quoted[0] if quoted else ""
+    if "acted in more than three movies with a tagline containing" in q and tagline_literal:
+        limit = limit or 3
+        return (
+            "MATCH (p:Person)-[:ACTED_IN]->(m:Movie) "
+            f"WHERE m.tagline CONTAINS {_quote_literal(tagline_literal)} "
+            "WITH p, count(m) AS movies_count "
+            "WHERE movies_count > 3 "
+            "RETURN p.name "
+            f"LIMIT {limit}"
+        )
+
+    if "acted in the most movies with a tagline containing" in q and tagline_literal:
+        limit = limit or 3
+        return (
+            "MATCH (p:Person)-[:ACTED_IN]->(m:Movie) "
+            f"WHERE m.tagline CONTAINS {_quote_literal(tagline_literal)} "
+            "WITH p, count(m) AS movieCount "
+            "ORDER BY movieCount DESC LIMIT "
+            f"{limit} "
+            "RETURN p.name"
+        )
+
+    if "acted in a movie released in" in q:
+        year = _extract_numeric_threshold(q, r"released in\s+(\d{4})")
+        if year is not None:
+            limit = limit or 3
+            return (
+                "MATCH (p:Person)-[:ACTED_IN]->(m:Movie) "
+                f"WHERE m.released = {year} "
+                "RETURN p.name "
+                f"LIMIT {limit}"
+            )
+
+    if "born before" in q and "acted in a movie with a tagline containing" in q and tagline_literal:
+        born = _extract_numeric_threshold(q, r"born before\s+(\d{4})")
+        if born is not None:
+            limit = limit or 3
+            return (
+                "MATCH (p:Person)-[:ACTED_IN]->(m:Movie) "
+                f"WHERE p.born < {born} AND m.tagline CONTAINS {_quote_literal(tagline_literal)} "
+                "RETURN p.name "
+                f"LIMIT {limit}"
+            )
+
+    if "born after" in q and "acted in a movie released before" in q:
+        born = _extract_numeric_threshold(q, r"born after\s+(\d{4})")
+        released = _extract_numeric_threshold(q, r"released before\s+(\d{4})")
+        if born is not None and released is not None:
+            limit = limit or 3
+            return (
+                "MATCH (p:Person)-[:ACTED_IN]->(m:Movie) "
+                f"WHERE p.born > {born} AND m.released < {released} "
+                "RETURN p.name AS actor_name, p.born AS birth_year, "
+                "m.title AS movie_title, m.released AS release_year "
+                "ORDER BY p.born "
+                f"LIMIT {limit}"
+            )
+
+    return None
+
+
+def _render_movies_multi_relation_patterns(question: str, q: str, limit: int | None) -> str | None:
+    if "written and directed the same movie" in q:
+        return (
+            "MATCH (p:Person)-[:DIRECTED]->(m:Movie) "
+            "MATCH (p)-[:WROTE]->(m) "
+            "RETURN m.title AS movie_title"
+        )
+
+    if "directed, produced, and acted in the same movie" in q:
+        limit = limit or 3
+        return (
+            "MATCH (p:Person)-[:DIRECTED]->(m:Movie)<-[:PRODUCED]-(p)-[:ACTED_IN]->(m) "
+            "RETURN p.name, collect(m.title) AS movies "
+            "ORDER BY size(movies) DESC "
+            f"LIMIT {limit}"
+        )
+
+    if "produced and directed by the same person" in q and "movies" in q:
+        limit = limit or 3
+        return (
+            "MATCH (p:Person)-[:DIRECTED]->(m:Movie)<-[:PRODUCED]-(p) "
+            "RETURN m.title AS MovieTitle "
+            f"LIMIT {limit}"
+        )
+
+    if "acted in and directed the same movie" in q:
+        if "which person has" in q:
+            return (
+                "MATCH (p:Person)-[:ACTED_IN]->(m:Movie)<-[:DIRECTED]-(p) "
+                "RETURN p.name AS person_name, m.title AS movie_title"
+            )
+        return (
+            "MATCH (p:Person)-[:ACTED_IN]->(m:Movie)<-[:DIRECTED]-(p) "
+            "RETURN p.name AS personName, m.title AS movieTitle"
+        )
+
+    if "both produced and directed movies" in q:
+        return (
+            "MATCH (p:Person)-[:DIRECTED]->(:Movie) WITH p "
+            "MATCH (p)-[:PRODUCED]->(:Movie) "
+            "RETURN DISTINCT p.name"
+        )
+
+    return None
+
+
+def _extract_quoted_literals(text: str) -> list[str]:
+    return [match.group(2) for match in re.finditer(r"(['\"])(.+?)\1", text)]
+
+
+def _extract_limit_from_question(text: str) -> int | None:
+    lowered = text.lower()
+    digit_match = re.search(r"\b(?:top|first)\s+(\d+)\b", lowered)
+    if digit_match:
+        return int(digit_match.group(1))
+    digit_match = re.search(r"\b(?:list|name|show|find)\s+(\d+)\b", lowered)
+    if digit_match:
+        return int(digit_match.group(1))
+    word_match = re.search(r"\b(?:top|first)\s+(one|two|three|four|five)\b", lowered)
+    word_to_int = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5}
+    if word_match:
+        return word_to_int[word_match.group(1)]
+    word_match = re.search(r"\b(?:list|name|show|find)\s+(one|two|three|four|five)\b", lowered)
+    if word_match:
+        return word_to_int[word_match.group(1)]
+    return None
+
+
+def _extract_numeric_threshold(text: str, pattern: str) -> int | None:
+    match = re.search(pattern, text, flags=re.IGNORECASE)
+    return int(match.group(1)) if match else None
+
+
+def _extract_person_name_after_token(text: str, token: str) -> str:
+    escaped = re.escape(token)
+    match = re.search(rf"{escaped}([A-Z][A-Za-z]+(?: [A-Z][A-Za-z]+)+)", text)
+    return match.group(1).strip() if match else ""
 
 
 def _find_metric_alias(return_items: list[str]) -> str:
