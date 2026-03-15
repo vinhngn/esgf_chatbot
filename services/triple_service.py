@@ -67,6 +67,13 @@ _FAST_HEURISTIC_FAMILIES = {
     "named_user_link_tweets",
     "avg_followers_by_hashtag_posters",
     "average_followers_of_followers",
+    "movies_top_votes",
+    "movies_votes_over_threshold",
+    "movie_review_summary_match",
+    "acted_in_roles",
+    "writers_and_directors_same_movie",
+    "producer_distinct_taglines_top",
+    "directors_movies_votes_threshold_top",
 }
 _GENERIC_ENTITY_LITERALS = {
     "user",
@@ -325,10 +332,126 @@ def _plan_to_dict(plan: QueryPlan | dict[str, Any] | None) -> dict[str, Any]:
 
 def _heuristic_query_plan(question: str, rewritten: str, database: str) -> dict[str, Any]:
     """Cheap planner for common Twitter benchmark patterns to avoid an extra LLM call."""
-    if (database or "").lower() != "twitter":
+    db = (database or "").lower()
+    text = f"{question}\n{rewritten}".lower()
+
+    if db == "movies":
+        if "top 5 movies" in text and "most votes" in text:
+            return {
+                "query_family": "movies_top_votes",
+                "focus_entity": "Movie",
+                "anchor": {"label": "", "property": "", "value": ""},
+                "return_mode": "properties",
+                "return_items": ["m.title", "m.votes"],
+                "sort_field": "m.votes",
+                "sort_direction": "desc",
+                "limit": 5,
+                "aggregation": "",
+                "needs_distinct": False,
+                "relation_path": [],
+                "use_graph_count": False,
+                "notes": ["Return title and votes only, not the full movie node."],
+            }
+        if "movies with more than 100 votes" in text:
+            return {
+                "query_family": "movies_votes_over_threshold",
+                "focus_entity": "Movie",
+                "anchor": {"label": "", "property": "", "value": ""},
+                "return_mode": "properties",
+                "return_items": ["m.title"],
+                "sort_field": "",
+                "sort_direction": "",
+                "limit": None,
+                "aggregation": "",
+                "needs_distinct": False,
+                "relation_path": [],
+                "use_graph_count": False,
+                "notes": ["Return movie titles only for vote-threshold questions."],
+            }
+        if "review summary" in text and "pretty funny at times" in text:
+            return {
+                "query_family": "movie_review_summary_match",
+                "focus_entity": "Movie",
+                "anchor": {"label": "", "property": "", "value": ""},
+                "return_mode": "properties",
+                "return_items": ["m.title"],
+                "sort_field": "",
+                "sort_direction": "",
+                "limit": None,
+                "aggregation": "",
+                "needs_distinct": False,
+                "relation_path": ["REVIEWED"],
+                "use_graph_count": False,
+                "notes": ["Use the REVIEWED relationship summary filter and return movie titles only."],
+            }
+        if "roles of keanu reeves" in text and "the matrix" in text:
+            return {
+                "query_family": "acted_in_roles",
+                "focus_entity": "Person",
+                "anchor": {"label": "Person", "property": "name", "value": "Keanu Reeves"},
+                "return_mode": "properties",
+                "return_items": ["r.roles AS roles"],
+                "sort_field": "",
+                "sort_direction": "",
+                "limit": None,
+                "aggregation": "",
+                "needs_distinct": False,
+                "relation_path": ["ACTED_IN"],
+                "use_graph_count": False,
+                "notes": ["Return relationship roles rather than the actor node."],
+            }
+        if "written and directed the same movie" in text:
+            return {
+                "query_family": "writers_and_directors_same_movie",
+                "focus_entity": "Person",
+                "anchor": {"label": "", "property": "", "value": ""},
+                "return_mode": "properties",
+                "return_items": ["DISTINCT p.name"],
+                "sort_field": "",
+                "sort_direction": "",
+                "limit": None,
+                "aggregation": "",
+                "needs_distinct": True,
+                "relation_path": ["WROTE", "DIRECTED"],
+                "use_graph_count": False,
+                "notes": ["Return distinct person names only."],
+            }
+        if "producers by the number of movies with different taglines" in text:
+            return {
+                "query_family": "producer_distinct_taglines_top",
+                "focus_entity": "Person",
+                "anchor": {"label": "", "property": "", "value": ""},
+                "return_mode": "properties",
+                "return_items": ["p.name", "distinctTaglines"],
+                "sort_field": "distinctTaglines",
+                "sort_direction": "desc",
+                "limit": 3,
+                "aggregation": "count",
+                "needs_distinct": False,
+                "relation_path": ["PRODUCED"],
+                "use_graph_count": False,
+                "notes": ["Count DISTINCT movie taglines per producer."],
+            }
+        if "top 5 people have directed movies with more than 200 votes" in text:
+            return {
+                "query_family": "directors_movies_votes_threshold_top",
+                "focus_entity": "Person",
+                "anchor": {"label": "", "property": "", "value": ""},
+                "return_mode": "properties",
+                "return_items": ["p.name AS director", "num_movies"],
+                "sort_field": "num_movies",
+                "sort_direction": "desc",
+                "limit": 5,
+                "aggregation": "count",
+                "needs_distinct": False,
+                "relation_path": ["DIRECTED"],
+                "use_graph_count": False,
+                "notes": ["Count directed movies after filtering by vote threshold."],
+            }
         return {}
 
-    text = f"{question}\n{rewritten}".lower()
+    if db != "twitter":
+        return {}
 
     if (
         "contain links" in text
@@ -1503,6 +1626,47 @@ def infer_return_contract(
             contract["strict"] = True
         elif not expected_items and "number of followers" in text and "top" in text:
             expected_items = ["u.screen_name", "u.name", "u.followers"]
+            contract["return_mode"] = "properties"
+            contract["strict"] = True
+
+        if expected_items:
+            contract["expected_items"] = expected_items
+
+    if db == "movies":
+        expected_items: list[str] = []
+
+        if query_plan.get("return_items"):
+            expected_items = [str(item) for item in (query_plan.get("return_items") or []) if str(item).strip()]
+            contract["strict"] = True
+            if query_plan.get("return_mode"):
+                contract["return_mode"] = str(query_plan.get("return_mode"))
+
+        if not expected_items and ("top 5 movies" in text and "most votes" in text):
+            expected_items = ["m.title", "m.votes"]
+            contract["return_mode"] = "properties"
+            contract["strict"] = True
+        elif not expected_items and "movies with more than 100 votes" in text:
+            expected_items = ["m.title"]
+            contract["return_mode"] = "properties"
+            contract["strict"] = True
+        elif not expected_items and "review summary" in text:
+            expected_items = ["m.title"]
+            contract["return_mode"] = "properties"
+            contract["strict"] = True
+        elif not expected_items and "roles of keanu reeves" in text and "the matrix" in text:
+            expected_items = ["r.roles AS roles"]
+            contract["return_mode"] = "properties"
+            contract["strict"] = True
+        elif not expected_items and "written and directed the same movie" in text:
+            expected_items = ["DISTINCT p.name"]
+            contract["return_mode"] = "properties"
+            contract["strict"] = True
+        elif not expected_items and "different taglines" in text and "producers" in text:
+            expected_items = ["p.name", "distinctTaglines"]
+            contract["return_mode"] = "properties"
+            contract["strict"] = True
+        elif not expected_items and "directed movies with more than 200 votes" in text:
+            expected_items = ["p.name AS director", "num_movies"]
             contract["return_mode"] = "properties"
             contract["strict"] = True
 

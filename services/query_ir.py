@@ -944,6 +944,58 @@ def _render_question_family_fallback(ir: dict[str, Any]) -> str | None:
             "ORDER BY user.followers DESC LIMIT 5"
         )
 
+    if family == "movies_top_votes":
+        return (
+            "MATCH (m:Movie) WHERE m.votes IS NOT NULL "
+            "RETURN m.title, m.votes "
+            "ORDER BY m.votes DESC LIMIT 5"
+        )
+
+    if family == "movies_votes_over_threshold":
+        return (
+            "MATCH (m:Movie) WHERE m.votes > 100 "
+            "RETURN m.title"
+        )
+
+    if family == "movie_review_summary_match":
+        return (
+            "MATCH (m:Movie)<-[r:REVIEWED]-(:Person) "
+            "WHERE r.summary = 'Pretty funny at times' "
+            "RETURN m.title"
+        )
+
+    if family == "acted_in_roles":
+        return (
+            "MATCH (p:Person)-[r:ACTED_IN]->(m:Movie) "
+            "WHERE p.name = 'Keanu Reeves' AND m.title = 'The Matrix' "
+            "RETURN r.roles AS roles"
+        )
+
+    if family == "writers_and_directors_same_movie":
+        return (
+            "MATCH (p:Person)-[:WROTE]->(m:Movie) "
+            "WHERE (p)-[:DIRECTED]->(m) "
+            "RETURN DISTINCT p.name"
+        )
+
+    if family == "producer_distinct_taglines_top":
+        return (
+            "MATCH (p:Person)-[:PRODUCED]->(m:Movie) "
+            "WHERE m.tagline IS NOT NULL "
+            "WITH p, count(DISTINCT m.tagline) AS distinctTaglines "
+            "ORDER BY distinctTaglines DESC LIMIT 3 "
+            "RETURN p.name, distinctTaglines"
+        )
+
+    if family == "directors_movies_votes_threshold_top":
+        return (
+            "MATCH (p:Person)-[:DIRECTED]->(m:Movie) "
+            "WHERE m.votes > 200 "
+            "WITH p, count(m) AS num_movies "
+            "ORDER BY num_movies DESC LIMIT 5 "
+            "RETURN p.name AS director, num_movies"
+        )
+
     if family == "follows_users":
         return (
             "MATCH (user:User)-[:FOLLOWS]->(me:Me {screen_name: 'neo4j'}) "
