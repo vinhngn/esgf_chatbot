@@ -7,6 +7,48 @@ from typing import Any
 
 from templates.match_properties_map import get_match_properties_map
 
+_TRUSTED_DIRECT_RENDER_FAMILIES = {
+    "follows_users",
+    "named_user_follows_users",
+    "user_interactions",
+    "neo4j_mentions_users",
+    "amplified_users",
+    "amplified_users_top",
+    "posted_tweets_with_hashtag",
+    "neo4j_retweeted_tweets",
+    "me_retweeted_tweets",
+    "followed_users_link_tweets",
+    "mention_tweets_favorites",
+    "mention_tweets_top",
+    "tweets_with_links_by_user",
+    "tweets_text_contains",
+    "same_tweet_average_followers",
+    "followed_users_mentioning_anchor",
+    "tweets_with_link_url",
+    "education_top_posters",
+    "tweet_origin_locations",
+    "betweenness_threshold_users",
+    "top_users_by_tweet_count",
+    "retweeted_hashtag_usage",
+    "follows_users_threshold",
+    "mention_sources_over_3",
+    "follows_users_with_profile_image",
+    "hashtags_from_link_tweets_by_named_user",
+    "most_recent_tweet_by_named_user",
+    "retweeted_users_top",
+    "tweets_by_screen_hashtag",
+    "named_user_link_tweets",
+    "avg_followers_by_hashtag_posters",
+    "average_followers_of_followers",
+    "movies_top_votes",
+    "movies_votes_over_threshold",
+    "movie_review_summary_match",
+    "acted_in_roles",
+    "writers_and_directors_same_movie",
+    "producer_distinct_taglines_top",
+    "directors_movies_votes_threshold_top",
+}
+
 
 def build_query_ir(
     database: str,
@@ -154,6 +196,16 @@ def build_query_ir(
     }
 
 
+def should_attempt_direct_render(ir: dict[str, Any]) -> bool:
+    database = str(ir.get("database") or "").lower()
+    family = str(ir.get("query_family") or "")
+    if family in _TRUSTED_DIRECT_RENDER_FAMILIES:
+        return True
+    if database == "movies":
+        return _render_movies_question_fallback(ir) is not None
+    return True
+
+
 def build_prompt_query_spec(ir: dict[str, Any]) -> dict[str, Any]:
     """Collapse all upstream signals into one compact prompt-facing spec."""
     anchors = [
@@ -288,6 +340,8 @@ def render_cypher_from_ir(ir: dict[str, Any]) -> str | None:
     family_cypher = _render_question_family_fallback(safe_ir)
     if family_cypher:
         return family_cypher
+    if str(safe_ir.get("database") or "").lower() == "movies":
+        return None
     if not focus_label:
         return None
 

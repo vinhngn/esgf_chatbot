@@ -38,7 +38,7 @@ from templates.entity_definitions import get_entity_definitions
 from templates.match_properties_map import get_match_properties_map
 from utils.helpers import normalize_value
 
-from services.query_ir import build_query_ir, render_cypher_from_ir
+from services.query_ir import build_query_ir, render_cypher_from_ir, should_attempt_direct_render
 from services.triple_service import build_enhanced_question, extract_triples_with_retry
 
 logger = logging.getLogger(__name__)
@@ -231,7 +231,7 @@ def _run_pipeline(
         conversation_history=conversation_history,
     )
 
-    direct_cypher = render_cypher_from_ir(query_ir)
+    direct_cypher = render_cypher_from_ir(query_ir) if should_attempt_direct_render(query_ir) else None
     if direct_cypher:
         schema_issues = _validate_direct_cypher_against_schema(
             direct_cypher,

@@ -75,6 +75,15 @@ _FAST_HEURISTIC_FAMILIES = {
     "producer_distinct_taglines_top",
     "directors_movies_votes_threshold_top",
 }
+_TRUSTED_MOVIES_FAMILIES = {
+    "movies_top_votes",
+    "movies_votes_over_threshold",
+    "movie_review_summary_match",
+    "acted_in_roles",
+    "writers_and_directors_same_movie",
+    "producer_distinct_taglines_top",
+    "directors_movies_votes_threshold_top",
+}
 _GENERIC_ENTITY_LITERALS = {
     "user",
     "users",
@@ -1634,41 +1643,13 @@ def infer_return_contract(
 
     if db == "movies":
         expected_items: list[str] = []
+        trusted_family = str(query_plan.get("query_family") or "") in _TRUSTED_MOVIES_FAMILIES
 
-        if query_plan.get("return_items"):
+        if trusted_family and query_plan.get("return_items"):
             expected_items = [str(item) for item in (query_plan.get("return_items") or []) if str(item).strip()]
             contract["strict"] = True
             if query_plan.get("return_mode"):
                 contract["return_mode"] = str(query_plan.get("return_mode"))
-
-        if not expected_items and ("top 5 movies" in text and "most votes" in text):
-            expected_items = ["m.title", "m.votes"]
-            contract["return_mode"] = "properties"
-            contract["strict"] = True
-        elif not expected_items and "movies with more than 100 votes" in text:
-            expected_items = ["m.title"]
-            contract["return_mode"] = "properties"
-            contract["strict"] = True
-        elif not expected_items and "review summary" in text:
-            expected_items = ["m.title"]
-            contract["return_mode"] = "properties"
-            contract["strict"] = True
-        elif not expected_items and "roles of keanu reeves" in text and "the matrix" in text:
-            expected_items = ["r.roles AS roles"]
-            contract["return_mode"] = "properties"
-            contract["strict"] = True
-        elif not expected_items and "written and directed the same movie" in text:
-            expected_items = ["DISTINCT p.name"]
-            contract["return_mode"] = "properties"
-            contract["strict"] = True
-        elif not expected_items and "different taglines" in text and "producers" in text:
-            expected_items = ["p.name", "distinctTaglines"]
-            contract["return_mode"] = "properties"
-            contract["strict"] = True
-        elif not expected_items and "directed movies with more than 200 votes" in text:
-            expected_items = ["p.name AS director", "num_movies"]
-            contract["return_mode"] = "properties"
-            contract["strict"] = True
 
         if expected_items:
             contract["expected_items"] = expected_items
