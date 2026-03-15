@@ -1429,14 +1429,306 @@ MATCH (me:Me {{screen_name: 'neo4j'}})-[:FOLLOWS]->(user:User) RETURN user.name,
 
 
 # =============================================================================
+# ACTIVE SLIM TEMPLATES
+# =============================================================================
+# Legacy prompt blocks above are kept as reference. The active prompt path now
+# uses a single generic skeleton for every database, with only domain facts,
+# hints, and representative examples changing per database.
+
+
+def _escape_prompt_block(text: str) -> str:
+    """Escape literal braces while keeping PromptTemplate placeholders external."""
+    return text.strip().replace("{", "{{").replace("}", "}}")
+
+
+def _build_generic_cypher_template(
+    domain_name: str,
+    domain_facts: str,
+    domain_hints: str,
+    examples: str,
+) -> str:
+    return (
+        f"You are a Cypher expert for the Neo4j {domain_name} graph database.\n\n"
+        "CRITICAL: Output ONLY the raw Cypher query. NO markdown, NO code blocks, NO explanation.\n\n"
+        "=== SCHEMA ===\n"
+        "{schema}\n\n"
+        "=== CORE RULES ===\n"
+        "- Use only node labels, relationship types, and property names that appear in the schema.\n"
+        "- Never invent new labels, relationships, directions, or shortcut properties.\n"
+        "- Follow the relationship direction shown in the schema.\n"
+        "- Reuse the same variable when the same entity must satisfy multiple relationships.\n"
+        "- If the question asks for entities themselves, return full nodes.\n"
+        "- If the question asks for names, titles, identifiers, roles, summaries, counts, averages, or metrics, return only those requested columns.\n"
+        "- Return every requested column and do not add extra columns.\n"
+        "- Use DISTINCT only when joins can duplicate rows and the question asks for unique entities.\n"
+        "- Use ORDER BY together with LIMIT for top / first / most / least patterns.\n"
+        "- Prefer exact equality for explicit names or titles unless the question asks for partial text matching.\n"
+        "- If a needed element is ambiguous, resolve it using the schema and domain hints below rather than inventing new schema elements.\n\n"
+        "=== DOMAIN FACTS ===\n"
+        f"{_escape_prompt_block(domain_facts)}\n\n"
+        "=== DOMAIN HINTS ===\n"
+        f"{_escape_prompt_block(domain_hints)}\n\n"
+        "=== EXAMPLES ===\n"
+        f"{_escape_prompt_block(examples)}\n\n"
+        "{question}\n"
+    )
+
+
+_GENERIC_TEMPLATE_CONFIGS = {
+    "climate": {
+        "domain_name": "Climate Science",
+        "facts": """
+- Main labels include Source, RCM, Variable, Experiment, Institute, SourceComponent, Realm, Country, Country_Subdivision, and Continent.
+- PRODUCES_VARIABLE links Source to Variable.
+- USED_IN_EXPERIMENT links Source to Experiment.
+- PRODUCED_BY_INSTITUTE links Source to Institute.
+- HAS_SOURCE_COMPONENT links Source to SourceComponent.
+- APPLIES_TO_REALM links Source to Realm.
+- DRIVEN_BY_SOURCE links RCM to Source.
+- COVERS_REGION links RCM to a region node.
+""",
+        "hints": """
+- Use exact variable names like pr and tas when the question names a climate variable explicitly.
+- For global climate models, follow the Source -> IS_OF_TYPE -> SourceType pattern.
+- For RCM questions, center the query on RCM and then traverse to regions or driving sources.
+- When listing models or sources, returning the full node is acceptable unless the question explicitly asks for a property.
+- For aggregation questions such as "how many" or "which institute has the most", return the metric column with the entity.
+""",
+        "examples": """
+Q: Show all climate models that include the variable 'pr'.
+MATCH (s:Source)-[:PRODUCES_VARIABLE]->(v:Variable {name: 'pr'})
+RETURN s
+LIMIT 50
+
+Q: Which variables are associated with the experiment historical?
+MATCH (e:Experiment {name: 'historical'})<-[:USED_IN_EXPERIMENT]-(s:Source)
+MATCH (s)-[:PRODUCES_VARIABLE]->(v:Variable)
+RETURN DISTINCT v.name, v.cf_standard_name
+LIMIT 50
+
+Q: Which institute has produced the most climate models?
+MATCH (i:Institute)<-[:PRODUCED_BY_INSTITUTE]-(s:Source)
+WITH i, count(s) AS model_count
+ORDER BY model_count DESC
+LIMIT 1
+RETURN i.name, model_count
+""",
+    },
+    "movies": {
+        "domain_name": "Movies",
+        "facts": """
+- Node labels include Person(name, born) and Movie(title, released, votes, tagline).
+- ACTED_IN has relationship property roles: LIST<STRING>.
+- REVIEWED has relationship properties summary: STRING and rating: INTEGER.
+- DIRECTED, PRODUCED, WROTE, and FOLLOWS are plain relationships without those properties.
+- In this graph, review rating/summary are on REVIEWED, not on Movie.
+- In this graph, roles are on ACTED_IN, not on Person.
+""",
+        "hints": """
+- If the question asks for movies or people themselves, return full nodes.
+- If the question asks for titles or names, project m.title or p.name instead of returning full nodes.
+- "roles" means r.roles on ACTED_IN.
+- "review summary" or "review rating" means properties on REVIEWED.
+- "same person wrote and directed" means reuse the same Person variable on both paths.
+- "movies with most roles" means size(r.roles) per ACTED_IN relationship unless the question explicitly says total or combined.
+""",
+        "examples": """
+Q: What are the roles of Keanu Reeves in 'The Matrix'?
+MATCH (p:Person {name: 'Keanu Reeves'})-[r:ACTED_IN]->(m:Movie {title: 'The Matrix'})
+RETURN r.roles AS roles
+
+Q: List all movies with a 'Pretty funny at times' review summary.
+MATCH (:Person)-[r:REVIEWED]->(m:Movie)
+WHERE r.summary = 'Pretty funny at times'
+RETURN m
+
+Q: Find all movies with a rating above 90.
+MATCH (:Person)-[r:REVIEWED]->(m:Movie)
+WHERE r.rating > 90
+RETURN m
+
+Q: Which movies have been both written and directed by the same person and what are their titles?
+MATCH (p:Person)-[:WROTE]->(m:Movie)<-[:DIRECTED]-(p)
+RETURN m.title AS movie_title
+
+Q: List the names of people who acted in movies directed by Nancy Meyers.
+MATCH (director:Person {name: 'Nancy Meyers'})-[:DIRECTED]->(m:Movie)
+MATCH (actor:Person)-[:ACTED_IN]->(m)
+RETURN DISTINCT actor.name
+
+Q: Who are the top 3 producers by the number of movies with different taglines?
+MATCH (p:Person)-[:PRODUCED]->(m:Movie)
+WITH p, count(DISTINCT m.tagline) AS distinctTaglines
+ORDER BY distinctTaglines DESC
+LIMIT 3
+RETURN p.name, distinctTaglines
+""",
+    },
+    "recommendations": {
+        "domain_name": "Movie Recommendations",
+        "facts": """
+- Main labels include Movie, User, Genre, and person-like labels such as Actor or Director depending on the schema.
+- Users rate movies through the RATED relationship, which has rating as a relationship property.
+- Movies store IMDb-style properties such as imdbRating, imdbVotes, budget, revenue, year, released, countries, languages, and runtime when present in the schema.
+- IN_GENRE links Movie to Genre.
+- ACTED_IN and DIRECTED connect people to Movie.
+""",
+        "hints": """
+- Distinguish user ratings on RATED from IMDb-style rating on Movie.
+- For "top N movies with highest/lowest X", return the movie node unless the question explicitly asks for properties only.
+- For "first N movies with filter", prefer returning the requested properties instead of extra columns.
+- For "same person acted and directed", reuse the same person variable.
+- For language/country list questions, use size(listProperty) for per-movie counts and UNWIND only when aggregating across many movies.
+- For max/min style questions, use Cypher WITH patterns rather than SQL-like subqueries.
+""",
+        "examples": """
+Q: List movies released before 2000.
+MATCH (m:Movie)
+WHERE m.year < 2000
+RETURN m.title
+
+Q: What are the top 5 highest-rated movies by users?
+MATCH (m:Movie)<-[r:RATED]-(:User)
+WITH m, avg(r.rating) AS avgRating
+ORDER BY avgRating DESC
+LIMIT 5
+RETURN m.title AS movie, avgRating
+
+Q: Which country has produced the most movies?
+MATCH (m:Movie)
+UNWIND m.countries AS country
+WITH country, count(*) AS movieCount
+ORDER BY movieCount DESC
+LIMIT 1
+RETURN country, movieCount
+
+Q: Which movies have been both acted in and directed by the same person?
+MATCH (p)-[:ACTED_IN]->(m:Movie)<-[:DIRECTED]-(p)
+RETURN DISTINCT m.title
+
+Q: What is the average runtime of movies directed by the same director as "Open Season"?
+MATCH (ref:Movie {title: 'Open Season'})<-[:DIRECTED]-(d)
+MATCH (d)-[:DIRECTED]->(m:Movie)
+RETURN avg(m.runtime) AS averageRuntime
+""",
+    },
+    "northwind": {
+        "domain_name": "Northwind",
+        "facts": """
+- Main labels include Customer, Order, Product, Supplier, and Category.
+- Customer PURCHASED Order.
+- Order ORDERS Product, and the ORDERS relationship carries unitPrice, quantity, and discount.
+- Supplier SUPPLIES Product.
+- Product PART_OF Category.
+- Name-like properties are categoryName on Category, companyName on Customer and Supplier, and productName on Product.
+""",
+        "hints": """
+- If the question asks for the first N orders or products, returning the full node is usually appropriate.
+- If the question asks for company names, product names, or category names, project those explicit properties.
+- Revenue-like calculations should use relationship values on ORDERS, typically toFloat(r.unitPrice) * r.quantity.
+- For "most" or "top N" questions, return both the entity identifier and the metric.
+- For "least/fewest", prefer the minimum positive count when the question implies existing relationships rather than returning zero rows by mistake.
+""",
+        "examples": """
+Q: List the first 3 orders shipped to France.
+MATCH (o:Order)
+WHERE o.shipCountry = 'France'
+RETURN o
+LIMIT 3
+
+Q: Which 3 suppliers supply the most products?
+MATCH (s:Supplier)-[:SUPPLIES]->(p:Product)
+WITH s, count(p) AS productCount
+ORDER BY productCount DESC
+LIMIT 3
+RETURN s.companyName AS supplierName, productCount
+
+Q: What is the average unitPrice of products ordered in quantities greater than 10?
+MATCH (:Order)-[r:ORDERS]->(:Product)
+WHERE r.quantity > 10
+RETURN avg(toFloat(r.unitPrice)) AS avgPrice
+
+Q: Find all suppliers that supply discontinued products.
+MATCH (s:Supplier)-[:SUPPLIES]->(p:Product)
+WHERE p.discontinued = true
+RETURN s.companyName
+
+Q: List all suppliers that provide products to the 'Dairy Products' category.
+MATCH (s:Supplier)-[:SUPPLIES]->(p:Product)-[:PART_OF]->(c:Category {categoryName: 'Dairy Products'})
+RETURN s.companyName
+""",
+    },
+    "twitter": {
+        "domain_name": "Twitter",
+        "facts": """
+- Main labels include Me, User, Tweet, Hashtag, Link, and Source.
+- POSTS connects Me or User to Tweet.
+- RETWEETS connects a retweet tweet to the original tweet.
+- MENTIONS connects Tweet to User or Me.
+- TAGS connects Tweet to Hashtag.
+- CONTAINS connects Tweet to Link.
+- FOLLOWS connects accounts.
+- AMPLIFIES links Me to User.
+- INTERACTS_WITH, REPLY_TO, SIMILAR_TO, RT_MENTIONS, and USING are graph-specific relations that must be used exactly as they appear in the schema.
+""",
+        "hints": """
+- Use Me for questions about my account or explicit 'Me'; use User for other accounts unless the schema facts/examples indicate otherwise.
+- Use screen_name for handle-like values such as 'neo4j'; use name when the wording explicitly says named 'Neo4j'.
+- If the question asks for tweets themselves, return tweet nodes unless explicit tweet fields are requested.
+- For retweeted tweets by an account, traverse account -> POSTS -> retweet tweet -> RETWEETS -> original tweet.
+- For mention questions, centralize Tweet in the path: poster -> POSTS -> tweet -> MENTIONS -> mentioned user.
+- "most frequently" without a number usually implies LIMIT 1.
+""",
+        "examples": """
+Q: Who are the top 5 users that a specific user named 'Neo4j' follows?
+MATCH (me:Me {name: 'Neo4j'})-[:FOLLOWS]->(user:User)
+RETURN user.name, user.screen_name, user.followers, user.following
+ORDER BY user.followers DESC
+LIMIT 5
+
+Q: Show the first 3 tweets that 'Me' has retweeted.
+MATCH (me:Me)-[:POSTS]->(retweet:Tweet)-[:RETWEETS]->(original:Tweet)
+RETURN original
+ORDER BY original.created_at ASC
+LIMIT 3
+
+Q: Who are the users that 'neo4j' mentions most frequently in their tweets?
+MATCH (u:User {screen_name: 'neo4j'})-[:POSTS]->(t:Tweet)-[:MENTIONS]->(mentioned:User)
+RETURN mentioned.screen_name, count(t) AS mentions_count
+ORDER BY mentions_count DESC
+
+Q: Find all tweets posted by 'Neo4j' containing a hashtag.
+MATCH (u:User {name: 'Neo4j'})-[:POSTS]->(t:Tweet)-[:TAGS]->(h:Hashtag)
+RETURN t, h
+
+Q: Which users are amplified by 'Me' according to the AMPLIFIES relationship?
+MATCH (me:Me)-[:AMPLIFIES]->(user:User)
+RETURN user.screen_name AS AmplifiedUser
+""",
+    },
+}
+
+
+_ACTIVE_GENERIC_TEMPLATE_MAP = {
+    db_name: _build_generic_cypher_template(
+        domain_name=config["domain_name"],
+        domain_facts=config["facts"],
+        domain_hints=config["hints"],
+        examples=config["examples"],
+    )
+    for db_name, config in _GENERIC_TEMPLATE_CONFIGS.items()
+}
+
+
+# =============================================================================
 # TEMPLATE SELECTOR
 # =============================================================================
 _TEMPLATE_MAP = {
-    "climate": CYPHER_GENERATION_CLIMATE_TEMPLATE,
-    "movies": CYPHER_GENERATION_MOVIES_TEMPLATE,
-    "recommendations": CYPHER_GENERATION_RECOMMENDATIONS_TEMPLATE,
-    "northwind": CYPHER_GENERATION_NORTHWIND_TEMPLATE,
-    "twitter": CYPHER_GENERATION_TWITTER_TEMPLATE,
+    "climate": _ACTIVE_GENERIC_TEMPLATE_MAP["climate"],
+    "movies": _ACTIVE_GENERIC_TEMPLATE_MAP["movies"],
+    "recommendations": _ACTIVE_GENERIC_TEMPLATE_MAP["recommendations"],
+    "northwind": _ACTIVE_GENERIC_TEMPLATE_MAP["northwind"],
+    "twitter": _ACTIVE_GENERIC_TEMPLATE_MAP["twitter"],
 }
 
 
