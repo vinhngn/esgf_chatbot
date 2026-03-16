@@ -1457,9 +1457,10 @@ def _build_generic_cypher_template(
         "- Never invent new labels, relationships, directions, or shortcut properties.\n"
         "- Follow the relationship direction shown in the schema.\n"
         "- Reuse the same variable when the same entity must satisfy multiple relationships.\n"
-        "- If the question asks for entities themselves, return full nodes.\n"
+        "- Return full nodes only when the question clearly asks for the entity itself and does not ask for specific fields, relationship properties, or metrics.\n"
         "- If the question asks for names, titles, identifiers, roles, summaries, counts, averages, or metrics, return only those requested columns.\n"
         "- Return every requested column and do not add extra columns.\n"
+        "- If the query uses COUNT, AVG, SUM, size(...), or DISTINCT for ranking/filtering, keep the resulting metric column in RETURN.\n"
         "- Use DISTINCT only when joins can duplicate rows and the question asks for unique entities.\n"
         "- Use ORDER BY together with LIMIT for top / first / most / least patterns.\n"
         "- Prefer exact equality for explicit names or titles unless the question asks for partial text matching.\n"
@@ -1525,12 +1526,16 @@ RETURN i.name, model_count
 - In this graph, roles are on ACTED_IN, not on Person.
 """,
         "hints": """
-- If the question asks for movies or people themselves, return full nodes.
-- If the question asks for titles or names, project m.title or p.name instead of returning full nodes.
+- Return full Movie or Person nodes only for simple entity retrieval questions.
+- If the question asks for titles, names, birth years, released years, roles, ratings, summaries, or counts, project those fields instead of returning full nodes.
+- For "who" / "which people" / "which persons" / "which actors" / "which directors", prefer p.name plus the requested metric or context column, not the full Person node.
+- For "first N movies ..." with an explicit year, vote threshold, rating, or other scalar condition, prefer projected columns such as m.title and the relevant field.
 - "roles" means r.roles on ACTED_IN.
 - "review summary" or "review rating" means properties on REVIEWED.
 - "same person wrote and directed" means reuse the same Person variable on both paths.
 - "movies with most roles" means size(r.roles) per ACTED_IN relationship unless the question explicitly says total or combined.
+- If the filter or ranking is based on REVIEWED or ACTED_IN relationship properties, return the movie/person identifier together with those relationship properties or derived metrics.
+- For ranking or aggregation questions, keep the aggregate column in RETURN.
 """,
         "examples": """
 Q: What are the roles of Keanu Reeves in 'The Matrix'?
@@ -1545,7 +1550,7 @@ RETURN m
 Q: Find all movies with a rating above 90.
 MATCH (:Person)-[r:REVIEWED]->(m:Movie)
 WHERE r.rating > 90
-RETURN m
+RETURN m.title, r.rating
 
 Q: Which movies have been both written and directed by the same person and what are their titles?
 MATCH (p:Person)-[:WROTE]->(m:Movie)<-[:DIRECTED]-(p)
@@ -1562,6 +1567,68 @@ WITH p, count(DISTINCT m.tagline) AS distinctTaglines
 ORDER BY distinctTaglines DESC
 LIMIT 3
 RETURN p.name, distinctTaglines
+
+Q: Which top 5 people have directed movies with more than 200 votes?
+MATCH (p:Person)-[:DIRECTED]->(m:Movie)
+WHERE m.votes > 200
+WITH p, count(m) AS num_movies
+ORDER BY num_movies DESC
+LIMIT 5
+RETURN p.name AS director, num_movies
+
+Q: What are the first 3 movies with a released year of 2008?
+MATCH (m:Movie)
+WHERE m.released = 2008
+RETURN m.title, m.released
+ORDER BY m.title
+LIMIT 3
+
+Q: Who are the first 3 actors in the movie titled 'Speed Racer'?
+MATCH (p:Person)-[r:ACTED_IN]->(m:Movie {title: 'Speed Racer'})
+RETURN p.name, r.roles
+LIMIT 3
+
+Q: Which persons have acted in and directed the same movie?
+MATCH (p:Person)-[:ACTED_IN]->(m:Movie)<-[:DIRECTED]-(p)
+RETURN p.name AS personName, m.title AS movieTitle
+
+Q: List the top 5 movies with the most roles listed in ACTED_IN relationship.
+MATCH (m:Movie)<-[r:ACTED_IN]-(:Person)
+RETURN m.title AS movie, size(r.roles) AS roleCount
+ORDER BY roleCount DESC
+LIMIT 5
+
+Q: Which movie has the most roles in the 'ACTED_IN' relationship and what are those roles?
+MATCH (:Person)-[r:ACTED_IN]->(m:Movie)
+RETURN m.title AS Movie, r.roles AS Roles
+ORDER BY size(r.roles) DESC
+LIMIT 1
+
+Q: Who reviewed the movie with the highest rating and what was the summary?
+MATCH (m:Movie)<-[r:REVIEWED]-(p:Person)
+WITH m, r, p
+ORDER BY r.rating DESC
+LIMIT 1
+RETURN p.name AS reviewer, r.summary AS review_summary
+
+Q: Find the top 5 movies with the lowest ratings in REVIEWS.
+MATCH (:Person)-[r:REVIEWED]->(m:Movie)
+RETURN m.title AS movie, AVG(r.rating) AS average_rating
+ORDER BY average_rating ASC
+LIMIT 5
+
+Q: Which 3 persons have the most distinct roles in the ACTED_IN relationship?
+MATCH (p:Person)-[r:ACTED_IN]->(:Movie)
+WITH p, count(DISTINCT r.roles) AS distinctRoles
+ORDER BY distinctRoles DESC
+LIMIT 3
+RETURN p.name, distinctRoles
+
+Q: List the top 5 people who have produced the most number of movies with their birth years.
+MATCH (p:Person)-[:PRODUCED]->(m:Movie)
+RETURN p.name, p.born, count(m) AS movies_produced
+ORDER BY movies_produced DESC
+LIMIT 5
 """,
     },
     "recommendations": {
