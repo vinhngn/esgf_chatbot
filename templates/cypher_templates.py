@@ -1642,10 +1642,14 @@ LIMIT 5
 """,
         "hints": """
 - Distinguish user ratings on RATED from IMDb-style rating on Movie.
-- For "top N movies with highest/lowest X", return the movie node unless the question explicitly asks for properties only.
+- For "top N movies with highest/lowest X", return the movie node only when the question truly asks for the movie itself; otherwise return the requested title plus metric columns.
 - For "first N movies with filter", prefer returning the requested properties instead of extra columns.
+- For user ranking questions, return u.userId, u.name, and the metric when those fields are requested.
+- If the question asks for movie title together with IMDb rating, revenue, budget, year, released date, or a rating on RATED, keep all of those columns in RETURN.
 - For "same person acted and directed", reuse the same person variable.
-- For language/country list questions, use size(listProperty) for per-movie counts and UNWIND only when aggregating across many movies.
+- For language/country list questions, keep list semantics explicit: use membership checks like 'USA' IN m.countries, NOT 'English' IN m.languages, and use collect(DISTINCT ...) or count(DISTINCT ...) only when the question is about distinct coverage across many movies.
+- For timestamp questions on RATED, compare against the relationship timestamp field, not against the calendar year directly.
+- For ratio / difference / average queries, keep the computed metric column in RETURN.
 - For max/min style questions, use Cypher WITH patterns rather than SQL-like subqueries.
 """,
         "examples": """
@@ -1677,6 +1681,55 @@ Q: What is the average runtime of movies directed by the same director as "Open 
 MATCH (ref:Movie {title: 'Open Season'})<-[:DIRECTED]-(d)
 MATCH (d)-[:DIRECTED]->(m:Movie)
 RETURN avg(m.runtime) AS averageRuntime
+
+Q: List the top 5 users who have given the highest average ratings to movies.
+MATCH (u:User)-[r:RATED]->(:Movie)
+WITH u, avg(r.rating) AS avgRating
+ORDER BY avgRating DESC
+LIMIT 5
+RETURN u.userId, u.name, avgRating
+
+Q: What are the IMDb ratings of movies that have a plot mentioning 'evil exterminator'?
+MATCH (m:Movie)
+WHERE m.plot CONTAINS 'evil exterminator'
+RETURN m.title, m.imdbRating
+
+Q: List the top 3 movies with the highest budget to revenue ratio.
+MATCH (m:Movie)
+WHERE m.budget IS NOT NULL AND m.revenue IS NOT NULL AND m.revenue > 0
+RETURN m.title, m.budget, m.revenue, (toFloat(m.budget) / m.revenue) AS budgetToRevenueRatio
+ORDER BY budgetToRevenueRatio DESC
+LIMIT 3
+
+Q: Which 5 directors have directed movies in more than three different countries?
+MATCH (d:Director)-[:DIRECTED]->(m:Movie)
+WITH d, count(DISTINCT m.countries) AS numCountries
+WHERE numCountries > 3
+RETURN d.name, numCountries
+ORDER BY numCountries DESC
+LIMIT 5
+
+Q: Which three actors have acted in movies in more than 3 different languages?
+MATCH (a:Actor)-[:ACTED_IN]->(m:Movie)
+WITH a, count(DISTINCT m.languages) AS numLanguages
+WHERE numLanguages > 3
+RETURN a.name, numLanguages
+ORDER BY numLanguages DESC
+LIMIT 3
+
+Q: What are the first 3 movies with the most number of associated actors?
+MATCH (m:Movie)<-[:ACTED_IN]-(a:Actor)
+WITH m, count(a) AS actorCount
+ORDER BY actorCount DESC
+LIMIT 3
+RETURN m.title AS movieTitle, actorCount
+
+Q: List the top 5 movies that have been rated after 2015.
+MATCH (u:User)-[r:RATED]->(m:Movie)
+WHERE r.timestamp > 1451606400
+RETURN m.title, m.year, r.rating
+ORDER BY r.timestamp DESC
+LIMIT 5
 """,
     },
     "northwind": {

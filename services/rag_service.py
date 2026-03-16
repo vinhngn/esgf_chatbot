@@ -14,8 +14,11 @@ get_raw_results()   calls _run_pipeline() then returns raw DB result only.
 
 from __future__ import annotations
 
+import copy
 import logging
+import threading
 import urllib.parse
+from collections import OrderedDict
 
 from config import get_settings
 from models.chain import invoke_chain
@@ -30,6 +33,9 @@ from utils.helpers import normalize_value
 from services.triple_service import build_enhanced_question, extract_triples_with_retry
 
 logger = logging.getLogger(__name__)
+_PIPELINE_CACHE_MAXSIZE = 512
+_pipeline_cache: "OrderedDict[tuple[str, str], dict]" = OrderedDict()
+_pipeline_cache_lock = threading.Lock()
 
 # Neo4j browser base URL
 NEO4J_BROWSER_URL = "https://neoforjcmip.templeuni.com/browser/"
@@ -74,6 +80,25 @@ def _is_empty_result(result) -> bool:
     return False
 
 
+def _get_cached_pipeline(database: str, question: str) -> dict | None:
+    key = (database, question.strip())
+    with _pipeline_cache_lock:
+        cached = _pipeline_cache.get(key)
+        if cached is None:
+            return None
+        _pipeline_cache.move_to_end(key)
+        return copy.deepcopy(cached)
+
+
+def _set_cached_pipeline(database: str, question: str, payload: dict) -> None:
+    key = (database, question.strip())
+    with _pipeline_cache_lock:
+        _pipeline_cache[key] = copy.deepcopy(payload)
+        _pipeline_cache.move_to_end(key)
+        while len(_pipeline_cache) > _PIPELINE_CACHE_MAXSIZE:
+            _pipeline_cache.popitem(last=False)
+
+
 # ---------------------------------------------------------------------------
 # Core shared pipeline (steps 1-3)
 # ---------------------------------------------------------------------------
@@ -99,6 +124,12 @@ def _run_pipeline(
         decoded_query      : str | None
     """
     db_name = get_settings().database_name
+    if not conversation_history:
+        cached = _get_cached_pipeline(db_name, question)
+        if cached is not None:
+            logger.info("[RAGService] cache hit for %s", question)
+            return cached
+
     interpreter_llm = get_interpreter_llm()
     graph = get_graph()
     schema_labels = get_schema_labels()
@@ -137,7 +168,7 @@ def _run_pipeline(
         else (None, None)
     )
 
-    return {
+    payload = {
         "rewritten": rewritten,
         "verified_triples": verified_triples,
         "instance_triples": instance_triples,
@@ -145,6 +176,9 @@ def _run_pipeline(
         "encoded_query": encoded_query,
         "decoded_query": decoded_query,
     }
+    if not conversation_history:
+        _set_cached_pipeline(db_name, question, payload)
+    return payload
 
 
 # ---------------------------------------------------------------------------

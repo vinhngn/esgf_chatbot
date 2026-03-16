@@ -17,6 +17,8 @@ from __future__ import annotations
 
 import logging
 import re
+import threading
+from collections import OrderedDict
 
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_neo4j import Neo4jGraph
@@ -27,6 +29,9 @@ from utils.helpers import strip_quotes
 logger = logging.getLogger(__name__)
 
 MAX_ATTEMPTS = 3
+_INSTANCE_CACHE_MAXSIZE = 1024
+_instance_cache: "OrderedDict[tuple[str, str], list[tuple[str, str, str]]]" = OrderedDict()
+_instance_cache_lock = threading.Lock()
 
 
 # ---------------------------------------------------------------------------
@@ -50,6 +55,32 @@ def _parse_triple_response(response: str) -> tuple[str, list[tuple[str, str, str
                 )
 
     return rewritten, triples
+
+
+def _get_cached_instance_matches(
+    database: str,
+    literal: str,
+) -> list[tuple[str, str, str]] | None:
+    key = (database, literal.lower())
+    with _instance_cache_lock:
+        cached = _instance_cache.get(key)
+        if cached is None:
+            return None
+        _instance_cache.move_to_end(key)
+        return list(cached)
+
+
+def _set_cached_instance_matches(
+    database: str,
+    literal: str,
+    matches: list[tuple[str, str, str]],
+) -> None:
+    key = (database, literal.lower())
+    with _instance_cache_lock:
+        _instance_cache[key] = list(matches)
+        _instance_cache.move_to_end(key)
+        while len(_instance_cache) > _INSTANCE_CACHE_MAXSIZE:
+            _instance_cache.popitem(last=False)
 
 
 # ---------------------------------------------------------------------------
@@ -215,6 +246,14 @@ def verify_triples(
     #   2. List   query  – any(item IN n.prop WHERE toLower(item) = toLower($name))
     # The list query is only attempted when the scalar query raises a TypeError.
     for literal in literals:
+        cached_matches = _get_cached_instance_matches(database, literal)
+        if cached_matches is not None:
+            for triple in cached_matches:
+                if triple not in instance_triples:
+                    instance_triples.append(triple)
+            continue
+
+        literal_matches: list[tuple[str, str, str]] = []
         for label in schema_labels:
             properties_to_try = match_map.get(label, ["name"])
             for prop in properties_to_try:
@@ -269,6 +308,8 @@ def verify_triples(
 
                 if found:
                     triple = (literal, "instanceOf", label)
+                    if triple not in literal_matches:
+                        literal_matches.append(triple)
                     if triple not in instance_triples:
                         instance_triples.append(triple)
                         logger.info(
@@ -277,6 +318,7 @@ def verify_triples(
                             label,
                         )
                     break  # found in this label, no need to check other props
+        _set_cached_instance_matches(database, literal, literal_matches)
 
     # Validate structural triples against schema
     for s, p, o in triples:
