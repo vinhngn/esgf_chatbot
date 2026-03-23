@@ -434,16 +434,13 @@ def build_enhanced_question(
       - Recent conversation history (last 3 turns)
       - Original question
       - Rewritten (clarified) question
-      - Verified triples (schema-validated)
-      - Instance triples (actual DB entity matches)
-    """
-    triples_text = (
-        "\n".join(f"({s}, {r}, {o})" for s, r, o in verified_triples) or "None"
-    )
-    instance_text = (
-        "\n".join(f"({s}, {r}, {o})" for s, r, o in instance_triples) or "None"
-    )
 
+    Note:
+      Triples are still extracted/returned for debugging and API consumers,
+      but they are intentionally NOT injected into the chain question payload.
+      This keeps the final Cypher prompt's {question} field free of triplet
+      context for the T2C flow.
+    """
     parts: list[str] = []
 
     if conversation_history:
@@ -456,7 +453,5 @@ def build_enhanced_question(
 
     parts.append(f"Question: {question}")
     parts.append(f"Rewritten: {rewritten or question}")
-    parts.append(f"Verified Triples:\n{triples_text}")
-    parts.append(f"Instance Triples:\n{instance_text}")
 
     return "\n\n".join(parts)
