@@ -69,14 +69,26 @@ def reset_chain() -> None:
 
 def invoke_chain(question: str) -> dict | str:
     """
-    Invoke the chain with a question.
+    Invoke the chain with a question. 60s timeout.
     Returns chain result dict or an error string.
     """
+    import signal
+    import functools
+    from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
+
     maybe_refresh_schema()
     chain = get_chain()
 
+    def _run():
+        return chain.invoke({"query": question}, return_only_outputs=True)
+
     try:
-        result = chain.invoke({"query": question}, return_only_outputs=True)
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(_run)
+            result = future.result(timeout=60)
+    except FuturesTimeout:
+        logger.warning("[Chain] Chain timed out after 60s for question: %s", question[:80])
+        return "Sorry, the query took too long."
     except Exception as e:
         logger.warning("[Chain] GraphCypher chain error: %s", e)
         return "Sorry, I couldn't find an answer to your question."
@@ -84,7 +96,6 @@ def invoke_chain(question: str) -> dict | str:
     if result is None:
         return "No answer was generated."
 
-    # Clean and URL-encode the generated Cypher query for Neo4j Browser links
     try:
         steps = result.get("intermediate_steps", [{}])
         if steps and isinstance(steps[-1], dict):

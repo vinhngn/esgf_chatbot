@@ -31,6 +31,7 @@ def _create_llm(temperature: float, model: str = "gpt-4o-mini") -> ChatOpenAI:
         api_key=settings.OPENAI_API_KEY,
         temperature=temperature,
         model=model,
+        request_timeout=30,
     )
 
 
@@ -46,24 +47,24 @@ def get_main_llm() -> ChatOpenAI:
 
 
 def get_interpreter_llm() -> ChatOpenAI:
-    """Triple-extraction / question-rewrite LLM (temp=0.3). Singleton."""
+    """Triple-extraction / question-rewrite LLM (temp=0). Singleton."""
     global _interpreter_llm
     if _interpreter_llm is None:
         with _lock:
             if _interpreter_llm is None:
                 logger.info("[LLM] Initializing interpreter LLM...")
-                _interpreter_llm = _create_llm(temperature=0.3)
+                _interpreter_llm = _create_llm(temperature=0)
     return _interpreter_llm
 
 
 def get_cypher_llm() -> ChatOpenAI:
-    """Cypher-generation LLM (temp=0.3). Singleton."""
+    """Cypher-generation LLM (temp=0 for deterministic output). Singleton."""
     global _cypher_llm
     if _cypher_llm is None:
         with _lock:
             if _cypher_llm is None:
                 logger.info("[LLM] Initializing Cypher LLM...")
-                _cypher_llm = _create_llm(temperature=0.3)
+                _cypher_llm = _create_llm(temperature=0)
     return _cypher_llm
 
 
