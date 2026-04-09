@@ -7,4 +7,6 @@ venv/
 dist/
 build/
 .streamlit/
+
+*.log
 nul

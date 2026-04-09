@@ -1,0 +1,230 @@
+{
+  "database": "movies",
+  "node_properties": {
+    "Movie": {
+      "released": {
+        "type": "int",
+        "sample": "1999"
+      },
+      "tagline": {
+        "type": "str",
+        "sample": "Welcome to the Real World"
+      },
+      "title": {
+        "type": "str",
+        "sample": "A Few Good Men"
+      },
+      "votes": {
+        "type": "int",
+        "sample": "259"
+      }
+    },
+    "Person": {
+      "born": {
+        "type": "int",
+        "sample": "1929"
+      },
+      "name": {
+        "type": "str",
+        "sample": "Aaron Sorkin"
+      }
+    }
+  },
+  "relationship_properties": {
+    "ACTED_IN": {
+      "roles": {
+        "type": "list",
+        "sample": "['Julian Mercer']"
+      }
+    },
+    "DIRECTED": {},
+    "FOLLOWS": {},
+    "PRODUCED": {},
+    "REVIEWED": {
+      "rating": {
+        "type": "int",
+        "sample": "62"
+      },
+      "summary": {
+        "type": "str",
+        "sample": "Pretty funny at times"
+      }
+    },
+    "WROTE": {}
+  },
+  "relationship_patterns": [
+    {
+      "from": "Person",
+      "rel": "ACTED_IN",
+      "to": "Movie",
+      "count": 172
+    },
+    {
+      "from": "Person",
+      "rel": "DIRECTED",
+      "to": "Movie",
+      "count": 44
+    },
+    {
+      "from": "Person",
+      "rel": "PRODUCED",
+      "to": "Movie",
+      "count": 15
+    },
+    {
+      "from": "Person",
+      "rel": "WROTE",
+      "to": "Movie",
+      "count": 10
+    },
+    {
+      "from": "Person",
+      "rel": "REVIEWED",
+      "to": "Movie",
+      "count": 9
+    },
+    {
+      "from": "Person",
+      "rel": "FOLLOWS",
+      "to": "Person",
+      "count": 3
+    }
+  ],
+  "unique_constraints": [
+    {
+      "label": "Movie",
+      "property": "title"
+    },
+    {
+      "label": "Person",
+      "property": "name"
+    }
+  ],
+  "ambiguous_entities": [],
+  "property_confusion": [],
+  "node_counts": {
+    "Person": 133,
+    "Movie": 38
+  },
+  "sample_values": {
+    "Movie": {
+      "title": [
+        "A Few Good Men",
+        "A League of Their Own",
+        "Apollo 13",
+        "As Good as It Gets",
+        "Bicentennial Man",
+        "Cast Away",
+        "Charlie Wilson's War",
+        "Cloud Atlas",
+        "Frost/Nixon",
+        "Hoffa"
+      ]
+    },
+    "Person": {
+      "name": [
+        "Aaron Sorkin",
+        "Al Pacino",
+        "Angela Scope",
+        "Annabella Sciorra",
+        "Anthony Edwards",
+        "Audrey Tautou",
+        "Ben Miles",
+        "Bill Paxton",
+        "Bill Pullman",
+        "Billy Crystal"
+      ]
+    }
+  },
+  "sample_triples": [
+    {
+      "from": {
+        "label": "Person",
+        "property": "name",
+        "value": "James Marshall"
+      },
+      "rel": "ACTED_IN",
+      "rel_properties": {
+        "roles": "['Pfc. Louden Downey']"
+      },
+      "to": {
+        "label": "Movie",
+        "property": "title",
+        "value": "A Few Good Men"
+      }
+    },
+    {
+      "from": {
+        "label": "Person",
+        "property": "name",
+        "value": "Rob Reiner"
+      },
+      "rel": "DIRECTED",
+      "rel_properties": {},
+      "to": {
+        "label": "Movie",
+        "property": "title",
+        "value": "A Few Good Men"
+      }
+    },
+    {
+      "from": {
+        "label": "Person",
+        "property": "name",
+        "value": "Stefan Arndt"
+      },
+      "rel": "PRODUCED",
+      "rel_properties": {},
+      "to": {
+        "label": "Movie",
+        "property": "title",
+        "value": "Cloud Atlas"
+      }
+    },
+    {
+      "from": {
+        "label": "Person",
+        "property": "name",
+        "value": "Aaron Sorkin"
+      },
+      "rel": "WROTE",
+      "rel_properties": {},
+      "to": {
+        "label": "Movie",
+        "property": "title",
+        "value": "A Few Good Men"
+      }
+    },
+    {
+      "from": {
+        "label": "Person",
+        "property": "name",
+        "value": "Jessica Thompson"
+      },
+      "rel": "REVIEWED",
+      "rel_properties": {
+        "summary": "An amazing journey",
+        "rating": "95"
+      },
+      "to": {
+        "label": "Movie",
+        "property": "title",
+        "value": "Cloud Atlas"
+      }
+    },
+    {
+      "from": {
+        "label": "Person",
+        "property": "name",
+        "value": "Angela Scope"
+      },
+      "rel": "FOLLOWS",
+      "rel_properties": {},
+      "to": {
+        "label": "Person",
+        "property": "name",
+        "value": "Jessica Thompson"
+      }
+    }
+  ]
+}

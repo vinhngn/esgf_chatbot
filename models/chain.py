@@ -1,8 +1,6 @@
 """
-GraphCypherQAChain setup.
-Uses langchain_neo4j.GraphCypherQAChain (compatible with GraphStore/Neo4jGraph)
-instead of langchain_community version which caused validation errors.
-Thread-safe singleton with double-checked locking.
+GraphCypherQAChain — direct LLM Cypher generation.
+Proven baseline: 43% Exact Match on eval.
 """
 
 from __future__ import annotations
@@ -26,9 +24,17 @@ _chain_lock = threading.Lock()
 
 
 def _build_chain() -> GraphCypherQAChain:
-    """Build the GraphCypherQAChain with current config."""
+    from config import get_settings
+    from services.knowledge_base import format_for_cypher_prompt
+
     logger.info("[Chain] Building GraphCypherQAChain...")
     template = get_cypher_template()
+
+    db_name = get_settings().database_name
+    knowledge = format_for_cypher_prompt(db_name)
+    knowledge_escaped = knowledge.replace("{", "{{").replace("}", "}}")
+    template = template.replace("{knowledge}", knowledge_escaped)
+
     prompt = PromptTemplate(
         input_variables=["schema", "question"],
         template=template,
@@ -50,47 +56,28 @@ def _build_chain() -> GraphCypherQAChain:
 
 
 def get_chain() -> GraphCypherQAChain:
-    """Get or create the chain (thread-safe singleton)."""
     global _chain
     if _chain is None:
         with _chain_lock:
-            if _chain is None:  # double-checked locking
+            if _chain is None:
                 _chain = _build_chain()
     return _chain
 
 
 def reset_chain() -> None:
-    """Force rebuild the chain on next call (e.g. after config change)."""
     global _chain
     with _chain_lock:
         _chain = None
-    logger.info("[Chain] Chain reset — will rebuild on next invoke.")
 
 
 def invoke_chain(question: str) -> dict | str:
-    """
-    Invoke the chain with a question. 60s timeout.
-    Returns chain result dict or an error string.
-    """
-    import signal
-    import functools
-    from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
-
     maybe_refresh_schema()
     chain = get_chain()
 
-    def _run():
-        return chain.invoke({"query": question}, return_only_outputs=True)
-
     try:
-        with ThreadPoolExecutor(max_workers=1) as executor:
-            future = executor.submit(_run)
-            result = future.result(timeout=60)
-    except FuturesTimeout:
-        logger.warning("[Chain] Chain timed out after 60s for question: %s", question[:80])
-        return "Sorry, the query took too long."
+        result = chain.invoke({"query": question}, return_only_outputs=True)
     except Exception as e:
-        logger.warning("[Chain] GraphCypher chain error: %s", e)
+        logger.warning("[Chain] error: %s", e)
         return "Sorry, I couldn't find an answer to your question."
 
     if result is None:
@@ -105,6 +92,6 @@ def invoke_chain(question: str) -> dict | str:
                 encoded = urllib.parse.quote(cleaned)
                 result["intermediate_steps"][-1]["query"] = encoded
     except Exception as e:
-        logger.warning("[Chain] Failed to extract/clean Cypher query: %s", e)
+        logger.warning("[Chain] Failed to clean query: %s", e)
 
     return result

@@ -1,0 +1,438 @@
+{
+  "database": "northwind",
+  "node_properties": {
+    "Category": {
+      "categoryID": {
+        "type": "str",
+        "sample": "1"
+      },
+      "categoryName": {
+        "type": "str",
+        "sample": "Beverages"
+      },
+      "description": {
+        "type": "str",
+        "sample": "Soft drinks, coffees, teas, beers, and ales"
+      },
+      "picture": {
+        "type": "str",
+        "sample": "0x151C2F00020000000D000E0014002100FFFFFFFF4269746D617020496D616765005061696E742E"
+      }
+    },
+    "Customer": {
+      "address": {
+        "type": "str",
+        "sample": "Obere Str. 57"
+      },
+      "city": {
+        "type": "str",
+        "sample": "Berlin"
+      },
+      "companyName": {
+        "type": "str",
+        "sample": "Alfreds Futterkiste"
+      },
+      "contactName": {
+        "type": "str",
+        "sample": "Maria Anders"
+      },
+      "contactTitle": {
+        "type": "str",
+        "sample": "Sales Representative"
+      },
+      "country": {
+        "type": "str",
+        "sample": "Germany"
+      },
+      "customerID": {
+        "type": "str",
+        "sample": "ALFKI"
+      },
+      "fax": {
+        "type": "str",
+        "sample": "030-0076545"
+      },
+      "phone": {
+        "type": "str",
+        "sample": "030-0074321"
+      },
+      "postalCode": {
+        "type": "str",
+        "sample": "12209"
+      },
+      "region": {
+        "type": "str",
+        "sample": "NULL"
+      }
+    },
+    "Order": {
+      "customerID": {
+        "type": "str",
+        "sample": "VINET"
+      },
+      "employeeID": {
+        "type": "str",
+        "sample": "5"
+      },
+      "freight": {
+        "type": "str",
+        "sample": "32.38"
+      },
+      "orderDate": {
+        "type": "str",
+        "sample": "1996-07-04 00:00:00.000"
+      },
+      "orderID": {
+        "type": "str",
+        "sample": "10248"
+      },
+      "requiredDate": {
+        "type": "str",
+        "sample": "1996-08-01 00:00:00.000"
+      },
+      "shipAddress": {
+        "type": "str",
+        "sample": "59 rue de l'Abbaye"
+      },
+      "shipCity": {
+        "type": "str",
+        "sample": "Reims"
+      },
+      "shipCountry": {
+        "type": "str",
+        "sample": "France"
+      },
+      "shipName": {
+        "type": "str",
+        "sample": "Vins et alcools Chevalier"
+      },
+      "shipPostalCode": {
+        "type": "str",
+        "sample": "51100"
+      },
+      "shipRegion": {
+        "type": "str",
+        "sample": "NULL"
+      },
+      "shipVia": {
+        "type": "str",
+        "sample": "3"
+      },
+      "shippedDate": {
+        "type": "str",
+        "sample": "1996-07-16 00:00:00.000"
+      }
+    },
+    "Product": {
+      "categoryID": {
+        "type": "str",
+        "sample": "1"
+      },
+      "discontinued": {
+        "type": "bool",
+        "sample": "False"
+      },
+      "productID": {
+        "type": "str",
+        "sample": "1"
+      },
+      "productName": {
+        "type": "str",
+        "sample": "Chai"
+      },
+      "quantityPerUnit": {
+        "type": "str",
+        "sample": "10 boxes x 20 bags"
+      },
+      "reorderLevel": {
+        "type": "int",
+        "sample": "10"
+      },
+      "supplierID": {
+        "type": "str",
+        "sample": "1"
+      },
+      "unitPrice": {
+        "type": "float",
+        "sample": "18.0"
+      },
+      "unitsInStock": {
+        "type": "int",
+        "sample": "39"
+      },
+      "unitsOnOrder": {
+        "type": "int",
+        "sample": "0"
+      }
+    },
+    "Supplier": {
+      "address": {
+        "type": "str",
+        "sample": "49 Gilbert St."
+      },
+      "city": {
+        "type": "str",
+        "sample": "London"
+      },
+      "companyName": {
+        "type": "str",
+        "sample": "Exotic Liquids"
+      },
+      "contactName": {
+        "type": "str",
+        "sample": "Charlotte Cooper"
+      },
+      "contactTitle": {
+        "type": "str",
+        "sample": "Purchasing Manager"
+      },
+      "country": {
+        "type": "str",
+        "sample": "UK"
+      },
+      "fax": {
+        "type": "str",
+        "sample": "NULL"
+      },
+      "homePage": {
+        "type": "str",
+        "sample": "NULL"
+      },
+      "phone": {
+        "type": "str",
+        "sample": "(171) 555-2222"
+      },
+      "postalCode": {
+        "type": "str",
+        "sample": "EC1 4SD"
+      },
+      "region": {
+        "type": "str",
+        "sample": "NULL"
+      },
+      "supplierID": {
+        "type": "str",
+        "sample": "1"
+      }
+    }
+  },
+  "relationship_properties": {
+    "ORDERS": {
+      "discount": {
+        "type": "str",
+        "sample": "0"
+      },
+      "orderID": {
+        "type": "str",
+        "sample": "10248"
+      },
+      "productID": {
+        "type": "str",
+        "sample": "72"
+      },
+      "quantity": {
+        "type": "int",
+        "sample": "5"
+      },
+      "unitPrice": {
+        "type": "str",
+        "sample": "34.80"
+      }
+    },
+    "PART_OF": {},
+    "PURCHASED": {},
+    "SUPPLIES": {}
+  },
+  "relationship_patterns": [
+    {
+      "from": "Order",
+      "rel": "ORDERS",
+      "to": "Product",
+      "count": 2155
+    },
+    {
+      "from": "Customer",
+      "rel": "PURCHASED",
+      "to": "Order",
+      "count": 830
+    },
+    {
+      "from": "Product",
+      "rel": "PART_OF",
+      "to": "Category",
+      "count": 77
+    },
+    {
+      "from": "Supplier",
+      "rel": "SUPPLIES",
+      "to": "Product",
+      "count": 77
+    }
+  ],
+  "unique_constraints": [],
+  "ambiguous_entities": [],
+  "property_confusion": [
+    {
+      "property": "orderID",
+      "on_node": ":Order",
+      "node_type": "str",
+      "on_rel": "[:ORDERS]",
+      "rel_type": "str"
+    },
+    {
+      "property": "productID",
+      "on_node": ":Product",
+      "node_type": "str",
+      "on_rel": "[:ORDERS]",
+      "rel_type": "str"
+    },
+    {
+      "property": "unitPrice",
+      "on_node": ":Product",
+      "node_type": "float",
+      "on_rel": "[:ORDERS]",
+      "rel_type": "str"
+    }
+  ],
+  "node_counts": {
+    "Order": 830,
+    "Customer": 91,
+    "Product": 77,
+    "Supplier": 29,
+    "Category": 8
+  },
+  "sample_values": {
+    "Category": {
+      "categoryName": [
+        "Beverages",
+        "Condiments",
+        "Confections",
+        "Dairy Products",
+        "Grains/Cereals",
+        "Meat/Poultry",
+        "Produce",
+        "Seafood"
+      ]
+    },
+    "Customer": {
+      "companyName": [
+        "Alfreds Futterkiste",
+        "Ana Trujillo Emparedados y helados",
+        "Antonio Moreno Taquería",
+        "Around the Horn",
+        "B's Beverages",
+        "Berglunds snabbköp",
+        "Blauer See Delikatessen",
+        "Blondesddsl père et fils",
+        "Bon app'",
+        "Bottom-Dollar Markets"
+      ]
+    },
+    "Order": {
+      "orderID": [
+        "10248",
+        "10249",
+        "10250",
+        "10251",
+        "10252",
+        "10253",
+        "10254",
+        "10255",
+        "10256",
+        "10257"
+      ]
+    },
+    "Product": {
+      "productName": [
+        "Alice Mutton",
+        "Aniseed Syrup",
+        "Boston Crab Meat",
+        "Camembert Pierrot",
+        "Carnarvon Tigers",
+        "Chai",
+        "Chang",
+        "Chartreuse verte",
+        "Chef Anton's Cajun Seasoning",
+        "Chef Anton's Gumbo Mix"
+      ]
+    },
+    "Supplier": {
+      "companyName": [
+        "Aux joyeux ecclésiastiques",
+        "Bigfoot Breweries",
+        "Cooperativa de Quesos 'Las Cabras'",
+        "Escargots Nouveaux",
+        "Exotic Liquids",
+        "Formaggi Fortini s.r.l.",
+        "Forêts d'érables",
+        "G'day",
+        "Gai pâturage",
+        "Grandma Kelly's Homestead"
+      ]
+    }
+  },
+  "sample_triples": [
+    {
+      "from": {
+        "label": "Order",
+        "property": "orderID",
+        "value": "10317"
+      },
+      "rel": "ORDERS",
+      "rel_properties": {
+        "unitPrice": "14.40",
+        "quantity": "20",
+        "productID": "1",
+        "orderID": "10317",
+        "discount": "0"
+      },
+      "to": {
+        "label": "Product",
+        "property": "productName",
+        "value": "Chai"
+      }
+    },
+    {
+      "from": {
+        "label": "Customer",
+        "property": "companyName",
+        "value": "Alfreds Futterkiste"
+      },
+      "rel": "PURCHASED",
+      "rel_properties": {},
+      "to": {
+        "label": "Order",
+        "property": "orderID",
+        "value": "10643"
+      }
+    },
+    {
+      "from": {
+        "label": "Product",
+        "property": "productName",
+        "value": "Sasquatch Ale"
+      },
+      "rel": "PART_OF",
+      "rel_properties": {},
+      "to": {
+        "label": "Category",
+        "property": "categoryName",
+        "value": "Beverages"
+      }
+    },
+    {
+      "from": {
+        "label": "Supplier",
+        "property": "companyName",
+        "value": "Exotic Liquids"
+      },
+      "rel": "SUPPLIES",
+      "rel_properties": {},
+      "to": {
+        "label": "Product",
+        "property": "productName",
+        "value": "Chai"
+      }
+    }
+  ]
+}

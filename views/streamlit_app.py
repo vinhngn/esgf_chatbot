@@ -134,29 +134,10 @@ if user_input:
                 result = handle_user_message(user_input)
                 content = result["output"]
 
-                # --- Debug expander: triple extraction pipeline ---
-                rewritten = result.get("rewritten", "")
-                verified_triples = result.get("verified_triples", [])
-                instance_triples = result.get("instance_triples", [])
+                # --- Debug expander ---
                 cypher = result.get("cypher_query", "")
 
                 with st.expander("Pipeline debug", expanded=False):
-                    st.markdown(f"**Rewritten question:** {rewritten or '—'}")
-
-                    if verified_triples:
-                        st.markdown("**Verified triples:**")
-                        for s, p, o in verified_triples:
-                            st.markdown(f"- `({s}, {p}, {o})`")
-                    else:
-                        st.markdown("**Verified triples:** —")
-
-                    if instance_triples:
-                        st.markdown("**Instance triples:**")
-                        for s, p, o in instance_triples:
-                            st.markdown(f"- `({s}, {p}, {o})`")
-                    else:
-                        st.markdown("**Instance triples:** —")
-
                     if cypher:
                         st.markdown("**Generated Cypher:**")
                         st.code(cypher, language="cypher")

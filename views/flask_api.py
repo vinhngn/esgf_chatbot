@@ -43,21 +43,16 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 @app.post("/api/text2cypher")
 def text2cypher():
     """
-    Question → triple extraction → Cypher → raw DB results (no LLM formatting).
-
-    Expected by t2c_eval_framework.
+    Question → Cypher-of-Thought pipeline → raw DB results.
 
     Request JSON:
-        { "question": "...", "schema": "..." }   (schema is optional)
+        { "question": "..." }
 
     Response JSON:
         {
-            "cypher_query":     str,
-            "result":           list[dict],
-            "error":            str | null,
-            "rewritten":        str,
-            "verified_triples": list[list],
-            "instance_triples": list[list]
+            "cypher_query": str,
+            "result":       list[dict],
+            "error":        str | null
         }
     """
     payload = request.get_json(silent=True) or {}
@@ -68,30 +63,16 @@ def text2cypher():
 
     try:
         results = get_raw_results(question)
-
         return jsonify(
             {
                 "cypher_query": results.get("cypher_query", ""),
                 "result": results.get("result", []),
                 "error": results.get("error"),
-                "rewritten": results.get("rewritten", ""),
-                "verified_triples": results.get("verified_triples", []),
-                "instance_triples": results.get("instance_triples", []),
             }
         )
-
     except Exception as e:
         logger.error("Error in /api/text2cypher: %s", e, exc_info=True)
-        return jsonify(
-            {
-                "cypher_query": "",
-                "result": [],
-                "error": str(e),
-                "rewritten": "",
-                "verified_triples": [],
-                "instance_triples": [],
-            }
-        ), 500
+        return jsonify({"cypher_query": "", "result": [], "error": str(e)}), 500
 
 
 @app.post("/api/rag")

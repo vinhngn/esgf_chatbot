@@ -1,0 +1,488 @@
+{
+  "database": "twitter",
+  "node_properties": {
+    "Hashtag": {
+      "name": {
+        "type": "str",
+        "sample": "5g"
+      }
+    },
+    "Link": {
+      "url": {
+        "type": "str",
+        "sample": "http://Arrows.app"
+      }
+    },
+    "Me": {
+      "betweenness": {
+        "type": "float",
+        "sample": "349332601.0"
+      },
+      "followers": {
+        "type": "int",
+        "sample": "34507"
+      },
+      "following": {
+        "type": "int",
+        "sample": "10124"
+      },
+      "location": {
+        "type": "str",
+        "sample": "Graphs Are Everywhere"
+      },
+      "name": {
+        "type": "str",
+        "sample": "Neo4j"
+      },
+      "profile_image_url": {
+        "type": "str",
+        "sample": "http://pbs.twimg.com/profile_images/1183755273753767936/vSV_IPTs_normal.jpg"
+      },
+      "screen_name": {
+        "type": "str",
+        "sample": "neo4j"
+      },
+      "url": {
+        "type": "str",
+        "sample": "https://t.co/JSIaZFJEaE"
+      }
+    },
+    "Source": {
+      "name": {
+        "type": "str",
+        "sample": "Buffer"
+      }
+    },
+    "Tweet": {
+      "created_at": {
+        "type": "DateTime",
+        "sample": "2020-12-06T05:12:02.000000000+00:00"
+      },
+      "favorites": {
+        "type": "int",
+        "sample": "1"
+      },
+      "id": {
+        "type": "int",
+        "sample": "690028662083612672"
+      },
+      "id_str": {
+        "type": "str",
+        "sample": "1371815021265747970"
+      },
+      "import_method": {
+        "type": "str",
+        "sample": "user"
+      },
+      "text": {
+        "type": "str",
+        "sample": "Proud to help @educationgovuk deliver critical services across the #education se"
+      }
+    },
+    "User": {
+      "betweenness": {
+        "type": "float",
+        "sample": "349332601.0"
+      },
+      "followers": {
+        "type": "int",
+        "sample": "34507"
+      },
+      "following": {
+        "type": "int",
+        "sample": "10124"
+      },
+      "location": {
+        "type": "str",
+        "sample": "Graphs Are Everywhere"
+      },
+      "name": {
+        "type": "str",
+        "sample": "Neo4j"
+      },
+      "profile_image_url": {
+        "type": "str",
+        "sample": "http://pbs.twimg.com/profile_images/1183755273753767936/vSV_IPTs_normal.jpg"
+      },
+      "screen_name": {
+        "type": "str",
+        "sample": "0009Rajdeep"
+      },
+      "url": {
+        "type": "str",
+        "sample": "https://t.co/JSIaZFJEaE"
+      }
+    }
+  },
+  "relationship_properties": {
+    "AMPLIFIES": {},
+    "CONTAINS": {},
+    "FOLLOWS": {},
+    "INTERACTS_WITH": {},
+    "MENTIONS": {},
+    "POSTS": {},
+    "REPLY_TO": {},
+    "RETWEETS": {},
+    "RT_MENTIONS": {},
+    "SIMILAR_TO": {
+      "score": {
+        "type": "float",
+        "sample": "0.003205128205128205"
+      }
+    },
+    "TAGS": {},
+    "USING": {}
+  },
+  "relationship_patterns": [
+    {
+      "from": "User",
+      "rel": "FOLLOWS",
+      "to": "User",
+      "count": 44630
+    },
+    {
+      "from": "Tweet",
+      "rel": "MENTIONS",
+      "to": "User",
+      "count": 3459
+    },
+    {
+      "from": "User",
+      "rel": "POSTS",
+      "to": "Tweet",
+      "count": 2338
+    },
+    {
+      "from": "Tweet",
+      "rel": "USING",
+      "to": "Source",
+      "count": 2146
+    },
+    {
+      "from": "Tweet",
+      "rel": "CONTAINS",
+      "to": "Link",
+      "count": 1757
+    },
+    {
+      "from": "Tweet",
+      "rel": "TAGS",
+      "to": "Hashtag",
+      "count": 1493
+    },
+    {
+      "from": "User",
+      "rel": "INTERACTS_WITH",
+      "to": "User",
+      "count": 901
+    },
+    {
+      "from": "Tweet",
+      "rel": "REPLY_TO",
+      "to": "Tweet",
+      "count": 504
+    },
+    {
+      "from": "Tweet",
+      "rel": "RETWEETS",
+      "to": "Tweet",
+      "count": 268
+    },
+    {
+      "from": "User",
+      "rel": "SIMILAR_TO",
+      "to": "User",
+      "count": 210
+    },
+    {
+      "from": "User",
+      "rel": "AMPLIFIES",
+      "to": "User",
+      "count": 145
+    },
+    {
+      "from": "User",
+      "rel": "RT_MENTIONS",
+      "to": "User",
+      "count": 45
+    }
+  ],
+  "unique_constraints": [
+    {
+      "label": "Source",
+      "property": "name"
+    },
+    {
+      "label": "Tweet",
+      "property": "id"
+    },
+    {
+      "label": "Hashtag",
+      "property": "name"
+    },
+    {
+      "label": "User",
+      "property": "screen_name"
+    },
+    {
+      "label": "Link",
+      "property": "url"
+    }
+  ],
+  "ambiguous_entities": [
+    {
+      "property": "name",
+      "value": "Neo4j",
+      "labels": [
+        "Me",
+        "User"
+      ]
+    }
+  ],
+  "property_confusion": [],
+  "node_counts": {
+    "User": 38986,
+    "Tweet": 2407,
+    "Link": 1561,
+    "Hashtag": 344,
+    "Source": 27
+  },
+  "sample_values": {
+    "Source": {
+      "name": [
+        "Buffer",
+        "ContentStudio.io",
+        "Flamingo for Android",
+        "GaggleAMP",
+        "Hootsuite Inc.",
+        "HubSpot",
+        "Paper.li",
+        "Product Hunt Hi",
+        "Right Relevance",
+        "SEMrush Social Media Tool"
+      ]
+    },
+    "Tweet": {
+      "id": [
+        "690028662083612672",
+        "847841023313268736",
+        "956220394922373120",
+        "970745006754447360",
+        "1146901544534720515",
+        "1153424490795323395",
+        "1241419111806038018",
+        "1269912845464096768",
+        "1284058004204158976",
+        "1291871852701384707"
+      ]
+    },
+    "Hashtag": {
+      "name": [
+        "5g",
+        "accesscontrol",
+        "ai",
+        "algorithm",
+        "algoritmos",
+        "allianzbenelux",
+        "allmalepanels",
+        "aml",
+        "analytics",
+        "antimoneylaundering"
+      ]
+    },
+    "User": {
+      "screen_name": [
+        "0009Rajdeep",
+        "000stany000",
+        "00452a0893d4442",
+        "007_davinci",
+        "00oops",
+        "01dev01",
+        "01ngC",
+        "01use",
+        "03888fbb",
+        "047alfredo"
+      ]
+    },
+    "Link": {
+      "url": [
+        "http://Arrows.app",
+        "http://DevOps.com",
+        "http://GRANDcast.FM",
+        "http://arrow.app",
+        "http://arrows.app",
+        "http://bit.ly/3bKVMbG",
+        "http://bit.ly/3bw292k",
+        "http://bit.ly/3p2Bu0M",
+        "http://blog.bruggen.com/2016/02/podcast-interview-with-iian-",
+        "http://chart.graphapp.io"
+      ]
+    },
+    "Me": {
+      "name": [
+        "Neo4j"
+      ],
+      "screen_name": [
+        "neo4j"
+      ]
+    }
+  },
+  "sample_triples": [
+    {
+      "from": {
+        "label": "User",
+        "property": "name",
+        "value": "Neo4j"
+      },
+      "rel": "FOLLOWS",
+      "rel_properties": {},
+      "to": {
+        "label": "User",
+        "property": "name",
+        "value": "Tobias Lindaaker"
+      }
+    },
+    {
+      "from": {
+        "label": "Tweet",
+        "property": "text",
+        "value": "Proud to help @educationgovuk deliver cr"
+      },
+      "rel": "MENTIONS",
+      "rel_properties": {},
+      "to": {
+        "label": "User",
+        "property": "name",
+        "value": "Department for Education"
+      }
+    },
+    {
+      "from": {
+        "label": "User",
+        "property": "name",
+        "value": "Neo4j"
+      },
+      "rel": "POSTS",
+      "rel_properties": {},
+      "to": {
+        "label": "Tweet",
+        "property": "text",
+        "value": "Proud to help @educationgovuk deliver cr"
+      }
+    },
+    {
+      "from": {
+        "label": "Tweet",
+        "property": "text",
+        "value": "In this week's #twin4j, Hantsy shows how"
+      },
+      "rel": "USING",
+      "rel_properties": {},
+      "to": {
+        "label": "Source",
+        "property": "name",
+        "value": "Buffer"
+      }
+    },
+    {
+      "from": {
+        "label": "Tweet",
+        "property": "text",
+        "value": "Real-time Analytics News for Week Ending"
+      },
+      "rel": "TAGS",
+      "rel_properties": {},
+      "to": {
+        "label": "Hashtag",
+        "property": "name",
+        "value": "5g"
+      }
+    },
+    {
+      "from": {
+        "label": "User",
+        "property": "name",
+        "value": "Neo4j"
+      },
+      "rel": "INTERACTS_WITH",
+      "rel_properties": {},
+      "to": {
+        "label": "User",
+        "property": "name",
+        "value": "★ ☆ Billionaire ☆ ★"
+      }
+    },
+    {
+      "from": {
+        "label": "Tweet",
+        "property": "text",
+        "value": "@neo4j What a great match: the power of "
+      },
+      "rel": "REPLY_TO",
+      "rel_properties": {},
+      "to": {
+        "label": "Tweet",
+        "property": "text",
+        "value": "Really great application of graphs for i"
+      }
+    },
+    {
+      "from": {
+        "label": "Tweet",
+        "property": "text",
+        "value": "RT @AlessandroNegro: Today is my day! De"
+      },
+      "rel": "RETWEETS",
+      "rel_properties": {},
+      "to": {
+        "label": "Tweet",
+        "property": "text",
+        "value": "Today is my day! Deal of the Day March 1"
+      }
+    },
+    {
+      "from": {
+        "label": "User",
+        "property": "name",
+        "value": "Kesavan Nair (Kay)"
+      },
+      "rel": "SIMILAR_TO",
+      "rel_properties": {
+        "score": "0.003205128205128205"
+      },
+      "to": {
+        "label": "User",
+        "property": "name",
+        "value": "Neo4j"
+      }
+    },
+    {
+      "from": {
+        "label": "User",
+        "property": "name",
+        "value": "Neo4j"
+      },
+      "rel": "AMPLIFIES",
+      "rel_properties": {},
+      "to": {
+        "label": "User",
+        "property": "name",
+        "value": "Brant Boehmann"
+      }
+    },
+    {
+      "from": {
+        "label": "User",
+        "property": "name",
+        "value": "Neo4j"
+      },
+      "rel": "RT_MENTIONS",
+      "rel_properties": {},
+      "to": {
+        "label": "User",
+        "property": "name",
+        "value": "Chakra UI"
+      }
+    }
+  ]
+}

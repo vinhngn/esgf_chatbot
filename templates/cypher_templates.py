@@ -1452,19 +1452,35 @@ def _build_generic_cypher_template(
         "CRITICAL: Output ONLY the raw Cypher query. NO markdown, NO code blocks, NO explanation.\n\n"
         "=== SCHEMA ===\n"
         "{schema}\n\n"
-        "=== CORE RULES ===\n"
-        "- Use only node labels, relationship types, and property names that appear in the schema.\n"
-        "- Never invent new labels, relationships, directions, or shortcut properties.\n"
-        "- Follow the relationship direction shown in the schema.\n"
-        "- Reuse the same variable when the same entity must satisfy multiple relationships.\n"
-        "- Return full nodes only when the question clearly asks for the entity itself and does not ask for specific fields, relationship properties, or metrics.\n"
-        "- If the question asks for names, titles, identifiers, roles, summaries, counts, averages, or metrics, return only those requested columns.\n"
-        "- Return every requested column and do not add extra columns.\n"
-        "- If the query uses COUNT, AVG, SUM, size(...), or DISTINCT for ranking/filtering, keep the resulting metric column in RETURN.\n"
-        "- Use DISTINCT only when joins can duplicate rows and the question asks for unique entities.\n"
-        "- Use ORDER BY together with LIMIT for top / first / most / least patterns.\n"
-        "- Prefer exact equality for explicit names or titles unless the question asks for partial text matching.\n"
-        "- If a needed element is ambiguous, resolve it using the schema and domain hints below rather than inventing new schema elements.\n\n"
+        "=== GRAPH KNOWLEDGE (extracted from database — trust this over guesses) ===\n"
+        "{knowledge}\n\n"
+        "=== CYPHER SYNTAX RULES ===\n"
+        "- Write the COMPLETE MATCH pattern first, then WHERE, then RETURN.\n"
+        "  CORRECT: MATCH (a)-[:REL]->(b) WHERE a.x > 1 RETURN b\n"
+        "  WRONG:   MATCH (a) WHERE a.x > 1-[:REL]->(b) RETURN b\n"
+        "- When multiple conditions involve different MATCH patterns, use separate MATCH clauses:\n"
+        "  MATCH (a)-[:R1]->(b) MATCH (a)-[:R2]->(c) WHERE b.x > 1 RETURN c\n"
+        "- Reuse the SAME variable name when the same node appears in multiple MATCH clauses.\n"
+        "- Never chain a WHERE condition into a MATCH pattern on the same line.\n"
+        "- To count relationships per node, use count{{}} subquery syntax, NOT COUNT(pattern).\n"
+        "  CORRECT: RETURN count{{(u)-[:FOLLOWS]->(:User)}} AS cnt\n"
+        "  WRONG:   RETURN COUNT((u)-[:FOLLOWS]->(:User)) AS cnt\n\n"
+        "=== QUERY RULES ===\n"
+        "- Use only node labels, relationship types, and property names from the schema.\n"
+        "- Never invent new labels, relationships, directions, or properties.\n"
+        "- Follow the relationship direction shown in GRAPH KNOWLEDGE.\n"
+        "- Check PROPERTY LOCATIONS in GRAPH KNOWLEDGE to use the correct property on the correct node/relationship.\n"
+        "- Check ENTITY MATCHING in GRAPH KNOWLEDGE to use the correct property for WHERE filters.\n"
+        "- In RETURN: use raw property references (m.title, p.name) WITHOUT aliases unless an aggregation needs one.\n"
+        "  CORRECT: RETURN m.title, m.votes\n"
+        "  WRONG:   RETURN m.title AS movieTitle, m.votes AS voteCount\n"
+        "- Only use AS alias for aggregations: count(m) AS cnt, avg(r.rating) AS avgRating\n"
+        "- Return full nodes only when the question asks for the entity itself.\n"
+        "- If the question asks for specific fields, counts, or metrics, project only those columns.\n"
+        "- Keep aggregate columns (COUNT, AVG, SUM) in RETURN when used for ranking.\n"
+        "- Use ORDER BY + LIMIT for top/first/most/least patterns.\n"
+        "- Use DISTINCT only when joins can duplicate rows.\n"
+        "- Prefer exact equality for names/titles unless partial matching is requested.\n\n"
         "=== DOMAIN FACTS ===\n"
         f"{_escape_prompt_block(domain_facts)}\n\n"
         "=== DOMAIN HINTS ===\n"
@@ -1806,6 +1822,12 @@ RETURN user.name, user.screen_name, user.followers, user.following
 ORDER BY user.followers DESC
 LIMIT 5
 
+Q: List the 5 most recent users who started following 'Neo4j'.
+MATCH (me:Me {screen_name: 'neo4j'})<-[:FOLLOWS]-(user:User)
+RETURN user.screen_name, user.name, user.followers
+ORDER BY user.followers DESC
+LIMIT 5
+
 Q: Show the first 3 tweets that 'Me' has retweeted.
 MATCH (me:Me)-[:POSTS]->(retweet:Tweet)-[:RETWEETS]->(original:Tweet)
 RETURN original
@@ -1813,17 +1835,63 @@ ORDER BY original.created_at ASC
 LIMIT 3
 
 Q: Who are the users that 'neo4j' mentions most frequently in their tweets?
-MATCH (u:User {screen_name: 'neo4j'})-[:POSTS]->(t:Tweet)-[:MENTIONS]->(mentioned:User)
+MATCH (me:Me {screen_name: 'neo4j'})-[:POSTS]->(t:Tweet)-[:MENTIONS]->(mentioned:User)
 RETURN mentioned.screen_name, count(t) AS mentions_count
 ORDER BY mentions_count DESC
 
 Q: Find all tweets posted by 'Neo4j' containing a hashtag.
-MATCH (u:User {name: 'Neo4j'})-[:POSTS]->(t:Tweet)-[:TAGS]->(h:Hashtag)
+MATCH (me:Me {name: 'Neo4j'})-[:POSTS]->(t:Tweet)-[:TAGS]->(h:Hashtag)
 RETURN t, h
 
 Q: Which users are amplified by 'Me' according to the AMPLIFIES relationship?
 MATCH (me:Me)-[:AMPLIFIES]->(user:User)
 RETURN user.screen_name AS AmplifiedUser
+
+Q: Identify the top 3 users by the number of people they are following.
+MATCH (u:User)
+RETURN u.name, u.screen_name, count{(u)-[:FOLLOWS]->(:User)} AS followingCount
+ORDER BY followingCount DESC
+LIMIT 3
+
+Q: Who does 'neo4j' interact with most frequently?
+MATCH (me:Me {screen_name: 'neo4j'})-[:INTERACTS_WITH]->(user:User)
+RETURN user.screen_name, COUNT(*) AS interaction_count
+ORDER BY interaction_count DESC
+LIMIT 1
+
+Q: Show the tweets where 'neo4j' is mentioned and the tweet has a favorite count over 100.
+MATCH (t:Tweet)-[:MENTIONS]->(u:User {screen_name: 'neo4j'})
+WHERE t.favorites > 100
+RETURN t.text AS tweet_text, t.favorites AS favorite_count, t.created_at AS created_at
+
+Q: List the first 5 tweets with the highest number of favorites.
+MATCH (t:Tweet)
+RETURN t.text, t.favorites
+ORDER BY t.favorites DESC
+LIMIT 5
+
+Q: What are the top 5 most recent tweets based on the creation date?
+MATCH (t:Tweet)
+RETURN t.text, t.created_at
+ORDER BY t.created_at DESC
+LIMIT 5
+
+Q: Find the tweets that contain links and have been posted by users who follow 'Neo4j'.
+MATCH (u:User)-[:FOLLOWS]->(me:Me {name: 'Neo4j'})
+MATCH (u)-[:POSTS]->(t:Tweet)-[:CONTAINS]->(l:Link)
+RETURN t, l
+LIMIT 25
+
+Q: List the hashtags used in tweets posted by users with more than 1000 followers.
+MATCH (u:User)-[:POSTS]->(t:Tweet)-[:TAGS]->(h:Hashtag)
+WHERE u.followers > 1000
+RETURN DISTINCT h.name
+
+Q: Show the top 5 users that 'Neo4j' interacts with based on the number of interactions.
+MATCH (me:Me {screen_name: 'neo4j'})-[:INTERACTS_WITH]->(user:User)
+RETURN user.screen_name, user.name, COUNT(*) AS interactions
+ORDER BY interactions DESC
+LIMIT 5
 """,
     },
 }
