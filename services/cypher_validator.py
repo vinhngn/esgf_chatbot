@@ -38,6 +38,10 @@ def validate_and_fix(
     constraints = knowledge.get("unique_constraints", [])
     node_counts = knowledge.get("node_counts", {})
 
+    # Fix 0: Syntax — COUNT(pattern) → count{pattern}
+    cypher, syntax_fixes = _fix_count_syntax(cypher)
+    fixes.extend(syntax_fixes)
+
     # Fix 1: Check and fix relationship directions
     cypher, dir_fixes = _fix_directions(cypher, patterns_kb)
     fixes.extend(dir_fixes)
@@ -49,6 +53,10 @@ def validate_and_fix(
     # Fix 3: Resolve entity labels using knowledge samples
     cypher, entity_fixes = _fix_entity_labels(cypher, node_props, node_counts, patterns_kb)
     fixes.extend(entity_fixes)
+
+    # Fix 4: Strip unnecessary aliases from RETURN
+    cypher, alias_fixes = _strip_aliases(cypher)
+    fixes.extend(alias_fixes)
 
     if fixes:
         logger.info("[CypherValidator] Applied %d fixes: %s", len(fixes), fixes)
@@ -110,13 +118,22 @@ def _fix_property_locations(
                 # Property not on this node — check if it's on a relationship
                 for rel_name, rprops in rel_props.items():
                     if prop in rprops:
-                        # Find if there's a relationship variable for this type
                         rel_var = _find_rel_var(cypher, rel_name)
                         if rel_var and rel_var != var:
                             old_ref = f"{var}.{prop}"
                             new_ref = f"{rel_var}.{prop}"
                             cypher = cypher.replace(old_ref, new_ref)
-                            fixes.append(f"Property '{prop}' is on [:{rel_name}], not :{label}. Fixed {old_ref} → {new_ref}")
+                            fixes.append(f"Property '{prop}' on [:{rel_name}], not :{label}. {old_ref} → {new_ref}")
+                        elif not rel_var:
+                            # No rel variable exists — add one
+                            old_pattern = f"[:{rel_name}]"
+                            new_pattern = f"[r:{rel_name}]"
+                            if old_pattern in cypher:
+                                cypher = cypher.replace(old_pattern, new_pattern, 1)
+                                old_ref = f"{var}.{prop}"
+                                new_ref = f"r.{prop}"
+                                cypher = cypher.replace(old_ref, new_ref)
+                                fixes.append(f"Added rel var 'r' for [:{rel_name}], fixed {old_ref} → {new_ref}")
                         break
 
     return cypher, fixes
@@ -198,3 +215,111 @@ def _extract_node_part(cypher: str, var: str, label: str, start: int) -> str:
     pattern = re.compile(rf'\({var}:{label}(?:\s*\{{[^}}]*\}})?\)')
     m = pattern.search(cypher, start)
     return m.group(0) if m else f"({var}:{label})"
+
+
+def _fix_count_syntax(cypher: str) -> tuple[str, list[str]]:
+    """Fix COUNT(pattern) → count{pattern} for Neo4j 5.x."""
+    fixes = []
+    # Match COUNT((var)-[:REL]->(var)) patterns
+    pattern = re.compile(r'COUNT\(\s*(\([^)]*\)-\[:[A-Z_]+\]->[^)]*\))\s*\)', re.IGNORECASE)
+    for m in pattern.finditer(cypher):
+        old = m.group(0)
+        inner = m.group(1)
+        new = f"count{{{inner}}}"
+        cypher = cypher.replace(old, new)
+        fixes.append(f"Syntax: {old} → {new}")
+    return cypher, fixes
+
+
+def _strip_aliases(cypher: str) -> tuple[str, list[str]]:
+    """Strip unnecessary aliases from RETURN clause for eval compatibility."""
+    fixes = []
+
+    # Find RETURN clause — handle single-line and multiline
+    lines = cypher.split('\n')
+    return_idx = -1
+    for i, line in enumerate(lines):
+        if re.search(r'\bRETURN\b', line, re.IGNORECASE):
+            return_idx = i
+            break
+
+    if return_idx < 0:
+        return cypher, fixes
+
+    # Collect RETURN line(s) — stop at ORDER BY, LIMIT, or end
+    return_lines = [lines[return_idx]]
+    j = return_idx + 1
+    while j < len(lines):
+        stripped = lines[j].strip()
+        if re.match(r'^(ORDER|LIMIT|SKIP|UNION|WITH)\b', stripped, re.IGNORECASE) or not stripped:
+            break
+        # Continuation of RETURN (no keyword start)
+        if not re.match(r'^(MATCH|WHERE|RETURN|CREATE|DELETE|SET|REMOVE|MERGE)\b', stripped, re.IGNORECASE):
+            return_lines.append(lines[j])
+            j += 1
+        else:
+            break
+
+    return_text = ' '.join(l.strip() for l in return_lines)
+    # Extract just the field list after RETURN [DISTINCT]
+    # Handle both "RETURN x, y ORDER BY" and standalone "RETURN x, y"
+    m = re.search(r'\bRETURN\s+(?:DISTINCT\s+)?(.*?)(?:\s+ORDER\b|\s+LIMIT\b|\s+SKIP\b|$)', return_text, re.IGNORECASE)
+    if not m:
+        return cypher, fixes
+
+    prefix_match = re.search(r'(\bRETURN\s+(?:DISTINCT\s+)?)', return_text, re.IGNORECASE)
+    if not prefix_match:
+        return cypher, fixes
+
+    field_list = m.group(1).strip()
+
+    # Smart split by comma — respect parentheses and braces
+    parts = _smart_split(field_list)
+    new_parts = []
+    changed = False
+
+    for part in parts:
+        part = part.strip()
+        alias_m = re.match(r'^(.+?)\s+AS\s+(\w+)\s*$', part, re.IGNORECASE)
+        if alias_m:
+            expr = alias_m.group(1).strip()
+            # Keep alias for aggregations and computed expressions
+            if re.search(r'(?:count|avg|sum|size|collect|min|max)\s*[\({]', expr, re.IGNORECASE):
+                new_parts.append(part)
+            elif any(op in expr for op in ['+', '-', '*', '/', 'toFloat', 'toString']):
+                new_parts.append(part)
+            else:
+                new_parts.append(expr)
+                changed = True
+        else:
+            new_parts.append(part)
+
+    if changed:
+        new_field_list = ', '.join(new_parts)
+        # Replace in original cypher string
+        cypher = cypher.replace(field_list, new_field_list, 1)
+        fixes.append("Stripped unnecessary aliases from RETURN")
+
+    return cypher, fixes
+
+
+def _smart_split(text: str) -> list[str]:
+    """Split by comma, respecting parentheses and braces."""
+    parts = []
+    depth = 0
+    current = []
+    for ch in text:
+        if ch in '({[':
+            depth += 1
+            current.append(ch)
+        elif ch in ')}]':
+            depth -= 1
+            current.append(ch)
+        elif ch == ',' and depth == 0:
+            parts.append(''.join(current))
+            current = []
+        else:
+            current.append(ch)
+    if current:
+        parts.append(''.join(current))
+    return parts

@@ -1452,35 +1452,14 @@ def _build_generic_cypher_template(
         "CRITICAL: Output ONLY the raw Cypher query. NO markdown, NO code blocks, NO explanation.\n\n"
         "=== SCHEMA ===\n"
         "{schema}\n\n"
-        "=== GRAPH KNOWLEDGE (extracted from database — trust this over guesses) ===\n"
+        "=== GRAPH KNOWLEDGE ===\n"
         "{knowledge}\n\n"
-        "=== CYPHER SYNTAX RULES ===\n"
-        "- Write the COMPLETE MATCH pattern first, then WHERE, then RETURN.\n"
-        "  CORRECT: MATCH (a)-[:REL]->(b) WHERE a.x > 1 RETURN b\n"
-        "  WRONG:   MATCH (a) WHERE a.x > 1-[:REL]->(b) RETURN b\n"
-        "- When multiple conditions involve different MATCH patterns, use separate MATCH clauses:\n"
-        "  MATCH (a)-[:R1]->(b) MATCH (a)-[:R2]->(c) WHERE b.x > 1 RETURN c\n"
-        "- Reuse the SAME variable name when the same node appears in multiple MATCH clauses.\n"
-        "- Never chain a WHERE condition into a MATCH pattern on the same line.\n"
-        "- To count relationships per node, use count{{}} subquery syntax, NOT COUNT(pattern).\n"
-        "  CORRECT: RETURN count{{(u)-[:FOLLOWS]->(:User)}} AS cnt\n"
-        "  WRONG:   RETURN COUNT((u)-[:FOLLOWS]->(:User)) AS cnt\n\n"
-        "=== QUERY RULES ===\n"
-        "- Use only node labels, relationship types, and property names from the schema.\n"
-        "- Never invent new labels, relationships, directions, or properties.\n"
-        "- Follow the relationship direction shown in GRAPH KNOWLEDGE.\n"
-        "- Check PROPERTY LOCATIONS in GRAPH KNOWLEDGE to use the correct property on the correct node/relationship.\n"
-        "- Check ENTITY MATCHING in GRAPH KNOWLEDGE to use the correct property for WHERE filters.\n"
-        "- In RETURN: use raw property references (m.title, p.name) WITHOUT aliases unless an aggregation needs one.\n"
-        "  CORRECT: RETURN m.title, m.votes\n"
-        "  WRONG:   RETURN m.title AS movieTitle, m.votes AS voteCount\n"
-        "- Only use AS alias for aggregations: count(m) AS cnt, avg(r.rating) AS avgRating\n"
-        "- Return full nodes only when the question asks for the entity itself.\n"
-        "- If the question asks for specific fields, counts, or metrics, project only those columns.\n"
-        "- Keep aggregate columns (COUNT, AVG, SUM) in RETURN when used for ranking.\n"
-        "- Use ORDER BY + LIMIT for top/first/most/least patterns.\n"
-        "- Use DISTINCT only when joins can duplicate rows.\n"
-        "- Prefer exact equality for names/titles unless partial matching is requested.\n\n"
+        "=== RULES ===\n"
+        "- Use only labels, relationships, and properties from the schema.\n"
+        "- Follow relationship directions from GRAPH KNOWLEDGE.\n"
+        "- Use count{{}} subquery syntax for counting relationships: count{{(u)-[:REL]->(:Node)}}\n"
+        "- Use separate MATCH clauses when the same node has multiple relationships.\n"
+        "- Reuse the same variable for the same node across MATCH clauses.\n\n"
         "=== DOMAIN FACTS ===\n"
         f"{_escape_prompt_block(domain_facts)}\n\n"
         "=== DOMAIN HINTS ===\n"
@@ -1892,6 +1871,16 @@ MATCH (me:Me {screen_name: 'neo4j'})-[:INTERACTS_WITH]->(user:User)
 RETURN user.screen_name, user.name, COUNT(*) AS interactions
 ORDER BY interactions DESC
 LIMIT 5
+
+Q: List the users who follow Neo4j and have posted tweets using 'Buffer'.
+MATCH (u:User)-[:FOLLOWS]->(me:Me {name: 'Neo4j'})
+MATCH (u)-[:POSTS]->(t:Tweet)-[:USING]->(s:Source {name: 'Buffer'})
+RETURN DISTINCT u.screen_name, u.name
+
+Q: Find users who follow Neo4j and have tweeted about a specific hashtag.
+MATCH (u:User)-[:FOLLOWS]->(me:Me {name: 'Neo4j'})
+MATCH (u)-[:POSTS]->(t:Tweet)-[:TAGS]->(h:Hashtag {name: 'neo4j'})
+RETURN DISTINCT u.screen_name
 """,
     },
 }

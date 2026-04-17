@@ -32,7 +32,8 @@ from services.rag_service import (
 
 app = Flask(__name__)
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s", force=True)
+logging.getLogger().handlers[0].flush = lambda: None  # auto-flush
 
 
 # ---------------------------------------------------------------------------
@@ -62,7 +63,9 @@ def text2cypher():
         return jsonify({"error": "question is required"}), 400
 
     try:
+        logger.info("[API] Processing: %s", question[:60])
         results = get_raw_results(question)
+        logger.info("[API] Done: %s → cypher=%s", question[:40], bool(results.get("cypher_query")))
         return jsonify(
             {
                 "cypher_query": results.get("cypher_query", ""),
@@ -195,4 +198,4 @@ if __name__ == "__main__":
     print("  GET  /api/schema       — schema info")
     print("  GET  /health           — health check")
 
-    app.run(host=host, port=port, debug=False, threaded=True)
+    app.run(host=host, port=port, debug=False, threaded=False)

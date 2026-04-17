@@ -24,7 +24,10 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_neo4j import Neo4jGraph
 
 from services import schema_linker, cypher_validator, error_taxonomy
+from services.question_analyzer import analyze_and_enrich
 from services.knowledge_base import load_knowledge, format_for_cypher_prompt
+from services.context_assembler import assemble, build_prompt
+from services.example_store import get_examples
 from templates.cypher_templates import get_cypher_template
 from templates.entity_definitions import get_entity_definitions
 from utils.helpers import clean_cypher_query
@@ -42,24 +45,37 @@ def run(
     llm,
 ) -> dict:
     knowledge = load_knowledge(database)
-    entity_defs = get_entity_definitions(database)
 
     # --- Step 1: Schema Linking (CODE) ---
     link_result = schema_linker.link_schema(question, knowledge, full_schema)
     cropped_schema = link_result.cropped_schema or full_schema
 
-    # --- Step 2: Build prompt with knowledge (CODE) ---
-    template = get_cypher_template(database)
-    knowledge_text = format_for_cypher_prompt(database)
-    # Escape braces for the template
-    knowledge_escaped = knowledge_text.replace("{", "{{").replace("}", "}}")
-    prompt_text = template.replace("{schema}", cropped_schema)
-    prompt_text = prompt_text.replace("{knowledge}", knowledge_escaped)
-    # Unescape for final prompt (PromptTemplate already handled)
-    prompt_text = prompt_text.replace("{{", "{").replace("}}", "}")
-    prompt_text = prompt_text.replace("{question}", question)
+    # --- Step 2: Question Analysis (CODE) ---
+    enriched_question, intents = analyze_and_enrich(question, knowledge)
 
-    # --- Step 3: LLM generates Cypher directly (1 call) ---
+    # --- Step 3: Build prompt from template + targeted knowledge (CODE) ---
+    template = get_cypher_template(database)
+
+    # Select only relevant knowledge (not all)
+    from services.context_assembler import _select_knowledge
+    targeted_knowledge = _select_knowledge(knowledge, intents)
+    intents["matched_labels"].update(link_result.matched_labels)
+    intents["matched_rels"].update(link_result.matched_rels)
+
+    # Escape braces in dynamic content
+    safe_schema = cropped_schema.replace("{", "{{").replace("}", "}}")
+    safe_knowledge = targeted_knowledge.replace("{", "{{").replace("}", "}}")
+    safe_question = enriched_question.replace("{", "{{").replace("}", "}}")
+
+    prompt_text = template
+    prompt_text = prompt_text.replace("{schema}", safe_schema)
+    prompt_text = prompt_text.replace("{knowledge}", safe_knowledge)
+    prompt_text = prompt_text.replace("{question}", safe_question)
+
+    # Final unescape
+    prompt_text = prompt_text.replace("{{", "{").replace("}}", "}")
+
+    # --- Step 4: LLM generates Cypher directly (1 call) ---
     logger.info("[Pipeline] Generating Cypher for: %s", question[:60])
     try:
         response = llm.invoke([
@@ -76,13 +92,13 @@ def run(
 
     logger.info("[Pipeline] Generated: %s", cypher[:100])
 
-    # --- Step 4: Validate + auto-fix Cypher (CODE) ---
+    # --- Step 5: Validate + auto-fix Cypher (CODE) ---
     cypher, fixes = cypher_validator.validate_and_fix(cypher, knowledge)
 
-    # --- Step 5: Execute ---
+    # --- Step 6: Execute ---
     result, error = _execute(graph, cypher)
 
-    # --- Step 6: Self-correction if execution failed (1 LLM call) ---
+    # --- Step 7: Self-correction if execution failed (1 LLM call) ---
     if error:
         logger.info("[Pipeline] Execution failed, attempting correction")
         classified = error_taxonomy.classify_neo4j_error(error)
