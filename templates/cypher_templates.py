@@ -1843,12 +1843,15 @@ _ACTIVE_GENERIC_TEMPLATE_MAP = {
 # =============================================================================
 # TEMPLATE SELECTOR
 # =============================================================================
+# Use the detailed, hand-crafted templates with extensive few-shot examples.
+# The generic templates (_ACTIVE_GENERIC_TEMPLATE_MAP) are kept as fallback
+# for databases that don't have a dedicated detailed template.
 _TEMPLATE_MAP = {
-    "climate": _ACTIVE_GENERIC_TEMPLATE_MAP["climate"],
-    "movies": _ACTIVE_GENERIC_TEMPLATE_MAP["movies"],
-    "recommendations": _ACTIVE_GENERIC_TEMPLATE_MAP["recommendations"],
-    "northwind": _ACTIVE_GENERIC_TEMPLATE_MAP["northwind"],
-    "twitter": _ACTIVE_GENERIC_TEMPLATE_MAP["twitter"],
+    "climate": CYPHER_GENERATION_CLIMATE_TEMPLATE,
+    "movies": CYPHER_GENERATION_MOVIES_TEMPLATE,
+    "recommendations": CYPHER_GENERATION_RECOMMENDATIONS_TEMPLATE,
+    "northwind": CYPHER_GENERATION_NORTHWIND_TEMPLATE,
+    "twitter": CYPHER_GENERATION_TWITTER_TEMPLATE,
 }
 
 

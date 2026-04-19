@@ -3,11 +3,15 @@ GraphCypherQAChain setup.
 Uses langchain_neo4j.GraphCypherQAChain (compatible with GraphStore/Neo4jGraph)
 instead of langchain_community version which caused validation errors.
 Thread-safe singleton with double-checked locking.
+
+Includes retry logic: if the first Cypher query fails at the Neo4j level,
+the error message is fed back to the LLM so it can self-correct.
 """
 
 from __future__ import annotations
 
 import logging
+import re
 import threading
 import urllib.parse
 
@@ -23,6 +27,8 @@ logger = logging.getLogger(__name__)
 
 _chain: GraphCypherQAChain | None = None
 _chain_lock = threading.Lock()
+
+MAX_CYPHER_RETRIES = 2  # total attempts = 1 original + up to 2 retries
 
 
 def _build_chain() -> GraphCypherQAChain:
@@ -67,17 +73,30 @@ def reset_chain() -> None:
     logger.info("[Chain] Chain reset — will rebuild on next invoke.")
 
 
-def invoke_chain(question: str) -> dict | str:
+def _extract_and_clean_query(result: dict) -> str | None:
     """
-    Invoke the chain with a question. 60s timeout.
-    Returns chain result dict or an error string.
-    """
-    import signal
-    import functools
-    from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
+    Extract the raw Cypher query from chain result intermediate_steps,
+    clean it (strip markdown / prefix / semicolons), and store the cleaned
+    version back into intermediate_steps.
 
-    maybe_refresh_schema()
-    chain = get_chain()
+    Returns the cleaned query string, or None if not found.
+    """
+    steps = result.get("intermediate_steps", [])
+    if not isinstance(steps, list):
+        return None
+    for step in steps:
+        if isinstance(step, dict):
+            query_raw = step.get("query", "")
+            if query_raw:
+                cleaned = clean_cypher_query(query_raw)
+                step["query"] = cleaned  # store cleaned, NOT url-encoded
+                return cleaned
+    return None
+
+
+def _invoke_once(chain: GraphCypherQAChain, question: str, timeout: int = 60) -> dict | str:
+    """Single chain invocation with timeout. Returns result dict or error string."""
+    from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
 
     def _run():
         return chain.invoke({"query": question}, return_only_outputs=True)
@@ -85,26 +104,95 @@ def invoke_chain(question: str) -> dict | str:
     try:
         with ThreadPoolExecutor(max_workers=1) as executor:
             future = executor.submit(_run)
-            result = future.result(timeout=60)
+            result = future.result(timeout=timeout)
     except FuturesTimeout:
-        logger.warning("[Chain] Chain timed out after 60s for question: %s", question[:80])
+        logger.warning("[Chain] Timed out after %ds for: %s", timeout, question[:80])
         return "Sorry, the query took too long."
     except Exception as e:
         logger.warning("[Chain] GraphCypher chain error: %s", e)
-        return "Sorry, I couldn't find an answer to your question."
+        return f"CYPHER_ERROR: {e}"
 
     if result is None:
         return "No answer was generated."
-
-    try:
-        steps = result.get("intermediate_steps", [{}])
-        if steps and isinstance(steps[-1], dict):
-            query_raw = steps[-1].get("query", "")
-            if query_raw:
-                cleaned = clean_cypher_query(query_raw)
-                encoded = urllib.parse.quote(cleaned)
-                result["intermediate_steps"][-1]["query"] = encoded
-    except Exception as e:
-        logger.warning("[Chain] Failed to extract/clean Cypher query: %s", e)
-
     return result
+
+
+def invoke_chain(question: str) -> dict | str:
+    """
+    Invoke the chain with a question.
+
+    Retry logic:
+      1. Run the chain.
+      2. If the result contains a Neo4j / Cypher error, append the error to
+         the question and retry so the LLM can self-correct.
+      3. Up to MAX_CYPHER_RETRIES additional attempts.
+
+    Returns chain result dict (with cleaned Cypher in intermediate_steps)
+    or an error string.
+    """
+    maybe_refresh_schema()
+    chain = get_chain()
+
+    current_question = question
+    last_error: str | None = None
+
+    for attempt in range(1 + MAX_CYPHER_RETRIES):
+        logger.info("[Chain] invoke attempt %d/%d", attempt + 1, 1 + MAX_CYPHER_RETRIES)
+
+        result = _invoke_once(chain, current_question)
+
+        # Hard error (timeout / unexpected) — no point retrying
+        if isinstance(result, str):
+            if result.startswith("CYPHER_ERROR:") and attempt < MAX_CYPHER_RETRIES:
+                last_error = result.replace("CYPHER_ERROR: ", "")
+                current_question = (
+                    f"{question}\n\n"
+                    f"[IMPORTANT] The previous Cypher query failed with this error:\n"
+                    f"{last_error}\n"
+                    f"Please fix the Cypher query to avoid this error."
+                )
+                logger.info("[Chain] Retrying with error feedback: %s", last_error[:120])
+                continue
+            # Non-retryable or exhausted retries
+            if result.startswith("CYPHER_ERROR:"):
+                return "Sorry, I couldn't find an answer to your question."
+            return result
+
+        # Got a dict result — clean the Cypher query
+        _extract_and_clean_query(result)
+
+        # Check if the result itself signals an error (some chains embed errors)
+        raw_result = result.get("result")
+        if isinstance(raw_result, str) and _looks_like_cypher_error(raw_result):
+            if attempt < MAX_CYPHER_RETRIES:
+                last_error = raw_result
+                current_question = (
+                    f"{question}\n\n"
+                    f"[IMPORTANT] The previous Cypher query returned an error:\n"
+                    f"{last_error}\n"
+                    f"Please fix the Cypher query to avoid this error."
+                )
+                logger.info("[Chain] Result looks like error, retrying: %s", last_error[:120])
+                continue
+
+        return result
+
+    # Should not reach here, but just in case
+    return "Sorry, I couldn't find an answer to your question."
+
+
+def _looks_like_cypher_error(text: str) -> bool:
+    """Heuristic: does the text look like a Neo4j / Cypher error message?"""
+    error_patterns = [
+        r"SyntaxError",
+        r"Neo\.ClientError",
+        r"Invalid input",
+        r"Unknown function",
+        r"Type mismatch",
+        r"Variable `.+` not defined",
+        r"There is no procedure with the name",
+    ]
+    for pattern in error_patterns:
+        if re.search(pattern, text, re.IGNORECASE):
+            return True
+    return False

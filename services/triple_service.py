@@ -126,13 +126,47 @@ def verify_triples(
     graph: Neo4jGraph,
     database: str,
 ) -> tuple[list[tuple[str, str, str]], list[tuple[str, str, str]]]:
-    """Structural verification only — no DB queries."""
+    """
+    Two-phase verification:
+      Phase 1 — Structural: label & relationship must exist in schema.
+      Phase 2 — Instance:   for each verified triple, probe Neo4j to check
+                whether the subject/object entities actually exist and collect
+                concrete instance names so the Cypher LLM can use exact values.
+    """
     verified: list[tuple[str, str, str]] = []
+    instance_triples: list[tuple[str, str, str]] = []
+
+    # Phase 1: structural
     for s, p, o in triples:
         if p in schema_relationships and s in schema_labels and o in schema_labels:
             verified.append((s, p, o))
-    logger.info("[TripleService] verify_triples -> verified=%d", len(verified))
-    return verified, []
+
+    logger.info("[TripleService] structural verified=%d", len(verified))
+
+    # Phase 2: instance-level probing
+    for s_label, rel, o_label in verified:
+        try:
+            cypher = (
+                f"MATCH (a:{s_label})-[:{rel}]->(b:{o_label}) "
+                f"RETURN a.name AS subject, b.name AS object LIMIT 5"
+            )
+            rows = graph.query(cypher)
+            for row in rows:
+                subj = row.get("subject") or row.get("a.name")
+                obj = row.get("object") or row.get("b.name")
+                if subj and obj:
+                    instance_triples.append((str(subj), rel, str(obj)))
+        except Exception as e:
+            logger.debug(
+                "[TripleService] instance probe failed for (%s)-[:%s]->(%s): %s",
+                s_label, rel, o_label, e,
+            )
+
+    logger.info(
+        "[TripleService] verify_triples -> verified=%d, instances=%d",
+        len(verified), len(instance_triples),
+    )
+    return verified, instance_triples
 
 
 def extract_triples_with_retry(
@@ -174,14 +208,15 @@ def extract_triples_with_retry(
                 logger.warning("[TripleService] LLM call failed attempt %d: %s", attempt + 1, e)
                 continue
         raw_triples = triples
-        temp_verified, _ = verify_triples(
+        temp_verified, temp_instances = verify_triples(
             triples, schema_labels, schema_relationships, graph, database
         )
         if temp_verified:
             verified_triples = temp_verified
+            instance_triples = temp_instances
             logger.info(
-                "[TripleService] Got %d verified triple(s) on attempt %d",
-                len(verified_triples), attempt + 1,
+                "[TripleService] Got %d verified triple(s), %d instance(s) on attempt %d",
+                len(verified_triples), len(instance_triples), attempt + 1,
             )
             break
 
@@ -202,8 +237,18 @@ def build_enhanced_question(
     instance_triples: list[tuple[str, str, str]],
     conversation_history: list[dict[str, str]] | None = None,
 ) -> str:
-    """Build question string for the Cypher chain."""
+    """
+    Build an enriched question string for the Cypher chain.
+
+    Includes:
+      - conversation history (last 3 turns)
+      - original + rewritten question
+      - verified schema triples  (structural hints for the LLM)
+      - instance triples         (concrete entity names from Neo4j)
+    """
     parts: list[str] = []
+
+    # Conversation context
     if conversation_history:
         conversation_text = "\n".join(
             f"User: {msg['input']}\nBot: {msg['output']}"
@@ -211,6 +256,36 @@ def build_enhanced_question(
         )
         if conversation_text.strip():
             parts.append(f"Conversation History:\n{conversation_text}")
+
+    # Questions
     parts.append(f"Question: {question}")
     parts.append(f"Rewritten: {rewritten or question}")
+
+    # Verified triples — tell the LLM which schema paths are relevant
+    if verified_triples:
+        triple_lines = "\n".join(
+            f"  ({s})-[:{p}]->({o})" for s, p, o in verified_triples
+        )
+        parts.append(
+            f"Relevant schema paths (use these labels and relationships):\n{triple_lines}"
+        )
+
+    # Instance triples — give the LLM concrete entity names from the DB
+    if instance_triples:
+        # Deduplicate and limit to avoid prompt bloat
+        seen: set[tuple[str, str, str]] = set()
+        unique: list[tuple[str, str, str]] = []
+        for t in instance_triples:
+            if t not in seen:
+                seen.add(t)
+                unique.append(t)
+            if len(unique) >= 15:
+                break
+        instance_lines = "\n".join(
+            f"  ({s})-[:{p}]->({o})" for s, p, o in unique
+        )
+        parts.append(
+            f"Example entities found in the database (use exact names):\n{instance_lines}"
+        )
+
     return "\n\n".join(parts)

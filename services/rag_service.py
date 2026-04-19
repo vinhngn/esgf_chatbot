@@ -47,15 +47,22 @@ NEO4J_BROWSER_URL = "https://neoforjcmip.templeuni.com/browser/"
 
 
 def _extract_cypher_queries(chain_result: dict) -> tuple[str | None, str | None]:
-    """Extract the (encoded, decoded) Cypher query from intermediate_steps."""
+    """
+    Extract the (encoded, decoded) Cypher query from intermediate_steps.
+
+    After the chain.py fix, intermediate_steps now stores the *cleaned*
+    (non-encoded) query.  We derive the encoded version for the Neo4j
+    Browser link and keep the decoded version for display / debugging.
+    """
     steps = chain_result.get("intermediate_steps", [])
     if not isinstance(steps, list):
         return None, None
     for step in steps:
         if isinstance(step, dict):
-            encoded = step.get("query")
-            if encoded:
-                return encoded, urllib.parse.unquote(encoded)
+            cleaned = step.get("query")
+            if cleaned:
+                encoded = urllib.parse.quote(cleaned)
+                return encoded, cleaned
     return None, None
 
 
