@@ -18,7 +18,7 @@ import urllib.parse
 from langchain_core.prompts import PromptTemplate
 from langchain_neo4j import GraphCypherQAChain
 from templates.cypher_templates import get_cypher_template
-from utils.helpers import clean_cypher_query
+from utils.helpers import clean_cypher_query, rewrite_bare_node_returns
 
 from models.graph import get_graph, maybe_refresh_schema
 from models.llm import get_cypher_llm, get_qa_llm
@@ -76,8 +76,8 @@ def reset_chain() -> None:
 def _extract_and_clean_query(result: dict) -> str | None:
     """
     Extract the raw Cypher query from chain result intermediate_steps,
-    clean it (strip markdown / prefix / semicolons), and store the cleaned
-    version back into intermediate_steps.
+    clean it, rewrite bare node returns to explicit properties, and store
+    the final version back into intermediate_steps.
 
     Returns the cleaned query string, or None if not found.
     """
@@ -89,7 +89,14 @@ def _extract_and_clean_query(result: dict) -> str | None:
             query_raw = step.get("query", "")
             if query_raw:
                 cleaned = clean_cypher_query(query_raw)
-                step["query"] = cleaned  # store cleaned, NOT url-encoded
+                # Rewrite RETURN m → RETURN m.title, m.released, ...
+                # so t2c doesn't flatten full nodes into extra columns
+                try:
+                    graph = get_graph()
+                    cleaned = rewrite_bare_node_returns(cleaned, graph)
+                except Exception as e:
+                    logger.debug("[Chain] bare-node rewrite skipped: %s", e)
+                step["query"] = cleaned
                 return cleaned
     return None
 

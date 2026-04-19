@@ -1457,7 +1457,7 @@ def _build_generic_cypher_template(
         "- Never invent new labels, relationships, directions, or shortcut properties.\n"
         "- Follow the relationship direction shown in the schema.\n"
         "- Reuse the same variable when the same entity must satisfy multiple relationships.\n"
-        "- Return full nodes only when the question clearly asks for the entity itself and does not ask for specific fields, relationship properties, or metrics.\n"
+        "- NEVER return bare node variables (e.g. RETURN m, RETURN p). ALWAYS return explicit properties (e.g. RETURN m.title, p.name). This is critical.\n"
         "- If the question asks for names, titles, identifiers, roles, summaries, counts, averages, or metrics, return only those requested columns.\n"
         "- Return every requested column and do not add extra columns.\n"
         "- If the query uses COUNT, AVG, SUM, size(...), or DISTINCT for ranking/filtering, keep the resulting metric column in RETURN.\n"
