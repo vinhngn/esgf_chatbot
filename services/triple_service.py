@@ -238,17 +238,15 @@ def build_enhanced_question(
     conversation_history: list[dict[str, str]] | None = None,
 ) -> str:
     """
-    Build an enriched question string for the Cypher chain.
+    Build the enriched query string passed to the Cypher chain.
 
     Includes:
-      - conversation history (last 3 turns)
-      - original + rewritten question
-      - verified schema triples  (structural hints for the LLM)
-      - instance triples         (concrete entity names from Neo4j)
+      - Recent conversation history (last 3 turns)
+      - Original question
+      - Rewritten (clarified) question
     """
     parts: list[str] = []
 
-    # Conversation context
     if conversation_history:
         conversation_text = "\n".join(
             f"User: {msg['input']}\nBot: {msg['output']}"
@@ -257,35 +255,7 @@ def build_enhanced_question(
         if conversation_text.strip():
             parts.append(f"Conversation History:\n{conversation_text}")
 
-    # Questions
     parts.append(f"Question: {question}")
     parts.append(f"Rewritten: {rewritten or question}")
-
-    # Verified triples — tell the LLM which schema paths are relevant
-    if verified_triples:
-        triple_lines = "\n".join(
-            f"  ({s})-[:{p}]->({o})" for s, p, o in verified_triples
-        )
-        parts.append(
-            f"Relevant schema paths (use these labels and relationships):\n{triple_lines}"
-        )
-
-    # Instance triples — give the LLM concrete entity names from the DB
-    if instance_triples:
-        # Deduplicate and limit to avoid prompt bloat
-        seen: set[tuple[str, str, str]] = set()
-        unique: list[tuple[str, str, str]] = []
-        for t in instance_triples:
-            if t not in seen:
-                seen.add(t)
-                unique.append(t)
-            if len(unique) >= 15:
-                break
-        instance_lines = "\n".join(
-            f"  ({s})-[:{p}]->({o})" for s, p, o in unique
-        )
-        parts.append(
-            f"Example entities found in the database (use exact names):\n{instance_lines}"
-        )
 
     return "\n\n".join(parts)
