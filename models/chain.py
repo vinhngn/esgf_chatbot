@@ -18,7 +18,7 @@ import urllib.parse
 from langchain_core.prompts import PromptTemplate
 from langchain_neo4j import GraphCypherQAChain
 from templates.cypher_templates import get_cypher_template
-from utils.helpers import clean_cypher_query, rewrite_bare_node_returns
+from utils.helpers import clean_cypher_query, strip_noisy_return_properties
 
 from models.graph import get_graph, maybe_refresh_schema
 from models.llm import get_cypher_llm, get_qa_llm
@@ -44,12 +44,12 @@ def _build_chain() -> GraphCypherQAChain:
         qa_llm=get_qa_llm(),
         graph=get_graph(),
         cypher_prompt=prompt,
-        validate_cypher=True,
+        validate_cypher=False,
         return_direct=True,
         verbose=True,
         allow_dangerous_requests=True,
         return_intermediate_steps=True,
-        top_k=100,
+        top_k=50,
     )
     logger.info("[Chain] GraphCypherQAChain ready.")
     return chain
@@ -89,13 +89,6 @@ def _extract_and_clean_query(result: dict) -> str | None:
             query_raw = step.get("query", "")
             if query_raw:
                 cleaned = clean_cypher_query(query_raw)
-                # Rewrite RETURN m → RETURN m.title, m.released, ...
-                # so t2c doesn't flatten full nodes into extra columns
-                try:
-                    graph = get_graph()
-                    cleaned = rewrite_bare_node_returns(cleaned, graph)
-                except Exception as e:
-                    logger.debug("[Chain] bare-node rewrite skipped: %s", e)
                 step["query"] = cleaned
                 return cleaned
     return None
@@ -124,7 +117,7 @@ def _invoke_once(chain: GraphCypherQAChain, question: str, timeout: int = 60) ->
     return result
 
 
-def invoke_chain(question: str) -> dict | str:
+def invoke_chain(question: str, schema: str = "") -> dict | str:
     """
     Invoke the chain with a question.
 
@@ -141,6 +134,13 @@ def invoke_chain(question: str) -> dict | str:
     chain = get_chain()
 
     current_question = question
+    if schema:
+        current_question = (
+            f"IMPORTANT: The precise Graph Schema for this query is provided below.\n"
+            f"{schema}\n\n"
+            f"User Question: {question}"
+        )
+
     last_error: str | None = None
 
     for attempt in range(1 + MAX_CYPHER_RETRIES):

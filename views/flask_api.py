@@ -62,12 +62,13 @@ def text2cypher():
     """
     payload = request.get_json(silent=True) or {}
     question = (payload.get("question") or "").strip()
+    schema = (payload.get("schema") or "").strip()
 
     if not question:
         return jsonify({"error": "question is required"}), 400
 
     try:
-        results = get_raw_results(question)
+        results = get_raw_results(question, schema)
 
         return jsonify(
             {

@@ -716,30 +716,6 @@ MATCH (m:Movie) WHERE m.plot CONTAINS 'evil exterminator' RETURN m.title, m.imdb
 Q: List the movies released in the year the user "Omar Huffman" was born.
 MATCH (u:User {{name: "Omar Huffman"}})-[:RATED]->(m:Movie) WITH u, substring(m.released, 0, 4) AS userBirthYear MATCH (movie:Movie) WHERE substring(movie.released, 0, 4) = userBirthYear RETURN DISTINCT movie.title
 
-### DIRECTORS WITH MULTI-LANGUAGE MOVIES (return languages column) ###
-Q: Which three directors have directed movies in more than one language?
-MATCH (d:Director)-[:DIRECTED]->(m:Movie) WITH d, collect(DISTINCT m.languages) AS languages WHERE size(languages) > 1 RETURN d.name, languages ORDER BY size(languages) DESC LIMIT 3
-
-### BUDGET TO REVENUE RATIO ###
-Q: List the top 3 movies with the highest budget to revenue ratio.
-MATCH (m:Movie) WHERE m.budget IS NOT NULL AND m.revenue IS NOT NULL AND m.revenue > 0 RETURN m.title, m.budget, m.revenue, (toFloat(m.budget) / m.revenue) AS budgetToRevenueRatio ORDER BY budgetToRevenueRatio DESC LIMIT 3
-
-### REVENUE WITH RATED FILTER ###
-Q: List the top 3 movies with the most revenue that have a runtime under 90 minutes.
-MATCH (m:Movie) WHERE m.runtime < 90 AND exists((m)<-[:RATED]-()) RETURN m.title AS movie, m.revenue AS revenue ORDER BY revenue DESC LIMIT 3
-
-
-### CRITICAL: DIRECTORS MULTI-LANGUAGE - MUST RETURN languages COLUMN (NOT movieCount) ###
-Q: Which three directors have directed movies in more than one language?
-MATCH (d:Director)-[:DIRECTED]->(m:Movie) WITH d, collect(DISTINCT m.languages) AS languages WHERE size(languages) > 1 RETURN d.name, languages ORDER BY size(languages) DESC LIMIT 3
-
-### CRITICAL: REVENUE WITH RATED FILTER - USE exists() NOT IS NOT NULL ###
-Q: List the top 3 movies with the most revenue that have a runtime under 90 minutes.
-MATCH (m:Movie) WHERE m.runtime < 90 AND exists((m)<-[:RATED]-()) RETURN m.title AS movie, m.revenue AS revenue ORDER BY revenue DESC LIMIT 3
-
-### RETURN ALL REQUESTED COLUMNS (CRITICAL - 40% of errors) ###
-Q: List the top 3 movies with the highest budget to revenue ratio.
-MATCH (m:Movie) WHERE m.budget IS NOT NULL AND m.revenue IS NOT NULL AND m.revenue > 0 RETURN m.title, m.budget, m.revenue, (toFloat(m.budget) / m.revenue) AS budgetToRevenueRatio ORDER BY budgetToRevenueRatio DESC LIMIT 3
 
 Q: What are the first 3 movies where the main actor was born in France?
 MATCH (a:Actor)-[:ACTED_IN]->(m:Movie) WHERE a.bornIn = 'France' RETURN m.title LIMIT 3
@@ -928,14 +904,6 @@ MATCH (m:Movie) RETURN m.title AS title, size(m.countries) AS countryCount ORDER
 Q: List the top 3 movies with the most revenue that have a runtime under 90 minutes.
 MATCH (m:Movie) WHERE m.runtime < 90 AND exists((m)<-[:RATED]-()) RETURN m.title AS movie, m.revenue AS revenue ORDER BY revenue DESC LIMIT 3
 
-Q: List the top 5 movies with the largest budgets released before 2000.
-MATCH (m:Movie) WHERE m.year < 2000 RETURN m.title AS title, m.budget AS budget ORDER BY m.budget DESC LIMIT 5
-
-Q: Which movie had the largest number of actors participating?
-MATCH (a:Actor)-[:ACTED_IN]->(m:Movie) RETURN m.title AS Movie, count(a) AS NumberOfActors ORDER BY NumberOfActors DESC LIMIT 1
-
-Q: List the top 3 directors based on the number of different countries their movies have been released in.
-MATCH (d:Director)-[:DIRECTED]->(m:Movie) WITH d, size(collect(distinct m.countries)) AS numCountries ORDER BY numCountries DESC LIMIT 3 RETURN d.name AS director, numCountries AS numberOfCountries
 
 Q: List the top 5 actors by number of movies they've acted in that have been released on Christmas Day.
 MATCH (a:Actor)-[:ACTED_IN]->(m:Movie) WHERE m.released ENDS WITH '-12-25' WITH a, count(m) AS movieCount ORDER BY movieCount DESC LIMIT 5 RETURN a.name AS actorName, movieCount
@@ -944,26 +912,11 @@ Q: Which director has the highest average IMDB rating for movies with a budget g
 MATCH (m:Movie)<-[:DIRECTED]-(d:Director) WHERE m.budget > 200000000 WITH d, avg(m.imdbRating) AS averageRating RETURN d.name AS directorName, averageRating ORDER BY averageRating DESC LIMIT 1
 
 ### CRITICAL: RETURN ALL COLUMNS (Row 40, 53, 66, 80, 127, 139, 140 errors) ###
-Q: What are the first 3 movies with an actor born before 1900?
-MATCH (a:Actor)-[:ACTED_IN]->(m:Movie) WHERE a.born < date("1900-01-01") RETURN m.title AS MovieTitle, m.year AS ReleaseYear ORDER BY m.year ASC LIMIT 3
-
 Q: Which country has produced the most movies with a budget greater than 100 million dollars?
 MATCH (m:Movie) WHERE m.budget > 100000000 UNWIND m.countries AS country WITH country, count(DISTINCT m) AS movieCount ORDER BY movieCount DESC RETURN country, movieCount LIMIT 1
 
-Q: Which three movies have the highest difference in revenue and budget?
-MATCH (m:Movie) WHERE m.revenue IS NOT NULL AND m.budget IS NOT NULL RETURN m.title, m.revenue, m.budget, (m.revenue - m.budget) AS profit ORDER BY profit DESC LIMIT 3
-
-Q: List the top 5 movies with the smallest budgets that have an imdbRating over 7.0.
-MATCH (m:Movie) WHERE m.imdbRating > 7.0 RETURN m.title, m.budget, m.imdbRating ORDER BY m.budget ASC LIMIT 5
-
-Q: List the top 5 movies with the largest budgets released before 2000.
-MATCH (m:Movie) WHERE m.year < 2000 AND m.budget IS NOT NULL RETURN m.title, m.budget, m.year ORDER BY m.budget DESC LIMIT 5
-
 Q: List the first 3 actors who have acted in a movie with a budget over 50 million USD.
 MATCH (a:Actor)-[:ACTED_IN]->(m:Movie) WHERE m.budget > 50000000 RETURN a.name AS actorName, m.title AS movieTitle, m.budget AS movieBudget LIMIT 3
-
-Q: What are the top 3 movies with the highest budget to revenue ratio?
-MATCH (m:Movie) WHERE m.budget > 0 AND m.revenue > 0 WITH m, (toFloat(m.budget) / toFloat(m.revenue)) AS budget_to_revenue_ratio RETURN m.title AS movie_title, budget_to_revenue_ratio ORDER BY budget_to_revenue_ratio DESC LIMIT 3
 
 ### CRITICAL: PATH vs WHERE SEPARATION (Row 91, 108, 134 syntax errors) ###
 Q: What are the first 3 genres of movies that have been directed by directors born after 1980?
@@ -982,18 +935,9 @@ MATCH (m:Movie) WHERE toLower(m.plot) CONTAINS "shakespeare" RETURN avg(m.imdbRa
 Q: What are the names of the top 5 movies with a budget over 100 million dollars?
 MATCH (m:Movie) WHERE m.budget > 100000000 RETURN m.title ORDER BY m.imdbRating DESC LIMIT 5
 
-Q: What are the top 5 movies directed by directors born in Nebraska?
-MATCH (d:Director)-[:DIRECTED]->(m:Movie) WHERE d.bornIn CONTAINS "Nebraska" RETURN m.title AS MovieTitle, m.imdbRating AS Rating ORDER BY Rating DESC LIMIT 5
-
 ### CRITICAL: YEAR vs RELEASED (Row 115, 118, 135 errors) ###
 Q: What is the total revenue generated by movies released in the 1990s?
 MATCH (m:Movie) WHERE m.year >= 1990 AND m.year <= 1999 WITH sum(m.revenue) AS totalRevenue RETURN totalRevenue
-
-Q: What are the top 5 movies released in the 1990s by revenue?
-MATCH (m:Movie) WHERE m.released >= '1990-01-01' AND m.released < '2000-01-01' AND m.revenue IS NOT NULL RETURN m ORDER BY m.revenue DESC LIMIT 5
-
-Q: What movies have a runtime longer than 120 minutes and were released after 2000?
-MATCH (m:Movie) WHERE m.runtime > 120 AND m.released > '2000-01-01' RETURN m.title, m.released, m.runtime
 
 ### CRITICAL: DISTINCT vs NO DISTINCT (Row 121, 130, 131 errors) ###
 Q: Which 5 movies had their entire plot translated into more than one language?
@@ -1015,12 +959,6 @@ MATCH (a:Actor)-[:ACTED_IN]->(m:Movie) WHERE date(m.released) < a.born RETURN DI
 Q: Find the actors who have acted in movies directed by a director born before 1950.
 MATCH (actor:Actor)-[:ACTED_IN]->(movie:Movie)<-[:DIRECTED]-(director:Director) WHERE director.born < date('1950-01-01') RETURN DISTINCT actor.name
 
-### CRITICAL: FULL NODE RETURN (Row 76, 109, 118 errors) ###
-Q: List the top 3 movies with the lowest imdbVotes released after 2000.
-MATCH (m:Movie) WHERE m.year > 2000 AND m.imdbVotes IS NOT NULL RETURN m ORDER BY m.imdbVotes ASC LIMIT 3
-
-Q: What are the top 5 movies with the most budget and were released after 2010?
-MATCH (m:Movie) WHERE m.released >= '2011-01-01' AND m.budget IS NOT NULL RETURN m ORDER BY m.budget DESC LIMIT 5
 
 ### CRITICAL: 21st CENTURY (Row 122 error) ###
 Q: What is the total revenue of movies released in the 21st century?
@@ -1049,120 +987,127 @@ CRITICAL: Output ONLY the raw Cypher query. NO markdown, NO code blocks, NO expl
 === SCHEMA ===
 {schema}
 
-=== 10 CRITICAL RULES (Follow in order of priority) ===
+=== 12 CRITICAL RULES (Follow in order of priority) ===
 
-RULE 1 - RETURN FORMAT (40% of errors):
+RULE 1 - RETURN FORMAT (CRITICAL):
 | Question Pattern | Return Format |
 |------------------|---------------|
-| "List the first N X" | RETURN x (full node), NO ORDER BY |
-| "What are the top N X by Y" | RETURN x.prop, Y ORDER BY DESC |
-| "Which supplier supplies..." | RETURN s.supplierID, p.productName, p.unitPrice |
-| "Find all X that..." | RETURN x.companyName |
+| "List the first N X" / "Find all X" | RETURN projected properties (e.g. p.productName), NO ORDER BY, just LIMIT |
+| "What are the top N X by Y" | RETURN x.prop, Y ORDER BY Y DESC LIMIT N |
+| "Which supplier supplies..." | RETURN s.companyName |
+| "Which categories..." with joins | RETURN DISTINCT c.categoryName |
+NEVER return the full node (e.g. RETURN c) unless no properties are relevant. ALWAYS project properties.
 
-RULE 2 - RELATIONSHIP DIRECTION (NEVER reverse):
-- (o:Order)-[:ORDERS]->(p:Product) - Order contains Product
-- (o:Order)-[r:ORDERS]->(p:Product) - r has unitPrice, quantity, discount
-- (c:Customer)-[:PURCHASED]->(o:Order)
+RULE 2 - RELATIONSHIP DIRECTION AND PATHS:
+- (c:Customer)-[:PURCHASED]->(o:Order)-[r:ORDERS]->(p:Product)-[:PART_OF]->(cat:Category)
 - (s:Supplier)-[:SUPPLIES]->(p:Product)
-- (p:Product)-[:PART_OF]->(c:Category)
+- NEVER reverse these relationships!
 
-RULE 3 - RELATIONSHIP PROPERTIES:
-- ORDERS relationship has: unitPrice, quantity, discount
-- Use toFloat() for math: toFloat(r.unitPrice) * r.quantity
+RULE 3 - RELATIONSHIP PROPERTIES ON 'ORDERS':
+- The ORDERS relationship `[r:ORDERS]` contains: `unitPrice`, `quantity`, `discount`
+- ALWAYS use `toFloat()` when performing math on monetary properties!
+- Revenue formula: `toFloat(r.unitPrice) * r.quantity`
+- Total Order Value: `sum(toFloat(r.unitPrice) * r.quantity)`
+- Discount calculation: `avg(toFloat(r.discount))`
 
-RULE 4 - PROPERTY NAMES:
-- Category: categoryName (NOT name), description
-- Customer: customerID, companyName
-- Supplier: supplierID, companyName
-- Product: productName, unitPrice, unitsInStock, unitsOnOrder, reorderLevel, discontinued
+RULE 4 - NODE PROPERTIES TO RETURN:
+- Category: `categoryName`, `description`
+- Customer: `customerID`, `companyName`, `contactName`
+- Supplier: `supplierID`, `companyName`
+- Product: `productName`, `unitPrice`, `unitsInStock`, `unitsOnOrder`, `reorderLevel`, `discontinued`
+- Order: `orderID`, `freight`, `shipCountry`
+For products, if querying by a specific metric like unitsOnOrder, include that metric in the return: `RETURN p.productName, p.unitsOnOrder`
 
-RULE 5 - "first N" vs "top N":
-- "first N" → RETURN x (full node), NO ORDER BY, just LIMIT
-- "top N by X" → RETURN x.prop, X ORDER BY X DESC LIMIT N
+RULE 5 - DISTINCT:
+- Use `DISTINCT` when querying "Which X have..." involving multiple relationship steps (e.g. finding categories or suppliers via products and orders).
+- Example: `RETURN DISTINCT c.categoryName`
 
-RULE 6 - DISTINCT:
-- "first N X" → NO DISTINCT
-- "all X that..." with JOINs → DISTINCT
-- "Which N X" with multiple paths → DISTINCT
+RULE 6 - "least/fewest X":
+- `ORDER BY cnt ASC LIMIT 1`. Prefer > 0 filters if implying existing items.
 
-RULE 7 - "least/fewest X":
-- WHERE X > 0 ORDER BY X ASC (minimum positive, NOT = 0!)
+RULE 7 - AGGREGATION & WITH:
+- "most orders" → `WITH c, count(o) AS cnt ORDER BY cnt DESC LIMIT 1`
+- "highest average" → `WITH s, avg(toFloat(p.unitPrice)) AS avgPrice ORDER BY avgPrice DESC LIMIT 1`
 
-RULE 8 - TYPE CONVERSION:
-- freight, unitPrice, discount → toFloat() for math
-- avg(toFloat(r.unitPrice))
+RULE 8 - DATE COMPARISONS:
+- Dates are STRINGS like '1996-07-04'.
+- Use string comparison: `o.shippedDate > o.requiredDate` or `o.requiredDate < '1997-01-01'`
+- Use `STARTS WITH` for year matching: `WHERE o.shippedDate STARTS WITH '1996'`
 
-RULE 9 - AGGREGATION:
-- "most orders" → WITH c, count(o) AS cnt ORDER BY cnt DESC
-- "highest average" → WITH s, avg(p.unitPrice) AS avgPrice ORDER BY avgPrice DESC
+RULE 9 - NULL HANDLING:
+- "suppliers without homepage" → `WHERE s.homePage IS NULL`
+- "never been on order" → `WHERE p.unitsOnOrder = 0`
+- If ordering by a property, filter out nulls: `WHERE p.unitsOnOrder IS NOT NULL`
 
-RULE 10 - NULL HANDLING:
-- "suppliers without homepage" → WHERE s.homePage IS NULL
-- "products with no units on order" → WHERE p.unitsOnOrder = 0
+RULE 10 - SUBQUERIES AND SAME ENTITY:
+- "same supplier as 'Chai'" → `MATCH (p1 {{productName:'Chai'}})-[:SUPPLIES]-(s)-[:SUPPLIES]-(p2)`
 
 === FEW-SHOT EXAMPLES ===
 
-### "first N" vs "top N" ###
+### PROJECTED RETURNS (Simple Retrieval) ###
 Q: List the first 3 orders shipped to France.
-MATCH (o:Order) WHERE o.shipCountry = 'France' RETURN o LIMIT 3
-
-Q: What are the top 3 orders by freight to France?
-MATCH (o:Order) WHERE o.shipCountry = 'France' RETURN o.orderID, o.freight ORDER BY toFloat(o.freight) DESC LIMIT 3
+MATCH (o:Order) WHERE o.shipCountry = 'France' RETURN o.orderID, o.shipCountry LIMIT 3
 
 Q: What are the first 3 products with a reorder level above 20?
-MATCH (p:Product) WHERE p.reorderLevel > 20 RETURN p LIMIT 3
+MATCH (p:Product) WHERE p.reorderLevel > 20 RETURN p.productName, p.reorderLevel ORDER BY p.productName LIMIT 3
 
-### RANKING ###
+Q: List the products with unitsOnOrder greater than 30.
+MATCH (p:Product) WHERE p.unitsOnOrder > 30 RETURN p.productName, p.unitsOnOrder
+
+Q: Find all suppliers who do not have a homepage listed.
+MATCH (s:Supplier) WHERE s.homePage IS NULL RETURN s.companyName, s.contactName
+
+### RANKING & FILTERING ###
+Q: List the top 5 products with the most units on order.
+MATCH (p:Product) WHERE p.unitsOnOrder IS NOT NULL RETURN p.productName, p.unitsOnOrder ORDER BY p.unitsOnOrder DESC LIMIT 5
+
 Q: Which customer has placed the most orders?
 MATCH (c:Customer)-[:PURCHASED]->(o:Order) WITH c, count(*) AS orderCount ORDER BY orderCount DESC LIMIT 1 RETURN c.companyName, orderCount
 
-Q: Which 3 suppliers supply the most products?
-MATCH (s:Supplier)-[:SUPPLIES]->(p:Product) WITH s, COUNT(p) AS productCount ORDER BY productCount DESC LIMIT 3 RETURN s.companyName AS supplierName, productCount
+Q: List the top 3 orders with the highest freight charges.
+MATCH (o:Order) RETURN o.orderID, o.freight ORDER BY toFloat(o.freight) DESC LIMIT 3
 
-Q: List the top 5 categories with the most products.
-MATCH (p:Product)-[:PART_OF]->(c:Category) WITH c, count(p) AS productCount ORDER BY productCount DESC LIMIT 5 RETURN c.categoryName, productCount
+Q: What are the first 3 customers who have purchased orders shipped to France?
+MATCH (c:Customer)-[:PURCHASED]->(o:Order) WHERE o.shipCountry = 'France' RETURN c.customerID, c.companyName, c.contactName LIMIT 3
 
-### SIMPLE RETRIEVAL ###
-Q: List the products with unitsOnOrder greater than 30.
-MATCH (p:Product) WHERE p.unitsOnOrder > 30 RETURN p
+Q: Which products have never been on order (unitsOnOrder = 0) and are not discontinued?
+MATCH (p:Product) WHERE p.unitsOnOrder = 0 AND p.discontinued = false RETURN p.productName
 
-Q: Which suppliers supply products with unitsInStock above 80?
-MATCH (s:Supplier)-[:SUPPLIES]->(p:Product) WHERE p.unitsInStock > 80 RETURN s
+### AGGREGATIONS & COMPLEX CALCULATIONS ###
+Q: What is the total revenue generated by the product 'Aniseed Syrup'?
+MATCH (p:Product {{productName: 'Aniseed Syrup'}})-[r:ORDERS]->(o:Order) WITH p, o, toFloat(r.unitPrice) * r.quantity AS revenue RETURN sum(revenue) AS totalRevenue
 
-Q: Find all suppliers who do not have a homepage listed.
-MATCH (s:Supplier) WHERE s.homePage IS NULL RETURN s
+Q: What is the average discount given across all orders?
+MATCH (:Order)-[r:ORDERS]->(:Product) RETURN avg(toFloat(r.discount)) AS averageDiscount
 
-### FILTERED LIST ###
-Q: Find all suppliers that supply discontinued products.
-MATCH (s:Supplier)-[:SUPPLIES]->(p:Product) WHERE p.discontinued = true RETURN s.companyName
+Q: What is the average `freight` cost of orders shipped to 'France'?
+MATCH (o:Order) WHERE o.shipCountry = 'France' RETURN avg(toFloat(o.freight)) AS averageFreight
 
-Q: List all suppliers that provide products to the 'Dairy Products' category.
-MATCH (s:Supplier)-[:SUPPLIES]->(p:Product)-[:PART_OF]->(c:Category {{categoryName: 'Dairy Products'}}) RETURN s.companyName
+Q: Find the customer with the highest total order value (sum of unitPrice * quantity).
+MATCH (c:Customer)-[:PURCHASED]->(o:Order)-[r:ORDERS]->(p:Product) WITH c, o, sum(toFloat(r.unitPrice) * r.quantity) AS totalOrderValue WITH c, max(totalOrderValue) AS maxTotalOrderValue, collect(o.shipCity) AS shipCities WHERE size(shipCities) > 0 RETURN c.customerID, shipCities[0] AS shipCity ORDER BY maxTotalOrderValue DESC LIMIT 1
 
-### RELATIONSHIP PROPERTIES ###
-Q: What is the average unitPrice of products ordered in quantities greater than 10?
-MATCH (o:Order)-[rel:ORDERS]->(p:Product) WHERE rel.quantity > 10 WITH avg(toFloat(rel.unitPrice)) AS avgPrice RETURN avgPrice
+### DATE FILTERING ###
+Q: List the orders that were shipped later than the required date.
+MATCH (o:Order) WHERE o.shippedDate > o.requiredDate RETURN o.orderID
+
+Q: Identify the products that are part of orders that were required to be shipped before '1997-01-01'.
+MATCH (o:Order)-[:ORDERS]->(p:Product) WHERE o.requiredDate < '1997-01-01' RETURN DISTINCT p.productName AS ProductName, p.productID AS ProductID
 
 Q: What is the total revenue generated by orders shipped in 1996?
 MATCH (o:Order)-[r:ORDERS]->(p:Product) WHERE o.shippedDate STARTS WITH '1996' RETURN sum(toFloat(r.unitPrice) * r.quantity) AS totalRevenue
 
-Q: What is the average discount given across all orders?
-MATCH (o:Order)-[r:ORDERS]->(p:Product) RETURN avg(toFloat(r.discount)) AS averageDiscount
+### DISTINCT & MULTI-HOP PATHS ###
+Q: Which categories have products with a unit price less than $10?
+MATCH (p:Product)-[:PART_OF]->(c:Category) WHERE p.unitPrice < 10 RETURN DISTINCT c.categoryName
 
-### "least/fewest" ###
-Q: Which category has the least number of products on order?
-MATCH (c:Category)<-[:PART_OF]-(p:Product) WHERE p.unitsOnOrder > 0 RETURN c.categoryName, COUNT(p) AS productCount ORDER BY productCount ASC LIMIT 1
+Q: Which 3 suppliers provide products in the 'Dairy Products' category?
+MATCH (s:Supplier)-[:SUPPLIES]->(p:Product)-[:PART_OF]->(c:Category {{categoryName: 'Dairy Products'}}) RETURN DISTINCT s.companyName LIMIT 3
 
-### SUBQUERY ###
-Q: Which suppliers supply the product with the highest unitPrice?
-MATCH (p:Product) WITH max(p.unitPrice) AS maxPrice MATCH (p:Product {{unitPrice: maxPrice}}) MATCH (s:Supplier)-[:SUPPLIES]->(p) RETURN s.companyName
+Q: Find all products that have the same supplier as 'Chai'.
+MATCH (p:Product {{productName: 'Chai'}})-[:SUPPLIES]-(s:Supplier) MATCH (s)-[:SUPPLIES]-(otherProducts:Product) RETURN DISTINCT otherProducts.productName
 
-Q: List products with reorder level greater than average.
-MATCH (p:Product) WITH AVG(p.reorderLevel) AS avgReorderLevel MATCH (p2:Product) WHERE p2.reorderLevel > avgReorderLevel RETURN p2.productName
-
-### CATEGORY QUERIES ###
-Q: Which 3 customers have ordered the most products in the 'Seafood' category?
-MATCH (c:Customer)-[:PURCHASED]->(o:Order)-[:ORDERS]->(p:Product)-[:PART_OF]->(cat:Category {{categoryName: "Seafood"}}) WITH c, count(p) AS products_ordered ORDER BY products_ordered DESC LIMIT 3 RETURN c.companyName, products_ordered
+Q: Who are the customers that purchased orders shipped to France?
+MATCH (c:Customer)-[:PURCHASED]->(o:Order)-[:ORDERS]->(p:Product) WHERE o.shipCountry = 'France' RETURN DISTINCT c.companyName AS CustomerName, c.contactName AS ContactName, c.contactTitle AS ContactTitle, c.city AS City, c.country AS Country
 
 {question}
 """
@@ -1190,13 +1135,14 @@ RULE 1 - NEVER RETURN EMPTY (CRITICAL):
 - NEVER output empty string or just whitespace
 
 RULE 2 - :Me vs :User SELECTION (30% of errors):
-- :Me ONLY for: AMPLIFIES, INTERACTS_WITH, RT_MENTIONS, SIMILAR_TO, FOLLOWS (when neo4j involved)
-- :User for: POSTS (even with favorites), TAGS, MENTIONS (when neo4j is target)
+- :Me is the MAIN Neo4j account. Use :Me for almost EVERYTHING involving the Neo4j account: AMPLIFIES, INTERACTS_WITH, RT_MENTIONS, SIMILAR_TO, FOLLOWS, POSTS, and RETWEETS.
+- :User is generally for OTHER users, though :User can sometimes be used. If the query implies the main Neo4j account (like "posted by 'Neo4j'"), prioritize `(me:Me {{screen_name: 'neo4j'}})` over `:User`.
 
-RULE 3 - PROPERTY MATCHING:
-- screen_name: 'neo4j' (lowercase) when question says "neo4j"
-- name: 'Neo4j' (capitalized) when question says "Neo4j" or "user named Neo4j"
-- MATCH THE EXACT CASING from question
+RULE 3 - PROPERTY MATCHING (CRITICAL - 17% of errors):
+- ALWAYS prioritize using `screen_name: 'neo4j'` when the question refers to Neo4j's account, REGARDLESS of whether the question says 'neo4j' (lowercase) or 'Neo4j' (capitalized).
+- Example: "user named 'Neo4j'" -> `(me:Me {{screen_name: 'neo4j'}})`
+- Example: "tweets by 'neo4j'" -> `(me:Me {{screen_name: 'neo4j'}})`
+- ONLY use `name: 'Neo4j'` if explicitly matching against a general User node that is NOT the main account. When in doubt, default to `screen_name: 'neo4j'`.
 
 RULE 4 - LIMIT RULES (CRITICAL - 20% of errors):
 | Question Pattern | LIMIT |
@@ -1220,7 +1166,8 @@ RULE 5 - RETURN FORMAT - MATCH GOLD QUERY EXACTLY (CRITICAL - 25% of errors):
 - MATCH the exact columns from similar examples
 
 RULE 6 - RETURN FORMAT FOR TWEETS (CRITICAL):
-- "list tweets" / "show tweets" / "top N tweets" → RETURN t (full node)
+- ALWAYS project specific properties rather than returning full nodes. Do NOT use `RETURN t` unless absolutely necessary.
+- "list tweets" / "show tweets" / "top N tweets" → RETURN t.text, t.favorites
 - "tweets with highest/most X" → RETURN t.text, t.favorites
 - "show tweets where" with specific properties → RETURN t.text AS tweet_text, t.favorites AS favorite_count, t.created_at AS created_at
 - "tweets with most mentions" → RETURN t.id_str AS tweet_id, t.text AS tweet_text, mention_count (include id_str!)
@@ -1288,6 +1235,11 @@ RULE 20 - RETURN COLUMN ORDER:
 - For "top N users by followers": RETURN user.name, user.screen_name, user.followers, user.following (name first!)
 - For "users who follow": RETURN user.screen_name, user.name, user.followers, user.following, user.profile_image_url, user.url, user.location, user.statuses
 
+RULE 21 - AVOID CARTESIAN PRODUCTS (CRITICAL):
+- "tweets posted by users who follow Neo4j" → MATCH (me:Me {{screen_name: 'neo4j'}})-[:FOLLOWS]->(u:User)-[:POSTS]->(t:Tweet)
+- WRONG: (u:User)-[:FOLLOWS]->(me:Me)-[:POSTS]->(t:Tweet) → This means Neo4j posted the tweet, creating millions of rows!
+- ALWAYS ensure the direction and the node performing the action are correct.
+
 === FEW-SHOT EXAMPLES ===
 
 ### AMPLIFIES - always :Me, ONLY return requested columns ###
@@ -1318,16 +1270,22 @@ MATCH (u:User) RETURN u.name, u.screen_name, count{{(u)<-[:FOLLOWS]-(:User)}} AS
 Q: Who does 'neo4j' interact with most frequently?
 MATCH (me:Me {{screen_name: 'neo4j'}})-[:INTERACTS_WITH]->(user:User) RETURN user.screen_name, COUNT(*) AS interaction_count ORDER BY interaction_count DESC LIMIT 1
 
-### POSTS - use :User ###
-Q: What are the top 5 tweets by 'Neo4j' based on favorites count?
-MATCH (u:User {{name: 'Neo4j'}})-[:POSTS]->(t:Tweet) RETURN t ORDER BY t.favorites DESC LIMIT 5
+### POSTS - prioritize :Me and screen_name ###
+Q: List the top 5 tweets by 'neo4j' with the most favorites.
+MATCH (me:Me {{screen_name: 'neo4j'}})-[:POSTS]->(tweet:Tweet) RETURN tweet.text, tweet.favorites ORDER BY tweet.favorites DESC LIMIT 5
 
 Q: List all tweets by 'neo4j' that have more than 200 favorites. First 5.
-MATCH (u:User {{screen_name: 'neo4j'}})-[:POSTS]->(t:Tweet) WHERE t.favorites > 200 RETURN t LIMIT 5
+MATCH (me:Me {{screen_name: 'neo4j'}})-[:POSTS]->(t:Tweet) WHERE t.favorites > 200 RETURN t LIMIT 5
+
+Q: List the top 5 tweets that contain links and are posted by 'Neo4j'.
+MATCH (me:Me {{screen_name: 'neo4j'}})-[:POSTS]->(tweet:Tweet)-[:CONTAINS]->(link:Link) RETURN tweet ORDER BY tweet.favorites DESC LIMIT 5
+
+Q: Find the tweets that contain links and have been posted by users who follow "Neo4j".
+MATCH (me:Me {{screen_name: 'neo4j'}})-[:FOLLOWS]->(u:User)-[:POSTS]->(t:Tweet)-[:CONTAINS]->(link:Link) RETURN DISTINCT t
 
 ### POSTS with TAGS ###
 Q: Find all tweets posted by 'Neo4j' containing a hashtag.
-MATCH (u:User {{name: 'Neo4j'}})-[:POSTS]->(t:Tweet)-[:TAGS]->(h:Hashtag) RETURN t, h
+MATCH (me:Me {{name: 'Neo4j'}})-[:POSTS]->(t:Tweet)-[:TAGS]->(h:Hashtag) RETURN t, h
 
 Q: Which tweets by 'neo4j' contain the hashtag 'education'?
 MATCH (u:User {{screen_name: 'neo4j'}})-[:POSTS]->(t:Tweet)-[:TAGS]->(h:Hashtag {{name: 'education'}}) RETURN t
@@ -1337,9 +1295,6 @@ Q: Show the tweets where 'neo4j' is mentioned and the tweet has a favorite count
 MATCH (t:Tweet)-[:MENTIONS]->(u:User {{screen_name: 'neo4j'}}) WHERE t.favorites > 100 RETURN t.text AS tweet_text, t.favorites AS favorite_count, t.created_at AS created_at
 
 Q: Who does 'neo4j' mention most frequently?
-MATCH (u:User {{screen_name: 'neo4j'}})-[:POSTS]->(t:Tweet)-[:MENTIONS]->(mentioned:User) RETURN mentioned.screen_name, count(t) AS mentions_count ORDER BY mentions_count DESC
-
-Q: Who are the users that 'neo4j' mentions most frequently in their tweets?
 MATCH (u:User {{screen_name: 'neo4j'}})-[:POSTS]->(t:Tweet)-[:MENTIONS]->(mentioned:User) RETURN mentioned.screen_name, count(t) AS mentions_count ORDER BY mentions_count DESC
 
 ### RETWEETS - MUST use POSTS->RETWEETS ###
@@ -1410,17 +1365,7 @@ MATCH (t:Tweet)-[:MENTIONS]->(u:User) WITH t, COUNT(u) AS mention_count ORDER BY
 Q: Find the top 5 tweets with the highest number of user mentions.
 MATCH (t:Tweet)-[:MENTIONS]->(u:User) WITH t, COUNT(u) AS mention_count ORDER BY mention_count DESC LIMIT 5 RETURN t.id_str AS tweet_id, t.text AS tweet_text, mention_count
 
-### INTERACTS_WITH - LIMIT 1 for "most frequently" ###
-Q: Who does 'neo4j' interact with most frequently?
-MATCH (me:Me {{screen_name: 'neo4j'}})-[:INTERACTS_WITH]->(user:User) RETURN user.screen_name, COUNT(*) AS interaction_count ORDER BY interaction_count DESC LIMIT 1
-
-Q: Which user does 'Neo4j' interact with the most?
-MATCH (me:Me {{name: 'Neo4j'}})-[:INTERACTS_WITH]->(user:User) RETURN user.screen_name, COUNT(*) AS interaction_count ORDER BY interaction_count DESC LIMIT 1
-
 ### TOP N USERS BY FOLLOWERS - exact column format ###
-Q: Who are the top 5 users that a specific user named 'Neo4j' follows?
-MATCH (me:Me {{name: 'Neo4j'}})-[:FOLLOWS]->(user:User) RETURN user.name, user.screen_name, user.followers, user.following ORDER BY user.followers DESC LIMIT 5
-
 Q: List the top 3 users followed by 'neo4j' with the most followers.
 MATCH (me:Me {{screen_name: 'neo4j'}})-[:FOLLOWS]->(user:User) RETURN user.name, user.screen_name, user.followers, user.following ORDER BY user.followers DESC LIMIT 3
 
@@ -1457,7 +1402,8 @@ def _build_generic_cypher_template(
         "- Never invent new labels, relationships, directions, or shortcut properties.\n"
         "- Follow the relationship direction shown in the schema.\n"
         "- Reuse the same variable when the same entity must satisfy multiple relationships.\n"
-        "- NEVER return bare node variables (e.g. RETURN m, RETURN p). ALWAYS return explicit properties (e.g. RETURN m.title, p.name). This is critical.\n"
+        "- DEFAULT: Return specific properties (m.title, p.name, etc.) when the question asks for particular fields, metrics, or can be answered with projected columns.\n"
+        "- Return full nodes ONLY for simple entity retrieval where no specific properties are mentioned in the question.\n"
         "- If the question asks for names, titles, identifiers, roles, summaries, counts, averages, or metrics, return only those requested columns.\n"
         "- Return every requested column and do not add extra columns.\n"
         "- If the query uses COUNT, AVG, SUM, size(...), or DISTINCT for ranking/filtering, keep the resulting metric column in RETURN.\n"
@@ -1518,117 +1464,222 @@ RETURN i.name, model_count
     "movies": {
         "domain_name": "Movies",
         "facts": """
-- Node labels include Person(name, born) and Movie(title, released, votes, tagline).
-- ACTED_IN has relationship property roles: LIST<STRING>.
-- REVIEWED has relationship properties summary: STRING and rating: INTEGER.
-- DIRECTED, PRODUCED, WROTE, and FOLLOWS are plain relationships without those properties.
-- In this graph, review rating/summary are on REVIEWED, not on Movie.
-- In this graph, roles are on ACTED_IN, not on Person.
+- Node labels: Person(name: STRING, born: INTEGER), Movie(title: STRING, released: INTEGER, votes: INTEGER, tagline: STRING).
+- Movie does NOT have: budget, revenue, imdbRating, rating, roles, summary.
+- Person does NOT have: roles.
+- ACTED_IN relationship has property roles: LIST<STRING>. Access via r.roles.
+- REVIEWED relationship has properties summary: STRING and rating: INTEGER. Access via r.summary, r.rating.
+- DIRECTED, PRODUCED, WROTE, and FOLLOWS are plain relationships without extra properties.
+- CRITICAL: rating and summary are ONLY on the REVIEWED relationship, NEVER on Movie.
+- CRITICAL: roles is ONLY on the ACTED_IN relationship, NEVER on Person.
 """,
         "hints": """
-- Return full Movie or Person nodes only for simple entity retrieval questions.
-- If the question asks for titles, names, birth years, released years, roles, ratings, summaries, or counts, project those fields instead of returning full nodes.
-- For "who" / "which people" / "which persons" / "which actors" / "which directors", prefer p.name plus the requested metric or context column, not the full Person node.
-- For "first N movies ..." with an explicit year, vote threshold, rating, or other scalar condition, prefer projected columns such as m.title and the relevant field.
-- "roles" means r.roles on ACTED_IN.
-- "review summary" or "review rating" means properties on REVIEWED.
-- "same person wrote and directed" means reuse the same Person variable on both paths.
-- "movies with most roles" means size(r.roles) per ACTED_IN relationship unless the question explicitly says total or combined.
-- If the filter or ranking is based on REVIEWED or ACTED_IN relationship properties, return the movie/person identifier together with those relationship properties or derived metrics.
-- For ranking or aggregation questions, keep the aggregate column in RETURN.
+=== RETURN FORMAT (CRITICAL - 40%% of evaluation errors) ===
+
+DEFAULT: Return PROJECTED PROPERTIES (m.title, p.name, etc.), NOT full nodes.
+
+When to return projected properties (83%% of questions):
+- "Who..." / "Which people..." / "Which persons..." -> RETURN p.name (+ metric if ranking)
+- "List movies with..." / "List the movies..." -> RETURN m.title (+ filter property if relevant)
+- "What are the roles/reviews/ratings..." -> RETURN specific properties
+- "List the top N..." with ranking -> RETURN entity.name/title, metric ORDER BY metric DESC
+- "List the first N..." with filter -> RETURN entity.name/title, filter_property
+- "List all movies with more than X votes" -> RETURN m.title, m.votes
+- "Find all movies with a rating above X" -> RETURN m.title, r.rating
+- "top N by Y" -> RETURN title/name, Y ORDER BY Y DESC
+- Any aggregation (count, avg, sum) -> RETURN entity identifier + metric
+- Any question mentioning specific properties -> RETURN those properties
+
+When to return full node (rare, ~11%% of questions):
+- "Find the top N movies" with simple ORDER BY and NO specific property mentioned in question -> RETURN m ORDER BY
+- "Find all people born in X who have..." with NO specific properties requested -> RETURN p
+- "show movie X" (direct lookup) -> RETURN m
+- "List top 3 movies released before X" with simple filter -> RETURN m ORDER BY
+
+=== DISTINCT RULES (11%% of errors) ===
+- "List all X who..." with JOINs (multiple MATCH) -> RETURN DISTINCT
+- "Who has..." with JOINs -> RETURN DISTINCT
+- "Which movies have the word X in their review" -> RETURN DISTINCT m.title
+- "top N" / "first N" -> NO DISTINCT (LIMIT handles uniqueness)
+- Simple listing without JOINs -> NO DISTINCT
+
+=== RELATIONSHIP PROPERTIES ===
+- "rating" / "rated" / "review rating" -> r.rating on [:REVIEWED] relationship
+- "review summary" / "summary" -> r.summary on [:REVIEWED] relationship
+- "roles" / "role" -> r.roles on [:ACTED_IN] relationship
+- NEVER use m.rating, m.summary, m.roles, p.roles - these DO NOT EXIST!
+
+=== SAME PERSON PATTERN ===
+- "wrote and directed same movie" -> (p)-[:WROTE]->(m)<-[:DIRECTED]-(p) same variable p
+- "acted in and directed same movie" -> (p)-[:ACTED_IN]->(m)<-[:DIRECTED]-(p)
+- "produced and directed same movie" -> (p)-[:PRODUCED]->(m)<-[:DIRECTED]-(p)
+- Alternative syntax: MATCH (p)-[:DIRECTED]->(m) MATCH (p)-[:WROTE]->(m) with WHERE
+
+=== EXISTS PATTERN ===
+- "who has produced but never acted" -> WHERE exists{(p)-[:PRODUCED]->(:Movie)} AND NOT exists{(p)-[:ACTED_IN]->(:Movie)}
+- "people born in X who have directed" -> WHERE p.born = X AND exists{(p)-[:DIRECTED]->(:Movie)}
+
+=== AGGREGATION ===
+- "how many" -> COUNT(*) or COUNT(m)
+- "which X has most Y" -> WITH x, COUNT(y) AS cnt ORDER BY cnt DESC LIMIT 1 RETURN x.name, cnt
+- Always keep the metric column in RETURN when ranking/filtering by it
+
+=== ORDER BY + LIMIT ===
+- "top N" / "most" -> ORDER BY ... DESC LIMIT N
+- "first N" without ranking -> LIMIT N (no ORDER BY, or ORDER BY title/name)
+- "oldest" / "least" -> ORDER BY ... ASC LIMIT N
+- "youngest" -> ORDER BY p.born DESC (higher born year = younger)
+
+=== STRING MATCHING ===
+- "contains X" / "with the word X" / "including X" -> CONTAINS 'X'
+- Exact value -> = 'X'
 """,
         "examples": """
-Q: What are the roles of Keanu Reeves in 'The Matrix'?
-MATCH (p:Person {name: 'Keanu Reeves'})-[r:ACTED_IN]->(m:Movie {title: 'The Matrix'})
-RETURN r.roles AS roles
+### PROJECTED PROPERTIES (default pattern) ###
+Q: Find the top 5 movies with the most votes.
+MATCH (m:Movie) WHERE m.votes IS NOT NULL RETURN m.title, m.votes ORDER BY m.votes DESC LIMIT 5
 
-Q: List all movies with a 'Pretty funny at times' review summary.
-MATCH (:Person)-[r:REVIEWED]->(m:Movie)
-WHERE r.summary = 'Pretty funny at times'
-RETURN m
+Q: List the movies with more than 100 votes.
+MATCH (m:Movie) WHERE m.votes > 100 RETURN m.title
 
-Q: Find all movies with a rating above 90.
-MATCH (:Person)-[r:REVIEWED]->(m:Movie)
-WHERE r.rating > 90
-RETURN m.title, r.rating
+Q: List all movies with more than 2000 votes.
+MATCH (m:Movie) WHERE m.votes > 2000 RETURN m.title, m.votes
 
-Q: Which movies have been both written and directed by the same person and what are their titles?
-MATCH (p:Person)-[:WROTE]->(m:Movie)<-[:DIRECTED]-(p)
-RETURN m.title AS movie_title
+Q: What are the top 5 movies with the least votes and their release years?
+MATCH (m:Movie) RETURN m.title AS title, m.released AS release_year, m.votes AS votes ORDER BY m.votes ASC LIMIT 5
 
-Q: List the names of people who acted in movies directed by Nancy Meyers.
-MATCH (director:Person {name: 'Nancy Meyers'})-[:DIRECTED]->(m:Movie)
-MATCH (actor:Person)-[:ACTED_IN]->(m)
-RETURN DISTINCT actor.name
-
-Q: Who are the top 3 producers by the number of movies with different taglines?
-MATCH (p:Person)-[:PRODUCED]->(m:Movie)
-WITH p, count(DISTINCT m.tagline) AS distinctTaglines
-ORDER BY distinctTaglines DESC
-LIMIT 3
-RETURN p.name, distinctTaglines
-
-Q: Which top 5 people have directed movies with more than 200 votes?
-MATCH (p:Person)-[:DIRECTED]->(m:Movie)
-WHERE m.votes > 200
-WITH p, count(m) AS num_movies
-ORDER BY num_movies DESC
-LIMIT 5
-RETURN p.name AS director, num_movies
+Q: List the top 5 oldest movies in the database.
+MATCH (m:Movie) RETURN m.title, m.released ORDER BY m.released LIMIT 5
 
 Q: What are the first 3 movies with a released year of 2008?
-MATCH (m:Movie)
-WHERE m.released = 2008
-RETURN m.title, m.released
-ORDER BY m.title
-LIMIT 3
+MATCH (m:Movie) WHERE m.released = 2008 RETURN m.title, m.released ORDER BY m.title LIMIT 3
+
+Q: What is the name of the person who directed 'The Matrix'?
+MATCH (p:Person)-[:DIRECTED]->(m:Movie {title: 'The Matrix'}) RETURN p.name
+
+Q: List the top 5 youngest people who have written a movie.
+MATCH (p:Person)-[:WROTE]->(:Movie) RETURN p.name, p.born ORDER BY p.born DESC LIMIT 5
+
+### FULL NODE RETURN (only for simple entity retrieval) ###
+Q: Find all people born in 1949 who have directed a movie.
+MATCH (p:Person) WHERE p.born = 1949 AND exists{(p)-[:DIRECTED]->(:Movie)} RETURN p
+
+Q: Find all movies that have been produced by persons born after 1960 limited to top 5.
+MATCH (p:Person)-[:PRODUCED]->(m:Movie) WHERE p.born > 1960 RETURN m LIMIT 5
+
+Q: List top 3 movies released before 1980.
+MATCH (m:Movie) WHERE m.released < 1980 RETURN m ORDER BY m.released DESC LIMIT 3
+
+Q: "show movie gone with the wind"
+MATCH (m:Movie {title: "Gone with the Wind"}) RETURN m
+
+### RELATIONSHIP PROPERTIES (r.rating, r.summary, r.roles) ###
+Q: Find all movies with a rating above 90.
+MATCH (m:Movie)<-[r:REVIEWED]-(p:Person) WHERE r.rating > 90 RETURN m.title, r.rating
+
+Q: What are the top 3 highest rated reviews and which movies they are associated with?
+MATCH (p:Person)-[r:REVIEWED]->(m:Movie) RETURN m.title AS movie, r.rating AS rating, r.summary AS review ORDER BY r.rating DESC LIMIT 3
+
+Q: Who reviewed movies with a rating of 100?
+MATCH (p:Person)-[r:REVIEWED]->(m:Movie) WHERE r.rating = 100 RETURN p.name
+
+Q: Who has reviewed 'Speed Racer' and what was their rating?
+MATCH (p:Person)-[r:REVIEWED]->(m:Movie {title: 'Speed Racer'}) RETURN p.name AS reviewer, r.rating AS rating
+
+Q: List all movies with a 'Pretty funny at times' review summary.
+MATCH (m:Movie)<-[r:REVIEWED]-(p:Person) WHERE r.summary = 'Pretty funny at times' RETURN m.title
+
+Q: Which movies have the word "coolest" in their review summary?
+MATCH (m:Movie)<-[r:REVIEWED]-(p:Person) WHERE r.summary CONTAINS 'coolest' RETURN DISTINCT m.title
+
+Q: What are the roles of Keanu Reeves in 'The Matrix'?
+MATCH (p:Person {name: 'Keanu Reeves'})-[r:ACTED_IN]->(m:Movie {title: 'The Matrix'}) RETURN r.roles AS roles
 
 Q: Who are the first 3 actors in the movie titled 'Speed Racer'?
-MATCH (p:Person)-[r:ACTED_IN]->(m:Movie {title: 'Speed Racer'})
-RETURN p.name, r.roles
-LIMIT 3
+MATCH (p:Person)-[r:ACTED_IN]->(m:Movie {title: 'Speed Racer'}) RETURN p.name, r.roles LIMIT 3
 
-Q: Which persons have acted in and directed the same movie?
-MATCH (p:Person)-[:ACTED_IN]->(m:Movie)<-[:DIRECTED]-(p)
-RETURN p.name AS personName, m.title AS movieTitle
+Q: List the movies with exactly 3 roles in the ACTED_IN relationship.
+MATCH (m:Movie)<-[r:ACTED_IN]-(p:Person) WHERE size(r.roles) = 3 RETURN m.title
 
 Q: List the top 5 movies with the most roles listed in ACTED_IN relationship.
-MATCH (m:Movie)<-[r:ACTED_IN]-(:Person)
-RETURN m.title AS movie, size(r.roles) AS roleCount
-ORDER BY roleCount DESC
-LIMIT 5
+MATCH (m:Movie)<-[r:ACTED_IN]-(p:Person) RETURN m.title AS movie, size(r.roles) AS roleCount ORDER BY roleCount DESC LIMIT 5
 
-Q: Which movie has the most roles in the 'ACTED_IN' relationship and what are those roles?
-MATCH (:Person)-[r:ACTED_IN]->(m:Movie)
-RETURN m.title AS Movie, r.roles AS Roles
-ORDER BY size(r.roles) DESC
-LIMIT 1
+Q: Who has the most roles in a single movie?
+MATCH (p:Person)-[r:ACTED_IN]->(m:Movie) RETURN p.name, m.title, size(r.roles) AS num_roles ORDER BY num_roles DESC LIMIT 1
 
-Q: Who reviewed the movie with the highest rating and what was the summary?
-MATCH (m:Movie)<-[r:REVIEWED]-(p:Person)
-WITH m, r, p
-ORDER BY r.rating DESC
-LIMIT 1
-RETURN p.name AS reviewer, r.summary AS review_summary
+### SAME PERSON PATTERN ###
+Q: List all people who have written and directed the same movie.
+MATCH (p:Person)-[:WROTE]->(m:Movie) WHERE (p)-[:DIRECTED]->(m) RETURN DISTINCT p.name
 
-Q: Find the top 5 movies with the lowest ratings in REVIEWS.
-MATCH (:Person)-[r:REVIEWED]->(m:Movie)
-RETURN m.title AS movie, AVG(r.rating) AS average_rating
-ORDER BY average_rating ASC
-LIMIT 5
+Q: Which movies have been both written and directed by the same person?
+MATCH (p:Person)-[:DIRECTED]->(m:Movie) MATCH (p)-[:WROTE]->(m) RETURN m.title AS movie_title
 
-Q: Which 3 persons have the most distinct roles in the ACTED_IN relationship?
-MATCH (p:Person)-[r:ACTED_IN]->(:Movie)
-WITH p, count(DISTINCT r.roles) AS distinctRoles
-ORDER BY distinctRoles DESC
-LIMIT 3
-RETURN p.name, distinctRoles
+Q: Which persons have acted in and directed the same movie?
+MATCH (p:Person)-[:ACTED_IN]->(m:Movie)<-[:DIRECTED]-(p) RETURN p.name AS personName, m.title AS movieTitle
 
-Q: List the top 5 people who have produced the most number of movies with their birth years.
-MATCH (p:Person)-[:PRODUCED]->(m:Movie)
-RETURN p.name, p.born, count(m) AS movies_produced
-ORDER BY movies_produced DESC
-LIMIT 5
+Q: List the first 3 movies that have been produced and directed by the same person.
+MATCH (p:Person)-[:DIRECTED]->(m:Movie)<-[:PRODUCED]-(p) RETURN m.title AS MovieTitle LIMIT 3
+
+### DISTINCT WITH JOINS ###
+Q: List the names of people who acted in movies directed by Nancy Meyers.
+MATCH (p:Person {name: 'Nancy Meyers'})-[:DIRECTED]->(m:Movie) MATCH (a:Person)-[:ACTED_IN]->(m) RETURN DISTINCT a.name
+
+Q: Which people have reviewed a movie with the words "Robin Williams" in the summary?
+MATCH (p:Person)-[r:REVIEWED]->(m:Movie) WHERE r.summary CONTAINS 'Robin Williams' RETURN DISTINCT p.name
+
+Q: List 3 actors who also have roles as producers.
+MATCH (p:Person)-[:ACTED_IN]->(:Movie), (p)-[:PRODUCED]->(:Movie) RETURN DISTINCT p.name LIMIT 3
+
+### EXISTS PATTERN ###
+Q: Who has produced movies but never acted in any?
+MATCH (p:Person) WHERE exists{(p)-[:PRODUCED]->(:Movie)} AND NOT exists{(p)-[:ACTED_IN]->(:Movie)} RETURN p.name
+
+Q: Find movies that have NOT been reviewed.
+MATCH (m:Movie) WHERE NOT EXISTS {(m)<-[:REVIEWED]-()} RETURN m.title
+
+### AGGREGATION WITH WITH ###
+Q: Who are the top 3 producers by the number of movies with different taglines?
+MATCH (p:Person)-[:PRODUCED]->(m:Movie) WHERE m.tagline IS NOT NULL WITH p, count(DISTINCT m.tagline) AS distinctTaglines ORDER BY distinctTaglines DESC LIMIT 3 RETURN p.name, distinctTaglines
+
+Q: Which top 5 people have directed movies with more than 200 votes?
+MATCH (p:Person)-[:DIRECTED]->(m:Movie) WHERE m.votes > 200 WITH p, count(m) AS num_movies ORDER BY num_movies DESC LIMIT 5 RETURN p.name AS director, num_movies
+
+Q: Which year saw the release of the most movies?
+MATCH (m:Movie) WITH m.released AS releaseYear, count(m) AS movieCount ORDER BY movieCount DESC RETURN releaseYear, movieCount LIMIT 1
+
+Q: Which persons have directed the most movies with a tagline containing 'world'?
+MATCH (p:Person)-[:DIRECTED]->(m:Movie) WHERE m.tagline CONTAINS 'world' WITH p, COUNT(m) AS movieCount ORDER BY movieCount DESC LIMIT 1 RETURN p.name AS director, movieCount
+
+Q: What are the 3 most common taglines found in the movies?
+MATCH (m:Movie) WHERE m.tagline IS NOT NULL RETURN m.tagline AS Tagline, count(m) AS Frequency ORDER BY Frequency DESC LIMIT 3
+
+Q: "how many movies did jeremy allen white played"
+MATCH (p:Person {name: "Jeremy Allen White"})-[:ACTED_IN]->(m:Movie) RETURN COUNT(m) AS movies_played
+
+### RATINGS & REVIEWS ###
+Q: Which users have both rated and acted in a movie? (Note: User and Actor are distinct labels, match on userId/tmdbId if needed, or stick to User rating movies)
+MATCH (u:User)-[r:RATED]->(m:Movie)
+WITH u, count(m) AS moviesRated
+ORDER BY moviesRated DESC LIMIT 3
+RETURN u.name AS userName, moviesRated
+
+Q: List the top 5 actors with the most roles in movies released before 1980.
+MATCH (a:Actor)-[r:ACTED_IN]->(m:Movie)
+WHERE m.year < 1980
+WITH a, count(r) AS numRoles
+ORDER BY numRoles DESC LIMIT 5
+RETURN a.name AS actor, numRoles
+
+Q: Which 5 actors have the most roles listed as uncredited?
+MATCH (a:Actor)-[r:ACTED_IN]->(m:Movie)
+WHERE r.role CONTAINS "uncredited"
+RETURN a.name, count(r) AS uncreditedRoles
+ORDER BY uncreditedRoles DESC LIMIT 5
+
+Q: List the top 5 people who have directed the most number of movies with their birth years.
+MATCH (d:Director)-[:DIRECTED]->(m:Movie)
+RETURN d.name, d.born, count(m) AS movies_directed
+ORDER BY movies_directed DESC LIMIT 5
 """,
     },
     "recommendations": {
@@ -1641,15 +1692,19 @@ LIMIT 5
 - ACTED_IN and DIRECTED connect people to Movie.
 """,
         "hints": """
-- Distinguish user ratings on RATED from IMDb-style rating on Movie.
-- For "top N movies with highest/lowest X", return the movie node only when the question truly asks for the movie itself; otherwise return the requested title plus metric columns.
-- For "first N movies with filter", prefer returning the requested properties instead of extra columns.
+=== RETURN FORMAT (CRITICAL) ===
+- DEFAULT to Projected Properties, not full nodes. 
+- ALWAYS use RETURN m.title instead of RETURN m, unless the question is explicitly asking for "the movie" without any specific metric or title.
 - For user ranking questions, return u.userId, u.name, and the metric when those fields are requested.
 - If the question asks for movie title together with IMDb rating, revenue, budget, year, released date, or a rating on RATED, keep all of those columns in RETURN.
-- For "same person acted and directed", reuse the same person variable.
-- For language/country list questions, keep list semantics explicit: use membership checks like 'USA' IN m.countries, NOT 'English' IN m.languages, and use collect(DISTINCT ...) or count(DISTINCT ...) only when the question is about distinct coverage across many movies.
-- For timestamp questions on RATED, compare against the relationship timestamp field, not against the calendar year directly.
 - For ratio / difference / average queries, keep the computed metric column in RETURN.
+
+=== RELATIONSHIP PATTERNS & FUNCTIONS ===
+- Distinguish user ratings on RATED from IMDb-style rating on Movie.
+- For "same person acted and directed", reuse the same person variable.
+- For language/country list questions, keep list semantics explicit: use membership checks like 'USA' IN m.countries, NOT 'English' IN m.languages.
+- To extract the year from the 'released' string property, use substring(m.released, 1, 4).
+- For timestamp questions on RATED, compare against the relationship timestamp field, not against the calendar year directly.
 - For max/min style questions, use Cypher WITH patterns rather than SQL-like subqueries.
 """,
         "examples": """
@@ -1743,11 +1798,17 @@ LIMIT 5
 - Name-like properties are categoryName on Category, companyName on Customer and Supplier, and productName on Product.
 """,
         "hints": """
-- If the question asks for the first N orders or products, returning the full node is usually appropriate.
-- If the question asks for company names, product names, or category names, project those explicit properties.
-- Revenue-like calculations should use relationship values on ORDERS, typically toFloat(r.unitPrice) * r.quantity.
+=== RETURN FORMAT (CRITICAL) ===
+- DEFAULT to Projected Properties, not full nodes. 
+- Return specific properties asked for, or default identifiers like p.productName for Product, s.companyName for Supplier, c.companyName for Customer.
+- Only return full nodes (e.g., RETURN o, RETURN p) if the question explicitly asks for "the orders" or "the products" without specifying ANY properties to show.
 - For "most" or "top N" questions, return both the entity identifier and the metric.
+
+=== CALCULATIONS & FUNCTIONS ===
+- Revenue-like calculations should use relationship values on ORDERS, typically toFloat(r.unitPrice) * r.quantity.
+- When calculating aggregates on decimal/money fields (like freight, unitPrice), ALWAYS use toFloat(), e.g., avg(toFloat(o.freight)).
 - For "least/fewest", prefer the minimum positive count when the question implies existing relationships rather than returning zero rows by mistake.
+- When finding the top 1 associated property for a grouped entity, you can use collect(prop)[0] to extract it.
 """,
         "examples": """
 Q: List the first 3 orders shipped to France.
@@ -1783,7 +1844,7 @@ RETURN s.companyName
         "facts": """
 - Main labels include Me, User, Tweet, Hashtag, Link, and Source.
 - POSTS connects Me or User to Tweet.
-- RETWEETS connects a retweet tweet to the original tweet.
+- RETWEETS connects a retweet Tweet to the original Tweet.
 - MENTIONS connects Tweet to User or Me.
 - TAGS connects Tweet to Hashtag.
 - CONTAINS connects Tweet to Link.
@@ -1792,18 +1853,50 @@ RETURN s.companyName
 - INTERACTS_WITH, REPLY_TO, SIMILAR_TO, RT_MENTIONS, and USING are graph-specific relations that must be used exactly as they appear in the schema.
 """,
         "hints": """
-- Use Me for questions about my account or explicit 'Me'; use User for other accounts unless the schema facts/examples indicate otherwise.
-- Use screen_name for handle-like values such as 'neo4j'; use name when the wording explicitly says named 'Neo4j'.
-- If the question asks for tweets themselves, return tweet nodes unless explicit tweet fields are requested.
-- For retweeted tweets by an account, traverse account -> POSTS -> retweet tweet -> RETWEETS -> original tweet.
-- For mention questions, centralize Tweet in the path: poster -> POSTS -> tweet -> MENTIONS -> mentioned user.
-- "most frequently" without a number usually implies LIMIT 1.
+=== RETURN FORMAT (CRITICAL) ===
+- DEFAULT to Projected Properties, not full nodes. Only use RETURN t for simple "find tweets" questions that don't mention specific properties to show.
+- When projecting Tweets, usually return t.text, t.favorites, t.created_at or just the properties mentioned in the question.
+- When projecting Users, usually return user.name, user.screen_name, user.followers, user.following or u.statuses.
+- "List the top 5 tweets with the highest number of favorites" -> RETURN t.text, t.favorites ORDER BY t.favorites DESC
+- "Who are the top 5 users that Neo4j follows?" -> RETURN user.name, user.screen_name, user.followers, user.following
+- "most frequently" without a number implies LIMIT 1.
+
+=== ENTITY SELECTION ===
+- CRITICAL screen_name vs name: When the question says 'neo4j' (lowercase) use {screen_name: 'neo4j'}. When it says 'Neo4j' (capitalized) use {name: 'Neo4j'}.
+- CRITICAL Me vs User: 
+   * Use :Me for relationships like AMPLIFIES, INTERACTS_WITH, RT_MENTIONS, SIMILAR_TO, and FOLLOWS when the neo4j account is the subject.
+   * Use :User for POSTS and MENTIONS (e.g. (u:User {screen_name: 'neo4j'})-[:POSTS]->...).
+
+=== RELATIONSHIP PATTERNS & FUNCTIONS ===
+- For retweeted tweets: (me:Me)-[:POSTS]->(retweet:Tweet)-[:RETWEETS]->(original:Tweet)-[:POSTS]->(author)
+- For mention questions: (poster)-[:POSTS]->(tweet:Tweet)-[:MENTIONS]->(mentioned:User)
+- When comparing exact dates against `created_at` timestamp, wrap it with date(): `WHERE date(retweet.created_at) = date('2021-03-16')`.
+- For counting the number of relationships an entity has, you can use pattern comprehension: `count{(u)-[:FOLLOWS]->(:User)}`.
 """,
         "examples": """
 Q: Who are the top 5 users that a specific user named 'Neo4j' follows?
 MATCH (me:Me {name: 'Neo4j'})-[:FOLLOWS]->(user:User)
 RETURN user.name, user.screen_name, user.followers, user.following
 ORDER BY user.followers DESC
+LIMIT 5
+
+Q: What are the first 3 locations where the most users are based?
+MATCH (u:User) 
+WHERE u.location IS NOT NULL 
+RETURN u.location AS Location, count(u) AS UserCount 
+ORDER BY UserCount DESC 
+LIMIT 3
+
+Q: Find the top 5 users by number of statuses posted.
+MATCH (u:User) 
+RETURN u.name, u.screen_name, u.statuses 
+ORDER BY u.statuses DESC 
+LIMIT 5
+
+Q: List the first 5 tweets with the highest number of favorites.
+MATCH (t:Tweet) 
+RETURN t.text, t.favorites 
+ORDER BY t.favorites DESC 
 LIMIT 5
 
 Q: Show the first 3 tweets that 'Me' has retweeted.
@@ -1817,13 +1910,41 @@ MATCH (u:User {screen_name: 'neo4j'})-[:POSTS]->(t:Tweet)-[:MENTIONS]->(mentione
 RETURN mentioned.screen_name, count(t) AS mentions_count
 ORDER BY mentions_count DESC
 
-Q: Find all tweets posted by 'Neo4j' containing a hashtag.
-MATCH (u:User {name: 'Neo4j'})-[:POSTS]->(t:Tweet)-[:TAGS]->(h:Hashtag)
-RETURN t, h
+Q: What are the top 5 most recent tweets based on the creation date?
+MATCH (t:Tweet) 
+RETURN t 
+ORDER BY t.created_at DESC 
+LIMIT 5
 
-Q: Which users are amplified by 'Me' according to the AMPLIFIES relationship?
-MATCH (me:Me)-[:AMPLIFIES]->(user:User)
-RETURN user.screen_name AS AmplifiedUser
+Q: Which users does 'neo4j' amplify the most and list the top 5?
+MATCH (me:Me {screen_name: 'neo4j'})-[:AMPLIFIES]->(user:User)
+RETURN user.screen_name, COUNT(*) AS amplification_count
+ORDER BY amplification_count DESC
+LIMIT 5
+
+Q: Identify the top 3 users by the number of people they are following.
+MATCH (u:User) 
+RETURN u.name, u.screen_name, count{(u)-[:FOLLOWS]->(:User)} AS followingCount 
+ORDER BY followingCount DESC 
+LIMIT 3
+
+Q: List all tweets by 'neo4j' that have more than 200 favorites. First 5.
+MATCH (u:User {screen_name: 'neo4j'})-[:POSTS]->(t:Tweet)
+WHERE t.favorites > 200
+RETURN t
+LIMIT 5
+
+Q: Find the top 5 tweets by 'Neo4j' based on favorites count?
+MATCH (u:User {name: 'Neo4j'})-[:POSTS]->(t:Tweet)
+RETURN t.text, t.favorites
+ORDER BY t.favorites DESC
+LIMIT 5
+
+Q: Who does 'neo4j' interact with most frequently?
+MATCH (me:Me {screen_name: 'neo4j'})-[:INTERACTS_WITH]->(user:User)
+RETURN user.screen_name, COUNT(*) AS interaction_count
+ORDER BY interaction_count DESC
+LIMIT 1
 """,
     },
 }
@@ -1848,7 +1969,7 @@ _ACTIVE_GENERIC_TEMPLATE_MAP = {
 # for databases that don't have a dedicated detailed template.
 _TEMPLATE_MAP = {
     "climate": CYPHER_GENERATION_CLIMATE_TEMPLATE,
-    "movies": CYPHER_GENERATION_MOVIES_TEMPLATE,
+    "movies": _ACTIVE_GENERIC_TEMPLATE_MAP.get("movies", CYPHER_GENERATION_MOVIES_TEMPLATE),
     "recommendations": CYPHER_GENERATION_RECOMMENDATIONS_TEMPLATE,
     "northwind": CYPHER_GENERATION_NORTHWIND_TEMPLATE,
     "twitter": CYPHER_GENERATION_TWITTER_TEMPLATE,

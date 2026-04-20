@@ -8,3 +8,12 @@ dist/
 build/
 .streamlit/
 nul
+
+# Data files
+*.json
+*.csv
+*.log
+
+# Analysis & Test scripts
+scripts/
+tests/

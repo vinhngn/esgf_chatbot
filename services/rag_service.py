@@ -280,25 +280,22 @@ def get_results(
 
 
 @retry(tries=2, delay=10)
-def get_raw_results(question: str) -> dict:
+def get_raw_results(question: str, schema: str = "") -> dict:
     """
     Flask / T2C evaluation entry point.
-    Runs the full pipeline (triple extraction → chain) but skips LLM formatting.
-
-    Returns dict with keys:
-        cypher_query     : str
-        result           : list  (JSON-safe, normalised)
-        error            : str | None
-        rewritten        : str
-        verified_triples : list[list[str]]
-        instance_triples : list[list[str]]
+    Passes the question DIRECTLY to the Cypher chain (no triple extraction)
+    for cleaner, faster Cypher generation.
+    Falls back to direct OpenAI call if the chain fails.
     """
-    pipe = _run_pipeline(question, conversation_history=[])
-    chain_result = pipe["chain_result"]
-    decoded_query = pipe["decoded_query"]
-    rewritten = pipe["rewritten"]
-    verified_triples = pipe["verified_triples"]
-    instance_triples = pipe["instance_triples"]
+    db_name = get_settings().database_name
+
+    # Skip triple extraction — pass raw question directly to chain.
+    # Triple extraction adds noise to the question and confuses the Cypher LLM.
+    chain_result = invoke_chain(question, schema)
+
+    decoded_query = None
+    if isinstance(chain_result, dict):
+        encoded_query, decoded_query = _extract_cypher_queries(chain_result)
 
     if isinstance(chain_result, dict):
         raw_result = chain_result.get("result")
@@ -311,7 +308,6 @@ def get_raw_results(question: str) -> dict:
                 if raw_result.startswith("[") and raw_result.endswith("]"):
                     try:
                         import ast
-
                         parsed = ast.literal_eval(raw_result)
                         result = normalize_value(parsed)
                     except Exception:
@@ -324,19 +320,70 @@ def get_raw_results(question: str) -> dict:
         else:
             result = []
     else:
-        # chain_result is an error string
         decoded_query = ""
         result = []
         error = str(chain_result) if chain_result else None
+
+    # --- Fallback: if chain produced no cypher, try direct OpenAI call ---
+    if not decoded_query:
+        logger.info("[RAGService] Chain produced no cypher, trying direct fallback...")
+        try:
+            fallback_cypher = _direct_cypher_fallback(question)
+            if fallback_cypher:
+                decoded_query = fallback_cypher
+                try:
+                    graph = get_graph()
+                    fallback_result = graph.query(fallback_cypher)
+                    if fallback_result:
+                        result = normalize_value(fallback_result)
+                        if not isinstance(result, list):
+                            result = []
+                        error = None
+                        logger.info("[RAGService] Fallback succeeded: %d rows", len(result))
+                except Exception as exec_err:
+                    logger.warning("[RAGService] Fallback execution failed: %s", exec_err)
+        except Exception as fb_err:
+            logger.warning("[RAGService] Fallback generation failed: %s", fb_err)
 
     return {
         "cypher_query": decoded_query or "",
         "result": result,
         "error": error,
-        "rewritten": rewritten,
-        "verified_triples": [list(t) for t in verified_triples],
-        "instance_triples": [list(t) for t in instance_triples],
+        "rewritten": "",
+        "verified_triples": [],
+        "instance_triples": [],
     }
+
+
+def _direct_cypher_fallback(question: str) -> str:
+    """
+    Direct OpenAI call to generate Cypher — used as fallback when
+    GraphCypherQAChain fails. Uses the domain-specific template for consistency.
+    """
+    import re as _re
+    from models.llm import get_cypher_llm
+    from models.graph import get_graph
+    from utils.helpers import clean_cypher_query, strip_noisy_return_properties
+
+    graph = get_graph()
+    schema = graph.get_schema
+    llm = get_cypher_llm()
+    template = get_cypher_template()
+
+    # Build prompt from template
+    prompt = template.replace("{schema}", schema).replace(
+        "{question}", f"Question: {question}\n\nCypher Query:"
+    )
+
+    try:
+        response = llm.invoke(prompt)
+        cypher = response.content.strip()
+        cypher = clean_cypher_query(cypher)
+        cypher = strip_noisy_return_properties(cypher)
+        return cypher
+    except Exception as e:
+        logger.warning("[RAGService] Direct fallback LLM call failed: %s", e)
+        return ""
 
 
 # ---------------------------------------------------------------------------
