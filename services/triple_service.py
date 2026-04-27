@@ -148,12 +148,23 @@ def verify_triples(
         try:
             cypher = (
                 f"MATCH (a:{s_label})-[:{rel}]->(b:{o_label}) "
-                f"RETURN a.name AS subject, b.name AS object LIMIT 5"
+                f"RETURN properties(a) AS a_props, properties(b) AS b_props LIMIT 5"
             )
             rows = graph.query(cypher)
             for row in rows:
-                subj = row.get("subject") or row.get("a.name")
-                obj = row.get("object") or row.get("b.name")
+                a_props = row.get("a_props", {})
+                b_props = row.get("b_props", {})
+                
+                # Extract best identifier (name, title, screen_name, text, url, id)
+                def get_id(props):
+                    for k in ["name", "title", "screen_name", "text", "url", "id", "id_str"]:
+                        if k in props and props[k]:
+                            return props[k]
+                    return str(props)
+
+                subj = get_id(a_props)
+                obj = get_id(b_props)
+                
                 if subj and obj:
                     instance_triples.append((str(subj), rel, str(obj)))
         except Exception as e:

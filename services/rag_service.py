@@ -120,7 +120,7 @@ def _run_pipeline(
 
       1. Triple extraction with retry  (interpreter LLM + Neo4j verification)
       2. Build enhanced question        (original + rewritten + triples)
-      3. Invoke Cypher chain            (GraphCypherQAChain → Neo4j)
+  3. Invoke Cypher generator        (retrieval-grounded Cypher → Neo4j)
 
     Returns a dict with keys:
         rewritten          : str
@@ -357,8 +357,7 @@ def get_raw_results(question: str, schema: str = "") -> dict:
 
 def _direct_cypher_fallback(question: str) -> str:
     """
-    Direct OpenAI call to generate Cypher — used as fallback when
-    GraphCypherQAChain fails. Uses the domain-specific template for consistency.
+    Direct OpenAI call to generate Cypher, used as a last-resort fallback.
     """
     import re as _re
     from models.llm import get_cypher_llm
@@ -393,9 +392,9 @@ def _direct_cypher_fallback(question: str) -> str:
 
 def get_available_databases() -> list[str]:
     """Return the list of databases that have a Cypher template."""
-    from templates.cypher_templates import _TEMPLATE_MAP
+    from templates.cypher_templates import _DOMAIN_CONFIGS
 
-    return list(_TEMPLATE_MAP.keys())
+    return list(_DOMAIN_CONFIGS.keys())
 
 
 def get_database_info() -> dict:

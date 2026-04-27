@@ -1,98 +1,98 @@
 """
-Entity definitions per database type.
-FIX: Added default fallback so entity_definitions is always defined.
+Semantic Schema definitions per database type.
+This replaces simple natural language with exact Cypher-style property structures,
+which dramatically improves LLM understanding of property locations.
 """
 from config import get_settings
 
 entity_climate_definitions = """
-The definitions of the entity types are given below:
-Activity: A coordinated modeling effort or scientific campaign.
-ExperimentFamily: A group of related experiments sharing a common scientific goal.
-Experiment: A specific simulation scenario (e.g., historical, ssp585).
-SubExperiment: A variant or subset of an experiment, usually with specific configurations.
-Source: A climate model or system used to generate data (e.g., GFDL-ESM4).
-SourceType: The classification of the model
-SourceComponent: A component of a climate model.
-PhysicalScheme: A physical process representation used in a model (e.g., cloud scheme).
-PhysicalFeature: Unique physical characteristics of a model (e.g., terrain-following grid).
-SimulationType: Type of simulation performed (e.g., transient, equilibrium).
-Metric: Quantitative measure of model performance (e.g., climate sensitivity).
-Project: A broader initiative under which models/experiments are conducted (e.g., CMIP6).
-Institute: Organization responsible for developing models or running simulations.
-Variable: Scientific quantities output by models (e.g., temperature, precipitation).
-Realm: Component of the Earth system (e.g., atmosphere, ocean).
-Frequency: Temporal resolution of model output (e.g., daily, monthly).
-Resolution: Spatial resolution or grid size of the data.
-Ensemble: A collection of model runs differing in initial conditions or configurations.
-Member: An individual member of an ensemble.
-MIPEra: A major generation or version of coordinated experiments (e.g., CMIP5, CMIP6).
-RCM (Regional Climate Model): A model used for fine-resolution regional simulations.
-Domain: Geographical coverage of a model.
-Continent: A large continuous landmass (e.g., Asia, Africa).
-Country: A sovereign state or territory (e.g., India, USA).
-Country Subdivision: Administrative units within countries (e.g., California).
-City: Urban locality (e.g., Paris).
-No Country Region: Areas not under country jurisdiction (e.g., open ocean).
-Water Bodies: Oceans, seas, and lakes (e.g., Pacific Ocean).
-Instrument: Device used to observe environmental variables (e.g., radiometer).
-Platform: Physical carrier for an instrument (e.g., satellite).
-Weather event: Specific events like storms, droughts.
-Teleconnection: Large-scale climate patterns (e.g., ENSO, NAO).
-Ocean circulation: Movements of ocean waters (e.g., AMOC).
-Natural hazard: Geophysical events impacting systems (e.g., tsunami, earthquake).
+=== SEMANTIC SCHEMA ===
+Node: Source {name: STRING}
+Node: RCM {name: STRING}
+Node: Variable {name: STRING, cf_standard_name: STRING}
+Node: Experiment {name: STRING}
+Node: Institute {name: STRING}
+Node: SourceComponent {name: STRING}
+Node: SourceType {name: STRING}
+Node: Realm {name: STRING}
+Node: Frequency {name: STRING}
+Node: Resolution {name: STRING}
+Node: Country {name: STRING, code: STRING}
+Node: Country_Subdivision {name: STRING, code: STRING}
+Node: Continent {name: STRING}
+Relationship: (Source)-[:PRODUCES_VARIABLE]->(Variable)
+Relationship: (Source)-[:USED_IN_EXPERIMENT]->(Experiment)
+Relationship: (Source)-[:PRODUCED_BY_INSTITUTE]->(Institute)
+Relationship: (Source)-[:HAS_SOURCE_COMPONENT]->(SourceComponent)
+Relationship: (Source)-[:IS_OF_TYPE]->(SourceType)
+Relationship: (Source)-[:APPLIES_TO_REALM]->(Realm)
+Relationship: (Source)-[:HAS_FREQUENCY]->(Frequency)
+Relationship: (Source)-[:HAS_RESOLUTION]->(Resolution)
+Relationship: (RCM)-[:DRIVEN_BY_SOURCE]->(Source)
+Relationship: (RCM)-[:COVERS_REGION]->(Country|Country_Subdivision|Continent)
+Relationship: (Country_Subdivision)-[:PART_OF]->(Country)
 """.strip()
 
 entity_movies_definitions = """
-The definitions of the entity types are given below:
-Movie: Represents a film with attributes such as title, release year, tagline, and number of votes.
-Person: Represents an individual (actor, director, writer, or producer) with a name and birth year.
+=== SEMANTIC SCHEMA ===
+Node: Person {name: STRING, born: INTEGER}
+Node: Movie {title: STRING, released: INTEGER, votes: INTEGER, tagline: STRING}
+Relationship: (Person)-[:ACTED_IN {roles: LIST<STRING>}]->(Movie)
+Relationship: (Person)-[:REVIEWED {rating: INTEGER, summary: STRING}]->(Movie)
+Relationship: (Person)-[:DIRECTED]->(Movie)
+Relationship: (Person)-[:PRODUCED]->(Movie)
+Relationship: (Person)-[:WROTE]->(Movie)
+Relationship: (Person)-[:FOLLOWS]->(Person)
 """.strip()
 
 entity_recommendations_definitions = """
-The definitions of the entity types are given below:
-Movie: Represents a film with attributes such as title, release year, runtime, budget, revenue, rating, and metadata like IMDb and TMDB identifiers. Includes descriptive fields such as plot, languages, countries, and poster or embedding vectors for recommendation tasks.
-Genre: Represents a movie genre or category (e.g., Action, Comedy, Drama) associated with one or more movies.
-User: Represents a user who has rated movies in the system, identified by a unique userId and optionally a display name.
-Actor: Represents a person who performed in one or more movies. Contains biographical details such as name, birth and death dates, birthplace, and links to IMDb or TMDB profiles.
-Director: Represents a person who directed one or more movies. Includes similar attributes to Actor, such as name, biography, birth and death information, and media profile links.
-Person: Represents a generic individual involved in the film industry (e.g., actor, director, or other contributor) with profile details such as name, birth information, IMDb/TMDB identifiers, and biography.
+=== SEMANTIC SCHEMA ===
+Node: Movie {title: STRING, year: INTEGER, released: STRING, runtime: INTEGER, budget: INTEGER, revenue: INTEGER, imdbRating: FLOAT, imdbVotes: INTEGER, plot: STRING, languages: LIST<STRING>, countries: LIST<STRING>, poster: STRING}
+Node: User {userId: STRING, name: STRING}
+Node: Genre {name: STRING}
+Node: Actor {name: STRING, born: DATE, died: DATE, bornIn: STRING, tmdbId: STRING, imdbId: STRING, bio: STRING}
+Node: Director {name: STRING, born: DATE, died: DATE, bornIn: STRING, tmdbId: STRING, imdbId: STRING, bio: STRING}
+Node: Person {name: STRING, born: DATE, died: DATE, bornIn: STRING, tmdbId: STRING, imdbId: STRING, bio: STRING}
+Relationship: (Actor)-[:ACTED_IN]->(Movie)
+Relationship: (Director)-[:DIRECTED]->(Movie)
+Relationship: (Person)-[:ACTED_IN|:DIRECTED]->(Movie)
+Relationship: (Movie)-[:IN_GENRE]->(Genre)
+Relationship: (User)-[:RATED {rating: FLOAT, timestamp: INTEGER}]->(Movie)
 """.strip()
 
 entity_northwind_definitions = """
-The definitions of the entity types are given below:
-Product: Represents an item available for sale, including details such as product name, quantity per unit, units in stock or on order, unit price, reorder level, and whether it is discontinued.
-Category: Represents a grouping or classification of products (e.g., Beverages, Condiments), including a category name, description, and associated image or picture.
-Supplier: Represents a company or individual providing products, including supplier ID, company and contact information, address, region, and communication details such as phone, fax, and homepage.
-Customer: Represents an organization or person that places orders, including company and contact information, address, region, and phone or fax details.
-Order: Represents a purchase transaction made by a customer, containing information about order date, shipment details, freight cost, and associated customer and employee.
-Relationships:
-- PART_OF: Connects a Product to its Category.
-- SUPPLIES: Connects a Supplier to the Products they supply.
-- PURCHASED: Connects a Customer to an Order they have placed.
-- ORDERS: Connects an Order to the Products it contains, with relationship properties such as order ID, product ID, quantity, unit price, and discount.
+=== SEMANTIC SCHEMA ===
+Node: Product {productID: STRING, productName: STRING, unitPrice: FLOAT, unitsInStock: INTEGER, unitsOnOrder: INTEGER, reorderLevel: INTEGER, discontinued: BOOLEAN}
+Node: Category {categoryID: STRING, categoryName: STRING, description: STRING}
+Node: Supplier {supplierID: STRING, companyName: STRING, contactName: STRING, contactTitle: STRING, address: STRING, city: STRING, region: STRING, postalCode: STRING, country: STRING, phone: STRING, fax: STRING, homePage: STRING}
+Node: Customer {customerID: STRING, companyName: STRING, contactName: STRING, contactTitle: STRING, address: STRING, city: STRING, region: STRING, postalCode: STRING, country: STRING, phone: STRING, fax: STRING}
+Node: Order {orderID: STRING, orderDate: STRING, requiredDate: STRING, shippedDate: STRING, shipVia: STRING, freight: FLOAT, shipName: STRING, shipAddress: STRING, shipCity: STRING, shipRegion: STRING, shipPostalCode: STRING, shipCountry: STRING}
+Relationship: (Product)-[:PART_OF]->(Category)
+Relationship: (Supplier)-[:SUPPLIES]->(Product)
+Relationship: (Customer)-[:PURCHASED]->(Order)
+Relationship: (Order)-[:ORDERS {unitPrice: FLOAT, quantity: INTEGER, discount: FLOAT}]->(Product)
 """.strip()
 
 entity_twitter_definitions = """
-The definitions of the entity types are given below:
-User: Represents a Twitter account other than yourself. Includes attributes such as name, screen name (handle), URL, location, profile image, and network metrics such as number of followers, following, statuses (tweets), and betweenness centrality.
-Me: Represents your own Twitter account in the graph. Includes the same properties as User, such as name, screen name, URL, location, profile image, and social metrics like followers, following, and betweenness.
-Tweet: Represents an individual post on Twitter, including attributes such as tweet ID, creation date and time, text content, number of favorites (likes), and import method (e.g., API or manual import).
-Hashtag: Represents a hashtag (keyword) used in tweets to categorize content or topics.
-Link: Represents a hyperlink or URL contained in a tweet, typically referencing an external resource.
-Source: Represents the platform, client, or app used to post a tweet (e.g., Twitter Web App, iPhone, Android).
-Relationships:
-- FOLLOWS: Connects a User or Me to another User or Me to indicate following behavior.
-- POSTS: Connects a User or Me to a Tweet they have authored.
-- INTERACTS_WITH: Indicates engagement between users (e.g., likes, replies, mentions, retweets).
-- SIMILAR_TO: Connects users based on similarity metrics such as mutual interests or follower overlap, with a score property.
-- RT_MENTIONS: Represents when Me retweets or mentions another User.
-- AMPLIFIES: Represents amplification behavior, such as retweeting or boosting content from another user.
-- MENTIONS: Connects a Tweet to the User or Me it mentions.
-- USING: Connects a Tweet to the Source used to publish it.
-- TAGS: Connects a Tweet to a Hashtag it contains.
-- CONTAINS: Connects a Tweet to a Link it includes.
-- RETWEETS: Connects a Tweet to another Tweet it retweets.
-- REPLY_TO: Connects a Tweet to another Tweet it replies to.
+=== SEMANTIC SCHEMA ===
+Node: User {screen_name: STRING, name: STRING, location: STRING, followers: INTEGER, following: INTEGER, statuses: INTEGER, betweenness: FLOAT, profile_image_url: STRING, url: STRING}
+Node: Me {screen_name: STRING, name: STRING, location: STRING, followers: INTEGER, following: INTEGER, statuses: INTEGER, betweenness: FLOAT, profile_image_url: STRING, url: STRING}
+Node: Tweet {id_str: STRING, text: STRING, created_at: STRING, favorites: INTEGER}
+Node: Hashtag {name: STRING}
+Node: Link {url: STRING}
+Node: Source {name: STRING}
+Relationship: (User|Me)-[:FOLLOWS]->(User|Me)
+Relationship: (User|Me)-[:POSTS]->(Tweet)
+Relationship: (Me)-[:AMPLIFIES]->(User)
+Relationship: (Me)-[:INTERACTS_WITH]->(User)
+Relationship: (Me)-[:SIMILAR_TO {score: FLOAT}]->(User)
+Relationship: (Me)-[:RT_MENTIONS]->(User)
+Relationship: (Tweet)-[:MENTIONS]->(User|Me)
+Relationship: (Tweet)-[:RETWEETS]->(Tweet)
+Relationship: (Tweet)-[:TAGS]->(Hashtag)
+Relationship: (Tweet)-[:CONTAINS]->(Link)
+Relationship: (Tweet)-[:USING]->(Source)
+Relationship: (Tweet)-[:REPLY_TO]->(Tweet)
 """.strip()
 
 

@@ -18,7 +18,7 @@ from utils.helpers import parse_schema
 logger = logging.getLogger(__name__)
 
 _graph: Neo4jGraph | None = None
-_graph_lock = threading.Lock()
+_graph_lock = threading.RLock()
 
 _schema_labels: set[str] = set()
 _schema_relationships: set[str] = set()

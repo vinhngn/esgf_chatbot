@@ -1,0 +1,283 @@
+{
+    "movies": {
+        "examples": [
+            {
+                "question": "Which people have directed movies with a budget higher than $100 million?",
+                "cypher": "MATCH (m:Movie) RETURN m"
+            },
+            {
+                "question": "Find the top 5 movies with the most votes.",
+                "cypher": "MATCH (m:Movie) WHERE m.votes IS NOT NULL RETURN m.title, m.votes ORDER BY m.votes DESC LIMIT 5"
+            },
+            {
+                "question": "Who are the top 3 producers by the number of movies with different taglines?",
+                "cypher": "MATCH (p:Person)-[:PRODUCED]->(m:Movie) WHERE m.tagline IS NOT NULL WITH p, count(DISTINCT m.tagline) AS distinctTaglines ORDER BY distinctTaglines DESC LIMIT 3 RETURN p.name, distinctTaglines"
+            },
+            {
+                "question": "Which top 5 people have directed movies with more than 200 votes?",
+                "cypher": "MATCH (p:Person)-[:DIRECTED]->(m:Movie) WHERE m.votes > 200 WITH p, count(m) AS num_movies ORDER BY num_movies DESC LIMIT 5 RETURN p.name AS director, num_movies"
+            },
+            {
+                "question": "What are the roles of an actor in a movie?",
+                "cypher": "MATCH (p:Person)-[r:ACTED_IN]->(m:Movie) WHERE p.name = 'Keanu Reeves' AND m.title = 'The Matrix' RETURN r.roles AS roles"
+            },
+            {
+                "question": "List movies with a specific review summary.",
+                "cypher": "MATCH (m:Movie)<-[r:REVIEWED]-(p:Person) WHERE r.summary = 'Pretty funny at times' RETURN m.title"
+            },
+            {
+                "question": "List all people who have written and directed the same movie.",
+                "cypher": "MATCH (p:Person)-[:WROTE]->(m:Movie) WHERE (p)-[:DIRECTED]->(m) RETURN DISTINCT p.name"
+            },
+            {
+                "question": "What is the average review rating for a movie?",
+                "cypher": "MATCH (m:Movie)<-[r:REVIEWED]-(:Person) WHERE m.title = 'The Matrix' RETURN avg(r.rating) AS averageRating"
+            }
+        ],
+        "hints": [
+            "Movie has only title, released, votes, and tagline properties in this schema.",
+            "For popularity/top movie questions, use m.votes when the question mentions votes or popularity.",
+            "Roles are stored on the ACTED_IN relationship, not on Person or Movie nodes.",
+            "Use Person with the relationship type to distinguish actors, directors, producers, writers, and reviewers.",
+            "Reviews use (Person)-[r:REVIEWED]->(Movie); rating and summary live on the REVIEWED relationship.",
+            "When the same person must write/direct/produce/review/act in the same movie, reuse the same Person variable across those relationships.",
+            "For title/tagline text questions, use CONTAINS on m.title or m.tagline only when the wording says contains/includes/word.",
+            "For follower questions in this dataset, followers are modeled by Person-[:FOLLOWS]->Person and require COUNT of incoming followers, not a stored follower property.",
+            "For 'first N' movie questions with no ranking metric, prefer the selected example shape and simple LIMIT; for 'first N with highest/lowest', rank by the named metric."
+        ]
+    },
+    "twitter": {
+        "examples": [
+            {
+                "question": "Which users are amplified by 'Me' according to the AMPLIFIES relationship?",
+                "cypher": "MATCH (me:Me)-[:AMPLIFIES]->(user:User) RETURN user.screen_name AS AmplifiedUser"
+            },
+            {
+                "question": "Who are the top 5 users that a specific user named 'Neo4j' follows?",
+                "cypher": "MATCH (me:Me {name: 'Neo4j'})-[:FOLLOWS]->(user:User) RETURN user.name, user.screen_name, user.followers, user.following ORDER BY user.followers DESC LIMIT 5"
+            },
+            {
+                "question": "List the 5 most recent users who started following 'Neo4j'.",
+                "cypher": "MATCH (neo4j:Me {screen_name: 'neo4j'})<-[:FOLLOWS]-(user:User) RETURN user.screen_name, user.name, user.followers, user.following, user.profile_image_url, user.url, user.location, user.statuses ORDER BY user.followers DESC LIMIT 5"
+            },
+            {
+                "question": "Identify the top 3 users by the number of people they are following.",
+                "cypher": "MATCH (u:User) RETURN u.name, u.screen_name, count{(u)-[:FOLLOWS]->(:User)} AS followingCount ORDER BY followingCount DESC LIMIT 3"
+            },
+            {
+                "question": "Who does 'neo4j' interact with most frequently?",
+                "cypher": "MATCH (me:Me {screen_name: 'neo4j'})-[:INTERACTS_WITH]->(user:User) RETURN user.screen_name, COUNT(*) AS interaction_count ORDER BY interaction_count DESC LIMIT 1"
+            },
+            {
+                "question": "Which three tweets have the most mentions of other users?",
+                "cypher": "MATCH (t:Tweet)-[:MENTIONS]->(u:User) WITH t, COUNT(u) AS mention_count ORDER BY mention_count DESC LIMIT 3 RETURN t.id_str AS tweet_id, t.text AS tweet_text, mention_count"
+            },
+            {
+                "question": "Who are the top 5 users that 'neo4j' retweets the most?",
+                "cypher": "MATCH (me:Me {screen_name: 'neo4j'})-[:POSTS]->(tweet:Tweet)-[:RETWEETS]->(retweetedTweet:Tweet)<-[:POSTS]-(retweetedUser:User) RETURN retweetedUser.screen_name AS retweeted_user, count(*) AS retweet_count ORDER BY retweet_count DESC LIMIT 5"
+            },
+            {
+                "question": "Find the tweets that contain links and have been posted by users who follow \"Neo4j\".",
+                "cypher": "MATCH (neo:User {screen_name: 'neo4j'})-[:FOLLOWS]->(follower:User) MATCH (follower)-[:POSTS]->(tweet:Tweet)-[:CONTAINS]->(link:Link) RETURN DISTINCT tweet"
+            },
+            {
+                "question": "List the top 5 tweets that contain links and are posted by 'Neo4j'.",
+                "cypher": "MATCH (me:Me {screen_name: 'neo4j'})-[:POSTS]->(tweet:Tweet)-[:CONTAINS]->(link:Link) RETURN tweet.text, tweet.favorites ORDER BY tweet.favorites DESC LIMIT 5"
+            },
+            {
+                "question": "List the first 5 tweets with the highest number of favorites.",
+                "cypher": "MATCH (t:Tweet) RETURN t.text, t.favorites ORDER BY t.favorites DESC LIMIT 5"
+            },
+            {
+                "question": "Find the top 5 users by number of statuses posted.",
+                "cypher": "MATCH (u:User) RETURN u.name, u.screen_name, u.statuses ORDER BY u.statuses DESC LIMIT 5"
+            },
+            {
+                "question": "What are the top 5 most recent tweets based on the creation date?",
+                "cypher": "MATCH (t:Tweet) RETURN t ORDER BY t.created_at DESC LIMIT 5"
+            },
+            {
+                "question": "Show tweets that mention 'neo4j' and have more than 100 favorites.",
+                "cypher": "MATCH (t:Tweet)-[:MENTIONS]->(u:User {screen_name: 'neo4j'}) WHERE t.favorites > 100 RETURN t.text AS tweet_text, t.favorites AS favorite_count, t.created_at AS created_at"
+            },
+            {
+                "question": "What are the 3 most recent tweets posted by any user?",
+                "cypher": "MATCH (u:User)-[:POSTS]->(t:Tweet) RETURN t.text AS tweet_text, t.created_at AS created_at ORDER BY t.created_at DESC LIMIT 3"
+            },
+            {
+                "question": "Show the first 3 tweets that Me has retweeted.",
+                "cypher": "MATCH (me:Me)-[:POSTS]->(retweet:Tweet)-[:RETWEETS]->(original:Tweet) RETURN original ORDER BY original.created_at ASC LIMIT 3"
+            },
+            {
+                "question": "List top tweets from users located in a given location.",
+                "cypher": "MATCH (u:User {location: 'Graphs Are Everywhere'})-[:POSTS]->(t:Tweet) RETURN t ORDER BY t.favorites DESC LIMIT 3"
+            },
+            {
+                "question": "Find the first tweets where neo4j is mentioned and the tweet is a retweet.",
+                "cypher": "MATCH (t:Tweet)-[:MENTIONS]->(u:User {screen_name: 'neo4j'}) WHERE EXISTS { (t)-[:RETWEETS]->(:Tweet) } RETURN t LIMIT 3"
+            },
+            {
+                "question": "Find all tweets posted by Neo4j containing a hashtag.",
+                "cypher": "MATCH (u:User {name: 'Neo4j'})-[:POSTS]->(t:Tweet)-[:TAGS]->(h:Hashtag) RETURN t, h"
+            },
+            {
+                "question": "List tweets that mention Neo4j and contain a link.",
+                "cypher": "MATCH (t:Tweet)-[:MENTIONS]->(u:User {name: 'Neo4j'}) MATCH (t)-[:CONTAINS]->(l:Link) RETURN t.text AS tweet_text, t.created_at AS created_at, l.url AS link_url ORDER BY t.created_at DESC LIMIT 3"
+            },
+            {
+                "question": "Find top tweets with links sorted by favorites.",
+                "cypher": "MATCH (t:Tweet)-[:CONTAINS]->(l:Link) RETURN t.text AS tweet_text, t.favorites AS favorites, l.url AS link_url ORDER BY t.favorites DESC LIMIT 5"
+            },
+            {
+                "question": "Who are the top users amplified by Me?",
+                "cypher": "MATCH (me:Me)-[:AMPLIFIES]->(u:User) RETURN u.name, u.screen_name ORDER BY u.followers DESC LIMIT 3"
+            },
+            {
+                "question": "Who are the top followers of Neo4j based on betweenness centrality?",
+                "cypher": "MATCH (me:Me {screen_name: 'neo4j'})<-[:FOLLOWS]-(follower:User) RETURN follower.name AS follower_name, follower.betweenness AS betweenness ORDER BY follower.betweenness DESC LIMIT 3"
+            },
+            {
+                "question": "Find top tweets by Neo4j using a specific source.",
+                "cypher": "MATCH (u:User {name: 'Neo4j'})-[:POSTS]->(t:Tweet)-[:USING]->(s:Source) RETURN t ORDER BY t.favorites DESC LIMIT 5"
+            }
+        ],
+        "hints": [
+            "Use :Me for the central Neo4j account when the relationship type is only defined from Me, such as AMPLIFIES, INTERACTS_WITH, SIMILAR_TO, and RT_MENTIONS.",
+            "Use :User when the question asks about any Twitter user or when selected examples show Neo4j modeled as a User for POSTS/MENTIONS patterns.",
+            "For the Neo4j account, prefer screen_name: 'neo4j' when the wording uses lowercase 'neo4j' or handle-like phrasing; use name: 'Neo4j' when the selected example or question clearly refers to the display name.",
+            "For 'A follows B', use (A)-[:FOLLOWS]->(B). For followers/users who follow B, use (B)<-[:FOLLOWS]-(user).",
+            "FOLLOWS has no date property in the input schema. Do not invent a follow timestamp for 'started following'; use the selected example's ranking/projection.",
+            "Do not chain through the wrong poster. If users who follow Neo4j posted tweets, keep the follower/user variable as the POSTs source.",
+            "The numeric properties followers, following, statuses, favorites, and betweenness are node properties. Use them directly when the wording asks for that stored metric.",
+            "Use count{} or COUNT only when the question asks to count matched relationships/entities rather than asking for a stored numeric property.",
+            "Retweet event pattern: (poster)-[:POSTS]->(retweet:Tweet)-[:RETWEETS]->(original:Tweet). To get original author, match (author)-[:POSTS]->(original).",
+            "If the question asks for tweets retweeted by Neo4j on a date, filter date(retweet.created_at) and return/order the original tweet as shown by retweet examples.",
+            "Mention pattern: (tweet:Tweet)-[:MENTIONS]->(user:User|Me). Prefer the MENTIONS relationship over text search for mentioned users.",
+            "Users mentioned in someone's tweets require account-[:POSTS]->Tweet-[:MENTIONS]->mentionedUser; tweets that mention someone use Tweet-[:MENTIONS]->target.",
+            "Users mentioned in the same tweet as another target require one shared Tweet variable with two MENTIONS traversals.",
+            "Links and hashtags are modeled as Tweet-[:CONTAINS]->Link and Tweet-[:TAGS]->Hashtag.",
+            "SIMILAR_TO has a score property on the relationship; bind the relationship variable when ranking by similarity.",
+            "USING connects Tweet to Source; source filters should traverse Tweet-[:USING]->Source and keep Tweet as the returned entity unless fields are requested.",
+            "Profile image questions should filter user.profile_image_url IS NOT NULL and project profile_image_url when requested.",
+            "Location questions use User.location; group by location only when the question asks for locations where users are based.",
+            "If the question asks for tweet text/favorites/created date, project those properties. If it asks to list tweets without naming properties, return the Tweet node."
+        ]
+    },
+    "northwind": {
+        "examples": [
+            {
+                "question": "What is the contactName of the supplier that supplies the product with productName equal to 'Chang'?",
+                "cypher": "MATCH (p:Product {productName: 'Chang'})<-[:SUPPLIES]-(s:Supplier) RETURN s.contactName"
+            },
+            {
+                "question": "Which suppliers supply products with a unitsInStock value above 80?",
+                "cypher": "MATCH (s:Supplier)-[:SUPPLIES]->(p:Product) WHERE p.unitsInStock > 80 RETURN s"
+            },
+            {
+                "question": "Identify the 5 suppliers with the highest average unit price of products supplied.",
+                "cypher": "MATCH (s:Supplier)-[:SUPPLIES]->(p:Product) WITH s, avg(p.unitPrice) AS avgUnitPrice ORDER BY avgUnitPrice DESC LIMIT 5 RETURN s.companyName AS Supplier, avgUnitPrice AS AverageUnitPrice"
+            },
+            {
+                "question": "Find the `customerID` and `shipCity` for the customer with the highest total order value (sum of `unitPrice` * `quantity` for all their orders).",
+                "cypher": "MATCH (c:Customer)-[:PURCHASED]->(o:Order)-[orders:ORDERS]->(p:Product) WITH c, o, sum(toFloat(orders.unitPrice) * orders.quantity) AS totalOrderValue WITH c, max(totalOrderValue) AS maxTotalOrderValue, collect(o.shipCity) AS shipCities WHERE size(shipCities) > 0 RETURN c.customerID, shipCities[0] AS shipCity ORDER BY maxTotalOrderValue DESC LIMIT 1"
+            },
+            {
+                "question": "What is the average unitPrice of products ordered in quantities greater than 10?",
+                "cypher": "MATCH (o:Order)-[rel:ORDERS]->(p:Product) WHERE rel.quantity > 10 WITH avg(toFloat(rel.unitPrice)) AS avgPrice RETURN avgPrice"
+            },
+            {
+                "question": "Which customers ordered the most distinct products?",
+                "cypher": "MATCH (c:Customer)-[:PURCHASED]->(o:Order)-[:ORDERS]->(p:Product) WITH c, COUNT(DISTINCT p.productID) AS distinctProducts ORDER BY distinctProducts DESC LIMIT 3 RETURN c.customerID, distinctProducts"
+            },
+            {
+                "question": "What is the average discount applied to orders shipped to a country?",
+                "cypher": "MATCH (o:Order {shipCountry: 'Denmark'})-[rel:ORDERS]->(p:Product) WITH avg(toFloat(rel.discount)) AS averageDiscount RETURN averageDiscount"
+            },
+            {
+                "question": "Which categories have products with a unit price less than a value?",
+                "cypher": "MATCH (p:Product)-[:PART_OF]->(c:Category) WHERE p.unitPrice < 10 RETURN DISTINCT c.categoryName"
+            }
+        ],
+        "hints": [
+            "\"Revenue\" or \"sales amount\" should be calculated as SUM(orders.quantity * orders.unitPrice * (1 - orders.discount)).",
+            "\"Top selling\" or \"most popular\" products are determined by the quantity in the [:ORDERS] relationship.",
+            "Order line price, quantity, and discount are properties on the ORDERS relationship.",
+            "Customer order flow is Customer-[:PURCHASED]->Order-[orders:ORDERS]->Product.",
+            "Supplier flow is Supplier-[:SUPPLIES]->Product; category flow is Product-[:PART_OF]->Category.",
+            "Customer names and supplier names are companyName/contactName properties; products use productName and categories use categoryName.",
+            "Order shipping filters use Order.shipCountry, Order.shipCity, Order.shipRegion, Order.shipName, and Order.orderDate.",
+            "Numeric Product properties include unitPrice, unitsInStock, unitsOnOrder, reorderLevel, and discontinued.",
+            "Use toFloat for relationship unitPrice/discount and Order.freight when doing arithmetic or numeric comparisons."
+        ]
+    },
+    "recommendations": {
+        "examples": [
+            {
+                "question": "What is the name of the actor who acted in the movie \"Toy Story\"?",
+                "cypher": "MATCH (m:Movie {title: \"Toy Story\"})<-[:ACTED_IN]-(a:Actor) RETURN a.name"
+            },
+            {
+                "question": "List the first 5 directors who have directed a movie with an imdbRating of 9 or higher.",
+                "cypher": "MATCH (d:Director)-[:DIRECTED]->(m:Movie) WHERE m.imdbRating >= 9 RETURN DISTINCT d.name LIMIT 5"
+            },
+            {
+                "question": "What is the average budget for movies in the \"Science Fiction\" genre?",
+                "cypher": "MATCH (m:Movie)-[:IN_GENRE]->(g:Genre {name: 'Science Fiction'}) RETURN avg(m.budget)"
+            },
+            {
+                "question": "Which three directors have directed movies in more than one language?",
+                "cypher": "MATCH (d:Director)-[:DIRECTED]->(m:Movie) WITH d, collect(DISTINCT m.languages) AS languages WHERE size(languages) > 1 RETURN d.name, languages ORDER BY size(languages) DESC LIMIT 3"
+            },
+            {
+                "question": "What are the IMDb ratings of movies whose plot contains a phrase?",
+                "cypher": "MATCH (m:Movie) WHERE m.plot CONTAINS 'evil exterminator' RETURN m.title, m.imdbRating"
+            },
+            {
+                "question": "List the top 3 movies with the highest budget to revenue ratio.",
+                "cypher": "MATCH (m:Movie) WHERE m.budget IS NOT NULL AND m.revenue IS NOT NULL AND m.revenue > 0 RETURN m.title, m.budget, m.revenue, (toFloat(m.budget) / m.revenue) AS budgetRevenueRatio ORDER BY budgetRevenueRatio DESC LIMIT 3"
+            },
+            {
+                "question": "List the first movies that have been directed by actors.",
+                "cypher": "MATCH (p:Person)-[:ACTED_IN]->(m:Movie)<-[:DIRECTED]-(p) RETURN m.title LIMIT 3"
+            },
+            {
+                "question": "Which users gave the highest rating to a movie?",
+                "cypher": "MATCH (u:User)-[r:RATED]->(m:Movie {title: 'Toy Story'}) RETURN u.name, r.rating ORDER BY r.rating DESC LIMIT 5"
+            }
+        ],
+        "hints": [
+            "\"Top rated\" means ordering by m.imdbRating DESC.",
+            "Person can be either an Actor or a Director. Differentiate using [:ACTED_IN] or [:DIRECTED] relationships.",
+            "User ratings use the (User)-[r:RATED]->(Movie) relationship.",
+            "Genres use Movie-[:IN_GENRE]->Genre and genre names live on Genre.name.",
+            "Actors use Actor-[:ACTED_IN]->Movie; directors use Director-[:DIRECTED]->Movie. Reuse one variable only when the same person must satisfy both roles.",
+            "Movie countries and languages can be list properties; use UNWIND or collect/count DISTINCT when the question asks for different countries/languages.",
+            "Use Movie.year for year comparisons and Movie.released only when the selected example or question asks for a release date string.",
+            "Movie budget, revenue, runtime, imdbRating, and imdbVotes are stored Movie metrics; rank directly by the named metric.",
+            "For plot/poster text questions, use CONTAINS on the requested text property."
+        ]
+    },
+    "climate": {
+        "examples": [
+            {
+                "question": "Show all climate models that include the variable 'pr'.",
+                "cypher": "MATCH (s:Source)-[:PRODUCES_VARIABLE]->(v:Variable {name: 'pr'})\nRETURN s\nLIMIT 50"
+            },
+            {
+                "question": "Which variables are associated with the experiment historical?",
+                "cypher": "MATCH (e:Experiment {name: 'historical'})<-[:USED_IN_EXPERIMENT]-(s:Source)\nMATCH (s)-[:PRODUCES_VARIABLE]->(v:Variable)\nRETURN DISTINCT v.name, v.cf_standard_name\nLIMIT 50"
+            },
+            {
+                "question": "Which institute has produced the most climate models?",
+                "cypher": "MATCH (i:Institute)<-[:PRODUCED_BY_INSTITUTE]-(s:Source)\nWITH i, count(s) AS model_count\nORDER BY model_count DESC\nLIMIT 1\nRETURN i.name, model_count"
+            }
+        ],
+        "hints": [
+            "Use exact variable names like pr and tas when the question names a climate variable explicitly.",
+            "For global climate models, follow the Source -> IS_OF_TYPE -> SourceType pattern.",
+            "For RCM questions, center the query on RCM and then traverse to regions or driving sources.",
+            "When listing models or sources, returning the full node is acceptable unless the question explicitly asks for a property.",
+            "For aggregation questions such as 'how many' or 'which institute has the most', return the metric column with the entity."
+        ]
+    }
+}
