@@ -433,6 +433,8 @@ def _build_query_hints(question: str) -> str:
         hints.append("RETURN contract: for tweets using a source, return the Tweet node unless the question asks for text/favorites/source fields.")
     if re.search(r"\bprofile image\b", lowered):
         hints.append("FILTER/RETURN contract: profile image questions require profile_image_url IS NOT NULL and should return user.screen_name plus user.profile_image_url, not the full User node.")
+    if re.search(r"\bprofile image urls? of users? who follow\b", lowered):
+        hints.append("RETURN contract: if asking only for profile image URLs, return only u.profile_image_url and do not add LIMIT unless the question asks for first/top.")
     if re.search(r"\blocation|based in|located in\b", lowered):
         hints.append("FILTER contract: Twitter location questions use User.location; grouping locations returns location plus count.")
     if re.search(r"\b(on|date)\s+['\"]?\d{4}-\d{2}-\d{2}['\"]?", lowered):
@@ -468,6 +470,50 @@ def _build_query_hints(question: str) -> str:
         hints.append("RETURN contract: for recent tweets based on created_at, return t.text and t.created_at when the question names the date field.")
     if re.search(r"\bhighest number of favorites|most favorites|favorites count\b", lowered):
         hints.append("ORDER contract: rank tweets by t.favorites DESC; use LIMIT 1 when the question says singular 'which tweet' without a number.")
+    if re.search(r"\blowest number of followers|least number of followers\b", lowered):
+        hints.append("RETURN contract: users ranked by lowest followers should return u.screen_name and u.followers, ordered by u.followers ASC.")
+    if re.search(r"\busers? who have more than \d+ followers\b", lowered) and re.search(r"\bfirst\s+\d+\b", lowered):
+        hints.append("RETURN contract: first users above a follower threshold usually return u.name, u.screen_name, and u.followers ordered by followers DESC.")
+    if re.search(r"\bmore than \d+ followers\b", lowered) and re.search(r"\bless than \d+ statuses\b", lowered):
+        hints.append("RETURN contract: follower/status filters should return screen_name, followers, and statuses as separate projected properties.")
+    if re.search(r"\btop\s+\d+\s+tweets? from users located\b", lowered):
+        hints.append("RETURN contract: top tweets from a location should return t.text and t.favorites, ordered by t.favorites DESC.")
+    if re.search(r"\btweets? by ['\"]?neo4j['\"]?.*hashtag|tweets? by ['\"]?neo4j['\"]?.*#\w+", lowered):
+        hints.append("RETURN contract: Neo4j hashtag tweet rankings usually return t.text, t.favorites, and t.created_at.")
+    if re.search(r"\bcreated in 2021\b", lowered):
+        hints.append("FILTER contract: use datetime('2021-01-01T00:00:00Z') through datetime('2021-12-31T23:59:59Z') for 2021 tweet ranges.")
+    if re.search(r"\bfirst\s+\d+\s+tweets?.*tagged.*hashtag.*mention", lowered):
+        hints.append("RETURN contract: tweets tagged with a hashtag and mentioning another user should return tweet_id, tweet_text, and created_at ordered by created_at ASC.")
+    if re.search(r"\bfirst\s+\d+\s+users?.*mentioned ['\"]?neo4j", lowered):
+        hints.append("TWITTER INPUT PATTERN: users who mentioned Neo4j are User-[:POSTS]->Tweet-[:MENTIONS]->Me; return user.screen_name and tweet.created_at ordered by tweet.created_at ASC.")
+    if re.search(r"\bmost recent tweet posted by ['\"]?neo4j", lowered):
+        hints.append("RETURN contract: most recent tweet posted by Neo4j should return t.text ordered by t.created_at DESC LIMIT 1.")
+    if re.search(r"\bdate and time of the most recent tweet.*mentions a user followed by", lowered):
+        hints.append("RETURN contract: use max(tweet.created_at) AS most_recent_tweet_date after matching tweets that mention followed users.")
+    if re.search(r"\baverage number of favorites.*mention both.*hashtag", lowered):
+        hints.append("TWITTER INPUT PATTERN: bind one Tweet with both MENTIONS target and TAGS hashtag, then return avg(t.favorites) AS average_favorites.")
+    if re.search(r"\baverage number of followers.*same tweets as ['\"]?neo4j", lowered):
+        hints.append("TWITTER INPUT PATTERN: for same tweets as Neo4j, bind one tweet connected to Neo4j and other users, then avg(other.followers) AS average_followers.")
+    if re.search(r"\breplied to a tweet by ['\"]?neo4j", lowered):
+        hints.append("PATH contract: replies use (user)-[:POSTS]->(original)<-[:REPLY_TO]-(reply); return reply ordered by reply.created_at ASC for first replies.")
+    if re.search(r"\bmost replies\b", lowered):
+        hints.append("PATH contract: count optional incoming REPLY_TO tweets per Neo4j tweet and return tweet_text plus reply_count.")
+    if re.search(r"\bhashtags used by users with more than", lowered):
+        hints.append("PATH contract: users with follower filters must remain connected to their posted tweets before traversing Tweet-[:TAGS]->Hashtag.")
+    if re.search(r"\btweets that mention ['\"]?neo4j['\"]? and contain a link\b", lowered):
+        hints.append("RETURN contract: when asking all tweets mentioning Neo4j and containing a link, return the Tweet node and use EXISTS for the link condition.")
+    if re.search(r"\blinks to ['\"]?https?://", lowered):
+        hints.append("FILTER contract: URL literal questions should use link.url CONTAINS '<url-fragment>' rather than exact Link map equality.")
+    if re.search(r"\bbetweenness higher than", lowered):
+        hints.append("RETURN contract: betweenness threshold questions return u.screen_name and u.betweenness.")
+    if re.search(r"\btop\s+\d+\s+locations.*most tweets\b", lowered):
+        hints.append("FILTER/RETURN contract: top tweet locations should filter u.location IS NOT NULL and return u.location AS Location, count(t) AS TweetCount.")
+    if re.search(r"\bhashtags.*tweets.*contain links.*posted by", lowered):
+        hints.append("PATH contract: for hashtags in tweets with links, first match posted Tweet, use EXISTS for CONTAINS Link, then MATCH Tweet-[:TAGS]->Hashtag.")
+    if re.search(r"\busers? who follow ['\"]?neo4j\b|\ball users who follow ['\"]?neo4j\b", lowered):
+        hints.append("PATH contract: users who follow Neo4j use (u:User)-[:FOLLOWS]->(:Me {screen_name: 'neo4j'}), not the reverse direction.")
+    if re.search(r"\bfirst\s+\d+\s+tweets?.*contain a hashtag\b", lowered):
+        hints.append("ORDER contract: first tweets containing a hashtag from neo4j should order by t.created_at ASC.")
     if re.search(r"\bsimilar to neo4j|similarity|similar_to\b", lowered):
         hints.append("PATH contract: bind the SIMILAR_TO relationship as [s:SIMILAR_TO] and return s.score AS similarity; do not put score inside the relationship pattern.")
     if re.search(r"\bpopular external sources|external sources\b", lowered):

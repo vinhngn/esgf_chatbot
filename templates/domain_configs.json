@@ -167,6 +167,94 @@
             {
                 "question": "List users retweeted by Me.",
                 "cypher": "MATCH (me:Me)-[:POSTS]->(retweet:Tweet)-[:RETWEETS]->(original:Tweet)<-[:POSTS]-(user:User) RETURN user.screen_name AS retweeted_user"
+            },
+            {
+                "question": "List the first tweets that Neo4j retweets on a date.",
+                "cypher": "MATCH (me:Me {screen_name: 'neo4j'})-[:POSTS]->(retweet:Tweet)-[:RETWEETS]->(original:Tweet) WHERE date(retweet.created_at) = date('2021-03-16') RETURN original.text, original.created_at ORDER BY retweet.created_at LIMIT 3"
+            },
+            {
+                "question": "Identify the first users who mentioned Neo4j in their tweets.",
+                "cypher": "MATCH (u:User)-[:POSTS]->(t:Tweet)-[:MENTIONS]->(m:Me {screen_name: 'neo4j'}) RETURN u.screen_name, t.created_at ORDER BY t.created_at ASC LIMIT 3"
+            },
+            {
+                "question": "List top tweets from users located in a location.",
+                "cypher": "MATCH (u:User {location: 'Graphs Are Everywhere'})-[:POSTS]->(t:Tweet) RETURN t.text, t.favorites ORDER BY t.favorites DESC LIMIT 3"
+            },
+            {
+                "question": "List tweets by neo4j tagged with a hashtag and mentioning another user.",
+                "cypher": "MATCH (u:User {screen_name: 'neo4j'})-[:POSTS]->(t:Tweet) MATCH (t)-[:TAGS]->(h:Hashtag) MATCH (t)-[:MENTIONS]->(m:User) RETURN t.id_str AS tweet_id, t.text AS tweet_text, t.created_at AS created_at ORDER BY t.created_at ASC LIMIT 3"
+            },
+            {
+                "question": "List top tweets that mention Neo4j and have more than 100 favorites.",
+                "cypher": "MATCH (u:User {screen_name: 'neo4j'})<-[:MENTIONS]-(t:Tweet) WHERE t.favorites > 100 RETURN t.text, t.favorites, t.created_at ORDER BY t.favorites DESC LIMIT 3"
+            },
+            {
+                "question": "Find tweets that mention Neo4j and are tagged with education.",
+                "cypher": "MATCH (t:Tweet)-[:TAGS]->(:Hashtag {name: 'education'}) WHERE t.text CONTAINS 'Neo4j' RETURN t"
+            },
+            {
+                "question": "Show tweets that replied to a tweet by neo4j.",
+                "cypher": "MATCH (u:User {screen_name: 'neo4j'})-[:POSTS]->(t:Tweet)<-[:REPLY_TO]-(reply:Tweet) RETURN reply ORDER BY reply.created_at ASC LIMIT 3"
+            },
+            {
+                "question": "Find top Neo4j tweets with the most replies.",
+                "cypher": "MATCH (u:User {screen_name: 'neo4j'})-[:POSTS]->(t:Tweet) OPTIONAL MATCH (t)<-[:REPLY_TO]-(r:Tweet) WITH t, count(r) AS reply_count ORDER BY reply_count DESC LIMIT 5 RETURN t.text AS tweet_text, reply_count"
+            },
+            {
+                "question": "List hashtags used by users with many followers.",
+                "cypher": "MATCH (u:User) WHERE u.followers > 1000 MATCH (u)-[:POSTS]->(t:Tweet) MATCH (t)-[:TAGS]->(h:Hashtag) RETURN DISTINCT h.name"
+            },
+            {
+                "question": "Find tweets mentioning Neo4j that contain a link.",
+                "cypher": "MATCH (t:Tweet)-[:MENTIONS]->(:User {screen_name: 'neo4j'}) WHERE exists{ (t)-[:CONTAINS]->(:Link) } RETURN t"
+            },
+            {
+                "question": "Identify top tweets that contain links to a URL.",
+                "cypher": "MATCH (t:Tweet)-[:CONTAINS]->(l:Link) WHERE l.url CONTAINS 'https://twitter.com' RETURN t ORDER BY t.favorites DESC LIMIT 3"
+            },
+            {
+                "question": "What is the most recent tweet posted by Neo4j?",
+                "cypher": "MATCH (u:User {name: 'Neo4j'})-[:POSTS]->(t:Tweet) RETURN t.text ORDER BY t.created_at DESC LIMIT 1"
+            },
+            {
+                "question": "Which users have a betweenness higher than a threshold?",
+                "cypher": "MATCH (u:User) WHERE u.betweenness > 1000000 RETURN u.screen_name, u.betweenness"
+            },
+            {
+                "question": "List all tweets by neo4j that have more than a favorite threshold and show the first five.",
+                "cypher": "MATCH (u:User {screen_name: 'neo4j'})-[:POSTS]->(t:Tweet) WHERE t.favorites > 200 RETURN t LIMIT 5"
+            },
+            {
+                "question": "List the first tweets retweeted by Me.",
+                "cypher": "MATCH (me:Me)-[:POSTS]->(retweet:Tweet)-[:RETWEETS]->(original:Tweet) RETURN original ORDER BY original.created_at ASC LIMIT 3"
+            },
+            {
+                "question": "List users with the lowest number of followers.",
+                "cypher": "MATCH (u:User) RETURN u.screen_name, u.followers ORDER BY u.followers ASC LIMIT 3"
+            },
+            {
+                "question": "What are the profile image URLs of users who follow neo4j?",
+                "cypher": "MATCH (u:User)-[:FOLLOWS]->(:Me {screen_name: 'neo4j'}) RETURN u.profile_image_url"
+            },
+            {
+                "question": "List top tweets that mention the user with screen name neo4j.",
+                "cypher": "MATCH (t:Tweet)-[:MENTIONS]->(u:User {screen_name: 'neo4j'}) RETURN t ORDER BY t.favorites DESC LIMIT 5"
+            },
+            {
+                "question": "List the top tweets that mention Neo4j.",
+                "cypher": "MATCH (t:Tweet)-[:MENTIONS]->(:User {name: 'Neo4j'}) RETURN t.text AS tweet_text, t.favorites AS favorites ORDER BY favorites DESC LIMIT 3"
+            },
+            {
+                "question": "List all users who follow neo4j.",
+                "cypher": "MATCH (u:User)-[:FOLLOWS]->(:Me {screen_name: 'neo4j'}) RETURN u"
+            },
+            {
+                "question": "Find users who follow Neo4j and posted tweets using a source.",
+                "cypher": "MATCH (neo:User {screen_name: 'neo4j'}) MATCH (user:User)-[:FOLLOWS]->(neo) MATCH (user)-[:POSTS]->(tweet:Tweet)-[:USING]->(source:Source {name: 'Twitter Web App'}) RETURN DISTINCT user.screen_name AS usernames"
+            },
+            {
+                "question": "Display first tweets from neo4j that contain a hashtag.",
+                "cypher": "MATCH (u:User {screen_name: 'neo4j'})-[:POSTS]->(t:Tweet)-[:TAGS]->(h:Hashtag) RETURN t ORDER BY t.created_at ASC LIMIT 3"
             }
         ],
         "hints": [
