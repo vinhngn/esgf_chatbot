@@ -139,6 +139,34 @@
             {
                 "question": "Find top tweets by Neo4j using a specific source.",
                 "cypher": "MATCH (u:User {name: 'Neo4j'})-[:POSTS]->(t:Tweet)-[:USING]->(s:Source) RETURN t ORDER BY t.favorites DESC LIMIT 5"
+            },
+            {
+                "question": "Which users have a profile image URL and follow Neo4j?",
+                "cypher": "MATCH (u:User)-[:FOLLOWS]->(:Me {screen_name: 'neo4j'}) WHERE u.profile_image_url IS NOT NULL RETURN u.screen_name, u.profile_image_url LIMIT 3"
+            },
+            {
+                "question": "What are the screen names of the users who posted the most tweets?",
+                "cypher": "MATCH (u:User)-[:POSTS]->(t:Tweet) WITH u, COUNT(t) AS tweet_count ORDER BY tweet_count DESC LIMIT 3 RETURN u.screen_name AS screen_name"
+            },
+            {
+                "question": "Which users are most similar to Neo4j based on the similarity score?",
+                "cypher": "MATCH (me:Me {name: 'Neo4j'})<-[s:SIMILAR_TO]-(u:User) RETURN u.screen_name AS user, s.score AS similarity ORDER BY similarity DESC LIMIT 5"
+            },
+            {
+                "question": "Which users does Neo4j retweet mentions from?",
+                "cypher": "MATCH (me:Me {screen_name: 'neo4j'})-[:RT_MENTIONS]->(user:User) RETURN user.screen_name AS user, count(*) AS mentions ORDER BY mentions DESC LIMIT 3"
+            },
+            {
+                "question": "Identify tweets linking to the most popular external sources.",
+                "cypher": "MATCH (t:Tweet)-[:USING]->(s:Source) WITH s, count(t) AS tweets_count ORDER BY tweets_count DESC LIMIT 5 MATCH (t:Tweet)-[:USING]->(s) RETURN t, s"
+            },
+            {
+                "question": "List top tweets with hashtags posted by neo4j.",
+                "cypher": "MATCH (u:User {screen_name: 'neo4j'})-[:POSTS]->(t:Tweet)-[:TAGS]->(h:Hashtag) RETURN t.text AS tweet, h.name AS hashtag ORDER BY t.created_at DESC LIMIT 3"
+            },
+            {
+                "question": "List users retweeted by Me.",
+                "cypher": "MATCH (me:Me)-[:POSTS]->(retweet:Tweet)-[:RETWEETS]->(original:Tweet)<-[:POSTS]-(user:User) RETURN user.screen_name AS retweeted_user"
             }
         ],
         "hints": [
@@ -160,6 +188,10 @@
             "USING connects Tweet to Source; source filters should traverse Tweet-[:USING]->Source and keep Tweet as the returned entity unless fields are requested.",
             "Profile image questions should filter user.profile_image_url IS NOT NULL and project profile_image_url when requested.",
             "Location questions use User.location; group by location only when the question asks for locations where users are based.",
+            "Do not add name/screen_name/followers columns by default. Projection must follow the question wording or the closest selected example exactly.",
+            "When a question asks for screen names, return only screen_name unless another field is explicitly requested.",
+            "When a question asks for top tweets by favorites, return tweet text plus favorites if the selected example projects properties; return the Tweet node only if the closest example does so.",
+            "For SIMILAR_TO, bind the relationship variable and return its score; never place score as an inline relationship map.",
             "If the question asks for tweet text/favorites/created date, project those properties. If it asks to list tweets without naming properties, return the Tweet node."
         ]
     },

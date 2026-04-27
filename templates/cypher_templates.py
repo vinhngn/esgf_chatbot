@@ -38,10 +38,12 @@ _SHARED_CORE_RULES = """
 - If "first N" appears with a ranking phrase such as highest/lowest/most/fewest, honor the ranking phrase and ORDER BY the metric.
 - For count/average/sum/min/max questions, return the computed metric alias.
 - Return exactly what the question asks for. Do not add helper columns.
+- The selected example's RETURN clause is a contract. For a close match, preserve the same number of return columns and aliases unless the user explicitly asks for different fields.
 - Return full nodes only when the question asks for entities and does not ask for specific properties or metrics.
 - Use DISTINCT only when the question asks for unique results or the join path can duplicate rows.
 - Use exact equality for quoted entity literals unless the question asks for text containment/search.
 - Before writing Cypher, decide these five contracts: anchor entity, path direction, filters, ranking/limit, and exact RETURN projection.
+- Never invent relationship properties or inline variables inside a relationship pattern; bind a relationship variable when you need a relationship property.
 """.strip()
 
 _TOKEN_SYNONYMS = {
@@ -250,7 +252,7 @@ def _number_limit(question: str) -> str | None:
         "nine": "9",
         "ten": "10",
     }
-    match = re.search(r"\b(?:top|first|last|limit|show|list|find|identify)\s+(?:the\s+)?(\d+)\b", lowered)
+    match = re.search(r"\b(?:top|first|last|limit|show|list|find|identify|which)\s+(?:the\s+)?(\d+)\b", lowered)
     if match:
         return match.group(1)
     for word, number in word_numbers.items():
@@ -318,6 +320,10 @@ def _build_query_hints(question: str) -> str:
     }
     for prop, pattern in return_terms.items():
         if re.search(pattern, lowered):
+            if prop == "name" and re.search(r"\bscreen names?\b", lowered):
+                continue
+            if prop == "url" and re.search(r"\bprofile image url\b|\bimage url\b", lowered):
+                continue
             property_returns.append(prop)
     if property_returns:
         hints.append(
@@ -351,6 +357,8 @@ def _build_query_hints(question: str) -> str:
         hints.append("METRIC contract: tweet favorites is the stored Tweet.favorites property, not COUNT unless counting favorite relationships appears in the schema.")
     if re.search(r"\b(number of followers|followers count|follower count)\b", lowered):
         hints.append("METRIC contract: user followers is the stored User.followers property unless the question explicitly asks for matched follower nodes.")
+    if re.search(r"\bposted the most tweets|most tweets posted|posted most tweets\b", lowered):
+        hints.append("METRIC contract: count matched POSTS relationships/tweets for 'posted the most tweets'; do not use the stored statuses property.")
     if re.search(r"\b(sales amount|order value)\b", lowered) or (
         "revenue" in lowered and re.search(r"\b(order|orders|customer|customers|product|products|sales)\b", lowered)
     ):
@@ -368,22 +376,32 @@ def _build_query_hints(question: str) -> str:
         hints.append("PATH contract: use Tweet-[:MENTIONS]->User/Me for mention semantics; do not use text CONTAINS for mentioned users.")
     if re.search(r"\bretweet", lowered):
         hints.append("PATH contract: retweet event is poster-[:POSTS]->retweet-[:RETWEETS]->original.")
+    if re.search(r"\bretweeted (the )?most times|retweeted by other users|tweets? retweeted by other users\b", lowered):
+        hints.append("PATH contract: for tweets retweeted by other tweets/users, count retweet Tweet nodes, not User nodes.")
     if re.search(r"\b(hashtag|tagged|tags?)\b", lowered):
         hints.append("PATH contract: hashtags use Tweet-[:TAGS]->Hashtag.")
-    if re.search(r"\b(link|url)\b", lowered):
+    if re.search(r"\b(link|url)\b", lowered) and not re.search(r"\bprofile image url\b|\bimage url\b", lowered):
         hints.append("PATH contract: links use Tweet-[:CONTAINS]->Link; URL filters should use link.url CONTAINS for partial URLs.")
     if re.search(r"\btweets?\b", lowered) and re.search(r"\b(link|url)\b", lowered) and re.search(r"\b(favorite|top|sort)\b", lowered):
         hints.append("RETURN contract: for ranked tweets with links, usually return tweet text, favorites, and link.url rather than only the Tweet node.")
+    if re.search(r"\btweets?\b", lowered) and re.search(r"\b(include|contain|link|url)\b", lowered) and re.search(r"\bfollowing ['\"]?neo4j|follow ['\"]?neo4j|users? following ['\"]?neo4j", lowered):
+        hints.append("TWITTER INPUT PATTERN: tweets with links posted by users following Neo4j should return tweet.text AS tweet_text, tweet.created_at AS created_at, and link.url AS link_url when ranked/listed.")
+    if re.search(r"\btweets?\b", lowered) and re.search(r"\b(using|posted using)\b", lowered):
+        hints.append("RETURN contract: source-filtered top tweets usually return tweet text and favorites, not only the Tweet node.")
     if re.search(r"\btweets?\b", lowered) and re.search(r"\bhashtag\b", lowered) and re.search(r"\b(all|containing)\b", lowered):
         hints.append("RETURN contract: for tweets containing a hashtag, include both the Tweet and Hashtag entity when the question asks for all tweets containing a hashtag.")
     if re.search(r"\bhashtags? used in tweets? that mention\b", lowered):
         hints.append("PATH contract: first find tweets mentioning the target user, then traverse to the posted tweet/hashtag pattern shown by the closest example; do not attach TAGS to a User node.")
+    if re.search(r"\bhashtags? (used|appearing|in).*tweets?.*(mention|latest|by)\b", lowered):
+        hints.append("RETURN contract: hashtag listing questions usually return h.name, not the Hashtag node.")
     if re.search(r"\busers? mentioned in .*tweets?\b", lowered):
         hints.append("PATH contract: if asking users mentioned in someone's tweets, start from that person/account -> POSTS -> Tweet -> MENTIONS -> mentioned user.")
     if re.search(r"\bsame tweets? as\b", lowered):
         hints.append("PATH contract: 'mentioned in the same tweets as X' means bind one Tweet and traverse MENTIONS from that same tweet to the other users.")
     if re.search(r"\busers? that .*mentions? most frequently\b|\bmentions? most frequently\b", lowered):
         hints.append("AGGREGATION contract: count the posting tweets per mentioned user, order by that count DESC, and do not invent a LIMIT unless the selected example/question has one.")
+    if re.search(r"\bmentioned the most\b|\bmentions? .* most\b", lowered) and re.search(r"\bneo4j\b", lowered):
+        hints.append("TWITTER INPUT PATTERN: distinguish 'Neo4j mentions users' from 'users mention Neo4j'. The POSTing account owns POSTS; MENTIONS points from Tweet to the mentioned user.")
     if re.search(r"\btweets? that mention\b", lowered) and re.search(r"\bcontain(s|ing)? a link\b", lowered):
         hints.append("RETURN contract: for tweets that mention a user and contain a link, return tweet text, created_at, and link.url when the question asks for recent/listed link tweets.")
     if re.search(r"\broles?\b", lowered):
@@ -405,14 +423,16 @@ def _build_query_hints(question: str) -> str:
 
     if re.search(r"\bneo4j\b", lowered):
         hints.append("ENTITY contract: choose :Me vs :User from the selected example and relationship type; do not blindly convert every Neo4j reference to :Me.")
-    if re.search(r"\btop\s+\d+\s+users?.*amplified|users?.*has amplified|users?.*amplifies\b", lowered):
-        hints.append("RETURN contract: for top amplified users, return the user entity or user name/screen_name as requested, and rank by user.followers unless the question asks for amplification count.")
+    if re.search(r"\bamplif(?:y|ies|ied|ying)\b", lowered):
+        hints.append("TWITTER INPUT PATTERN: AMPLIFIES is Me-[:AMPLIFIES]->User. If wording says 'amplifies the most', bind the relationship and COUNT it; if it only asks which users are amplified, do not rank unless asked.")
+    if re.search(r"\btop\s+\d+\s+users?.*amplified|users?.*has amplified\b", lowered) and not re.search(r"\bmost|number|count|how many\b", lowered):
+        hints.append("RETURN contract: for top amplified users without a count phrase, return the user entity or requested user fields and rank by user.followers.")
     if re.search(r"\btop\s+\d+\s+followers?.*betweenness|followers?.*betweenness\b", lowered):
         hints.append("RETURN contract: for followers ranked by betweenness, return follower.name and follower.betweenness, ordered by follower.betweenness DESC.")
     if re.search(r"\btweets? by .*using .*source\b", lowered):
         hints.append("RETURN contract: for tweets using a source, return the Tweet node unless the question asks for text/favorites/source fields.")
     if re.search(r"\bprofile image\b", lowered):
-        hints.append("FILTER contract: profile image questions usually require profile_image_url IS NOT NULL and should return profile_image_url when requested.")
+        hints.append("FILTER/RETURN contract: profile image questions require profile_image_url IS NOT NULL and should return user.screen_name plus user.profile_image_url, not the full User node.")
     if re.search(r"\blocation|based in|located in\b", lowered):
         hints.append("FILTER contract: Twitter location questions use User.location; grouping locations returns location plus count.")
     if re.search(r"\b(on|date)\s+['\"]?\d{4}-\d{2}-\d{2}['\"]?", lowered):
@@ -433,6 +453,33 @@ def _build_query_hints(question: str) -> str:
         hints.append("FILTER contract: freight is on Order and may need toFloat(o.freight) for numeric comparison/ranking.")
     if re.search(r"\breorder level|units on order|units in stock\b", lowered):
         hints.append("METRIC contract: reorderLevel, unitsOnOrder, and unitsInStock are Product properties.")
+
+    if re.search(r"\bscreen names? of .*users?.*posted the most tweets\b", lowered):
+        hints.append("RETURN contract: return only u.screen_name AS screen_name after counting tweets; do not return name or the count unless asked.")
+    if re.search(r"\btop\s+\d+\s+users?.*most followers\b|\busers? with the most followers\b", lowered):
+        hints.append("RETURN contract: for users ranked by followers, return u.screen_name and u.followers unless the question asks for names too.")
+    if re.search(r"\busers?.*follow(?:ed by)? ['\"]?neo4j['\"]?.*followers\b|\bfollowed by ['\"]?neo4j['\"]?.*followers\b", lowered):
+        hints.append("TWITTER INPUT PATTERN: users followed by Neo4j use (me:Me {screen_name: 'neo4j'})-[:FOLLOWS]->(user:User) and return user.screen_name plus requested metrics.")
+    if re.search(r"\btop\s+\d+\s+tweets?.*mention\b", lowered) and not re.search(r"\bscreen name\b", lowered):
+        hints.append("RETURN contract: top tweets that mention a user usually return tweet text and favorites, ordered by favorites DESC.")
+    if re.search(r"\btweets?.*mention.*screen name\b", lowered):
+        hints.append("RETURN contract: when the target is described by screen_name and no fields are named, returning the Tweet node is acceptable; rank by favorites for top tweets.")
+    if re.search(r"\bmost recent tweets?.*created_at|created_at.*date\b", lowered):
+        hints.append("RETURN contract: for recent tweets based on created_at, return t.text and t.created_at when the question names the date field.")
+    if re.search(r"\bhighest number of favorites|most favorites|favorites count\b", lowered):
+        hints.append("ORDER contract: rank tweets by t.favorites DESC; use LIMIT 1 when the question says singular 'which tweet' without a number.")
+    if re.search(r"\bsimilar to neo4j|similarity|similar_to\b", lowered):
+        hints.append("PATH contract: bind the SIMILAR_TO relationship as [s:SIMILAR_TO] and return s.score AS similarity; do not put score inside the relationship pattern.")
+    if re.search(r"\bpopular external sources|external sources\b", lowered):
+        hints.append("TWITTER INPUT PATTERN: popular sources use Tweet-[:USING]->Source, count tweets per Source, then return tweets and sources for the selected sources.")
+    if re.search(r"\bretweets mentions from\b", lowered):
+        hints.append("TWITTER INPUT PATTERN: 'retweets mentions from' uses Me-[:RT_MENTIONS]->User and counts that relationship.")
+    if re.search(r"\bretweeted by ['\"]?me['\"]?|users retweeted by ['\"]?me['\"]?", lowered):
+        hints.append("RETURN contract: users retweeted by Me should return user.screen_name AS retweeted_user, not the full User node.")
+    if re.search(r"\bretweeted.*tweets mentioning ['\"]?neo4j|retweeted tweets mentioning ['\"]?neo4j", lowered):
+        hints.append("RETURN contract: users who retweeted tweets mentioning Neo4j should return u.screen_name when asking for users.")
+    if re.search(r"\bsame tweets as users followed by ['\"]?neo4j", lowered):
+        hints.append("TWITTER INPUT PATTERN: start from Neo4j User -> FOLLOWS -> followedUser, find tweets mentioning followedUser, then other users mentioned in that same tweet; average otherUser.followers.")
 
     if not hints:
         return "- No extra query-specific hints. Follow schema, domain hints, and selected examples."
