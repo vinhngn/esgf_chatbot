@@ -4,10 +4,20 @@ from __future__ import annotations
 
 import logging
 
+from config import get_settings
 from models.graph import get_graph, maybe_refresh_schema
 from models.llm import get_cypher_llm
 from templates.cypher_templates import get_prompt_sections
-from utils.helpers import clean_cypher_query, strip_noisy_return_properties
+from templates.semantic_schema import semantic_cypher_feedback
+from utils.helpers import (
+    clean_cypher_query,
+    repair_northwind_order_line_properties,
+    repair_northwind_projection_and_metrics,
+    repair_northwind_semantic_patterns,
+    repair_twitter_semantic_patterns,
+    rewrite_bare_node_returns,
+    strip_noisy_return_properties,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -62,8 +72,25 @@ def invoke_chain(question: str, schema: str = "") -> dict | str:
             last_error=last_error,
         )
         response = llm.invoke(prompt)
+        database_name = get_settings().database_name
         current_cypher = clean_cypher_query(response.content.strip())
+        current_cypher = repair_northwind_order_line_properties(current_cypher)
+        if database_name == "northwind":
+            current_cypher = rewrite_bare_node_returns(current_cypher, question=question)
+        current_cypher = repair_northwind_projection_and_metrics(current_cypher, question=question)
         current_cypher = strip_noisy_return_properties(current_cypher)
+        current_cypher = repair_northwind_semantic_patterns(current_cypher, question=question)
+        current_cypher = repair_twitter_semantic_patterns(current_cypher, question=question)
+
+        semantic_feedback = semantic_cypher_feedback(
+            database_name,
+            question,
+            current_cypher,
+        )
+        if semantic_feedback and attempt < MAX_CYPHER_RETRIES:
+            logger.warning("[Cypher] Semantic validation feedback: %s", semantic_feedback)
+            last_error = semantic_feedback
+            continue
 
         try:
             logger.info("[Cypher] Validating syntax via EXPLAIN...")

@@ -8,6 +8,7 @@ import re
 
 from config import get_settings
 from templates.entity_definitions import get_entity_definitions
+from templates.semantic_schema import build_semantic_plan_text
 
 _DOMAIN_CONFIGS_PATH = os.path.join(os.path.dirname(__file__), "domain_configs.json")
 with open(_DOMAIN_CONFIGS_PATH, "r", encoding="utf-8") as file:
@@ -27,6 +28,7 @@ _SHARED_CORE_RULES = """
 - Output only one raw Cypher query. No markdown, no explanations.
 - Use only labels, relationships, properties, and directions that appear in the schema or selected examples.
 - Treat the schema as the source of truth for graph structure.
+- Use the semantic graph plan to reason through node labels, relationship directions, and traversal paths before writing Cypher.
 - Use domain facts for semantic meaning, domain hints for relationship guidance, and examples for query shape.
 - Prefer the selected example with the closest intent and adapt its structure instead of inventing a new structure.
 - Preserve relationship direction from the schema/examples. Do not reverse a path because the English sentence is passive.
@@ -551,6 +553,7 @@ def _build_prompt_sections(
     *,
     domain_name: str,
     domain_facts: str,
+    semantic_plan: str,
     domain_hints: str,
     query_hints: str,
     examples: str,
@@ -563,6 +566,8 @@ def _build_prompt_sections(
         f"{format_block(_SHARED_CORE_RULES)}\n\n"
         "=== DOMAIN FACTS ===\n"
         f"{format_block(domain_facts)}\n\n"
+        "=== SEMANTIC GRAPH PLAN ===\n"
+        f"{format_block(semantic_plan)}\n\n"
         "=== DOMAIN HINTS ===\n"
         f"{format_block(domain_hints)}\n\n"
         "=== QUERY INTENT HINTS ===\n"
@@ -589,6 +594,7 @@ def get_prompt_sections(
     return _build_prompt_sections(
         domain_name=_DOMAIN_NAMES.get(db, db.capitalize()),
         domain_facts=get_entity_definitions(db),
+        semantic_plan=build_semantic_plan_text(db, f"{original_question or ''} {question or ''}".strip()),
         domain_hints=_format_hints(config.get("hints", [])),
         query_hints=_build_query_hints(f"{original_question or ''} {question or ''}".strip()),
         examples=_format_examples(selected_examples),
@@ -612,6 +618,7 @@ def get_cypher_template(
     sections = _build_prompt_sections(
         domain_name=_DOMAIN_NAMES.get(db, db.capitalize()),
         domain_facts=get_entity_definitions(db),
+        semantic_plan=build_semantic_plan_text(db, f"{original_question or ''} {question or ''}".strip()),
         domain_hints=_format_hints(config.get("hints", [])),
         query_hints=_build_query_hints(f"{original_question or ''} {question or ''}".strip()),
         examples=_format_examples(selected_examples),
