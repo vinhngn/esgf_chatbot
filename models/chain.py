@@ -79,14 +79,17 @@ def invoke_chain(question: str, schema: str = "") -> dict | str:
             current_cypher = rewrite_bare_node_returns(current_cypher, question=question)
         current_cypher = repair_northwind_projection_and_metrics(current_cypher, question=question)
         current_cypher = strip_noisy_return_properties(current_cypher)
-        current_cypher = repair_northwind_semantic_patterns(current_cypher, question=question)
-        current_cypher = repair_twitter_semantic_patterns(current_cypher, question=question)
+        # Semantic repair disabled for baseline test.
+        # current_cypher = repair_northwind_semantic_patterns(current_cypher, question=question)
+        # current_cypher = repair_twitter_semantic_patterns(current_cypher, question=question)
 
-        semantic_feedback = semantic_cypher_feedback(
-            database_name,
-            question,
-            current_cypher,
-        )
+        # Semantic validation disabled for baseline test.
+        # semantic_feedback = semantic_cypher_feedback(
+        #     database_name,
+        #     question,
+        #     current_cypher,
+        # )
+        semantic_feedback = None
         if semantic_feedback and attempt < MAX_CYPHER_RETRIES:
             logger.warning("[Cypher] Semantic validation feedback: %s", semantic_feedback)
             last_error = semantic_feedback
