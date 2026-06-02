@@ -8,7 +8,6 @@ import re
 
 from config import get_settings
 from templates.entity_definitions import get_entity_definitions
-from templates.semantic_schema import build_semantic_plan_text
 
 _DOMAIN_CONFIGS_PATH = os.path.join(os.path.dirname(__file__), "domain_configs.json")
 with open(_DOMAIN_CONFIGS_PATH, "r", encoding="utf-8") as file:

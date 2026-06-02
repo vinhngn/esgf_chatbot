@@ -1,26 +1,19 @@
-"""Retrieval-grounded Text-to-Cypher execution."""
-
+﻿"""Retrieval-grounded Text-to-Cypher execution with universal schema grounding."""
 from __future__ import annotations
-
 import logging
-
 from config import get_settings
 from models.graph import get_graph, maybe_refresh_schema
-from models.llm import get_cypher_llm
+from models.llm import get_cypher_llm, get_grounding_llm
 from templates.cypher_templates import get_prompt_sections
-from templates.semantic_schema import semantic_cypher_feedback
 from utils.helpers import (
     clean_cypher_query,
     repair_northwind_order_line_properties,
     repair_northwind_projection_and_metrics,
-    repair_northwind_semantic_patterns,
-    repair_twitter_semantic_patterns,
-    rewrite_bare_node_returns,
     strip_noisy_return_properties,
+    rewrite_bare_node_returns,
 )
 
 logger = logging.getLogger(__name__)
-
 MAX_CYPHER_RETRIES = 2
 
 
@@ -48,12 +41,44 @@ def _build_coder_prompt(
     return prompt
 
 
+def _get_grounded_schema(question: str, runtime_schema: str) -> tuple[str, dict]:
+    """Get grounded schema via LLM schema linker. Falls back to full schema on failure."""
+    try:
+        from services.universal.schema_grounder import build_grounded_schema
+        grounding_llm = get_grounding_llm()
+        db_name = get_settings().database_name
+        result = build_grounded_schema(
+            question=question,
+            runtime_schema=runtime_schema,
+            db_name=db_name,
+            llm=grounding_llm,
+        )
+        grounded_text = result.get("schema_text", "")
+        debug = result.get("debug", {})
+        if grounded_text and len(grounded_text) > 50:
+            logger.info("[Chain] Using grounded subschema (%d chars)", len(grounded_text))
+            return grounded_text, debug
+        logger.warning("[Chain] Grounded schema too short, falling back to full schema")
+        return runtime_schema, debug
+    except Exception as exc:
+        logger.warning("[Chain] Schema grounding failed, using full schema: %s", exc)
+        return runtime_schema, {}
+
+
 def invoke_chain(question: str, schema: str = "") -> dict | str:
     maybe_refresh_schema()
     graph = get_graph()
     llm = get_cypher_llm()
 
-    db_schema = schema or graph.get_schema
+    full_schema = schema or graph.get_schema
+    grounding_debug = {}
+
+    # Use grounded schema when no explicit schema is provided
+    if not schema:
+        db_schema, grounding_debug = _get_grounded_schema(question, full_schema)
+    else:
+        db_schema = full_schema
+
     domain_template = get_prompt_sections(
         question=question,
         original_question=question,
@@ -79,21 +104,6 @@ def invoke_chain(question: str, schema: str = "") -> dict | str:
             current_cypher = rewrite_bare_node_returns(current_cypher, question=question)
         current_cypher = repair_northwind_projection_and_metrics(current_cypher, question=question)
         current_cypher = strip_noisy_return_properties(current_cypher)
-        # Semantic repair disabled for baseline test.
-        # current_cypher = repair_northwind_semantic_patterns(current_cypher, question=question)
-        # current_cypher = repair_twitter_semantic_patterns(current_cypher, question=question)
-
-        # Semantic validation disabled for baseline test.
-        # semantic_feedback = semantic_cypher_feedback(
-        #     database_name,
-        #     question,
-        #     current_cypher,
-        # )
-        semantic_feedback = None
-        if semantic_feedback and attempt < MAX_CYPHER_RETRIES:
-            logger.warning("[Cypher] Semantic validation feedback: %s", semantic_feedback)
-            last_error = semantic_feedback
-            continue
 
         try:
             logger.info("[Cypher] Validating syntax via EXPLAIN...")
@@ -105,7 +115,7 @@ def invoke_chain(question: str, schema: str = "") -> dict | str:
             return {
                 "query": current_cypher,
                 "result": raw_result,
-                "intermediate_steps": [{"query": current_cypher}],
+                "intermediate_steps": [{"query": current_cypher, "grounding": grounding_debug}],
             }
         except Exception as exc:
             error_msg = str(exc)
@@ -118,5 +128,5 @@ def invoke_chain(question: str, schema: str = "") -> dict | str:
     return {
         "query": current_cypher,
         "result": [],
-        "intermediate_steps": [{"query": current_cypher}],
+        "intermediate_steps": [{"query": current_cypher, "grounding": grounding_debug}],
     }
