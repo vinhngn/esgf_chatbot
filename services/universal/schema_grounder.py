@@ -15,6 +15,7 @@ import logging
 import re
 from dataclasses import dataclass, field
 from services.universal.schema_parser import SchemaGraph, ParsedPath
+from utils.pipeline_trace import trace_event
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +41,7 @@ def build_grounded_schema(
     db_name: str,
     llm,
     schema_graph: SchemaGraph | None = None,
+    trace_id: str = "unknown",
 ) -> dict:
     """Main entry: LLM schema linking + algorithmic validation.
     
@@ -51,18 +53,80 @@ def build_grounded_schema(
     
     if schema_graph is None:
         schema_graph = parse_schema_text(runtime_schema)
+
+    trace_event(
+        logger,
+        trace_id,
+        "GROUND-01",
+        "Runtime schema parsed into a graph",
+        {
+            "labels": schema_graph.get_all_labels(),
+            "relationships": schema_graph.get_all_rel_types(),
+            "traversal_paths": [
+                {
+                    "from": path.start,
+                    "relationship": path.rel_type,
+                    "to": path.end,
+                    "direction": path.direction,
+                }
+                for path in schema_graph.paths
+            ],
+        },
+    )
     
     # Step 1: Ask LLM to link schema
-    raw_llm = _call_grounder_llm(question, runtime_schema, db_name, llm)
+    raw_llm = _call_grounder_llm(
+        question,
+        runtime_schema,
+        db_name,
+        llm,
+        trace_id=trace_id,
+    )
     
     # Step 2: Validate against runtime schema
     validated, dropped = _validate_selection(raw_llm, schema_graph)
+    trace_event(
+        logger,
+        trace_id,
+        "GROUND-04",
+        "Grounding JSON validated against the runtime schema",
+        {
+            "validated_labels": sorted(validated.labels),
+            "validated_relationships": sorted(validated.relationships),
+            "validated_paths": validated.paths,
+            "entity_bindings": validated.entity_bindings,
+            "return_contract": validated.return_contract,
+            "metric_contract": validated.metric_contract,
+            "dropped_hallucinated_or_invalid_items": dropped,
+        },
+    )
     
     # Step 3: Expand paths if needed
+    paths_before_expansion = list(validated.paths)
     validated = _expand_paths(validated, schema_graph)
+    trace_event(
+        logger,
+        trace_id,
+        "GROUND-05",
+        "Traversal paths after deterministic shortest-path expansion",
+        {
+            "llm_selected_paths": paths_before_expansion,
+            "final_paths": validated.paths,
+            "algorithm_added_paths": [
+                path for path in validated.paths if path not in paths_before_expansion
+            ],
+        },
+    )
     
     # Step 4: Format compact schema
     schema_text = _format_grounded_schema(validated, question, db_name)
+    trace_event(
+        logger,
+        trace_id,
+        "GROUND-06",
+        "Schema grounder return value: text inserted into the final Cypher prompt",
+        schema_text,
+    )
     
     return {
         "schema_text": schema_text,
@@ -84,7 +148,14 @@ def build_grounded_schema(
     }
 
 
-def _call_grounder_llm(question: str, runtime_schema: str, db_name: str, llm) -> dict:
+def _call_grounder_llm(
+    question: str,
+    runtime_schema: str,
+    db_name: str,
+    llm,
+    *,
+    trace_id: str,
+) -> dict:
     schema_truncated = runtime_schema[:_MAX_SCHEMA_CHARS]
     prompt = f"""You are a schema linker for Neo4j Text-to-Cypher. Given a user question and database schema, identify which schema components are needed to answer the question.
 
@@ -111,10 +182,13 @@ Required JSON shape:
 Rules:
 - Use ONLY labels, relationships, and properties present in the schema below.
 - Do NOT invent new schema elements.
+- Return a JSON object, not a paragraph and not Cypher. The paths array may contain multiple traversal steps.
 - Preserve relationship direction from schema.
 - For entity values in the question (e.g. names, titles), map them to the most likely label.property.
 - Include ALL labels needed to complete the query path, not just start/end.
 - Include relationship properties when the question asks about relationship data.
+- If the requested metric/time property is absent from the schema, leave metric_contract empty.
+- Never assume an implicit timestamp, identifier, property, or relationship.
 
 Database: {db_name}
 Schema:
@@ -122,10 +196,39 @@ Schema:
 
 Question: {question}
 """
+    trace_event(
+        logger,
+        trace_id,
+        "GROUND-02",
+        "Full prompt sent to the schema-grounding LLM",
+        prompt,
+        verbose_only=True,
+    )
     try:
         response = llm.invoke(prompt)
         content = response.content.strip()
-        return _extract_json(content)
+        parsed = _extract_json(content)
+        trace_event(
+            logger,
+            trace_id,
+            "GROUND-03",
+            "Grounding LLM return contract: raw text parsed into a JSON object",
+            {
+                "raw_llm_text": content,
+                "parsed_json": parsed,
+                "return_type": type(parsed).__name__,
+                "path_count": len(parsed.get("paths", [])) if isinstance(parsed, dict) else 0,
+            },
+            verbose_only=True,
+        )
+        if not parsed:
+            trace_event(
+                logger,
+                trace_id,
+                "GROUND-03",
+                "Grounding LLM returned no usable JSON; fallback may use full schema",
+            )
+        return parsed
     except Exception as exc:
         logger.warning("[SchemaGrounder] LLM call failed: %s", exc)
         return {}
@@ -147,27 +250,47 @@ def _extract_json(text: str) -> dict:
 def _validate_selection(raw: dict, schema: SchemaGraph) -> tuple[GroundingSelection, dict]:
     """Validate LLM output against runtime schema. Returns (valid, dropped)."""
     sel = GroundingSelection()
-    dropped = {"labels": [], "relationships": [], "node_properties": {}, "rel_properties": {}, "paths": []}
+    dropped = {
+        "labels": [],
+        "relationships": [],
+        "node_properties": {},
+        "rel_properties": {},
+        "paths": [],
+        "entity_bindings": [],
+        "return_contract": [],
+        "metric_contract": [],
+        "notes": [],
+    }
+    if not isinstance(raw, dict):
+        return sel, dropped
+
+    def list_field(name: str) -> list:
+        value = raw.get(name)
+        return value if isinstance(value, list) else []
+
+    def dict_field(name: str) -> dict:
+        value = raw.get(name)
+        return value if isinstance(value, dict) else {}
     
     all_labels = set(schema.get_all_labels())
     all_rels = set(schema.get_all_rel_types())
     
     # Validate labels
-    for label in raw.get("labels", []):
+    for label in list_field("labels"):
         if isinstance(label, str) and label in all_labels:
             sel.labels.add(label)
         else:
             dropped["labels"].append(label)
     
     # Validate relationships
-    for rel in raw.get("relationships", []):
+    for rel in list_field("relationships"):
         if isinstance(rel, str) and rel in all_rels:
             sel.relationships.add(rel)
         else:
             dropped["relationships"].append(rel)
     
     # Validate node properties
-    for label, props in (raw.get("node_properties") or {}).items():
+    for label, props in dict_field("node_properties").items():
         if label not in all_labels:
             dropped["node_properties"][label] = props
             continue
@@ -183,7 +306,7 @@ def _validate_selection(raw: dict, schema: SchemaGraph) -> tuple[GroundingSelect
             sel.labels.add(label)  # ensure label included
     
     # Validate rel properties
-    for rel_type, props in (raw.get("rel_properties") or {}).items():
+    for rel_type, props in dict_field("rel_properties").items():
         if rel_type not in all_rels:
             dropped["rel_properties"][rel_type] = props
             continue
@@ -199,7 +322,10 @@ def _validate_selection(raw: dict, schema: SchemaGraph) -> tuple[GroundingSelect
             sel.relationships.add(rel_type)
     
     # Validate paths
-    for path in (raw.get("paths") or []):
+    for path in list_field("paths"):
+        if not isinstance(path, dict):
+            dropped["paths"].append(path)
+            continue
         start = path.get("from", "")
         rel = path.get("relationship", "")
         end = path.get("to", "")
@@ -216,17 +342,127 @@ def _validate_selection(raw: dict, schema: SchemaGraph) -> tuple[GroundingSelect
         else:
             dropped["paths"].append(path)
     
-    # Copy through entity_bindings, return_contract, metric_contract, notes
-    sel.entity_bindings = raw.get("entity_bindings", [])
-    sel.return_contract = raw.get("return_contract", [])
-    sel.metric_contract = raw.get("metric_contract", "")
-    sel.notes = raw.get("notes", [])
+    # Validate entity bindings instead of copying LLM-proposed schema refs.
+    for binding in list_field("entity_bindings"):
+        if not isinstance(binding, dict):
+            dropped["entity_bindings"].append(binding)
+            continue
+        text = binding.get("text", "")
+        label = binding.get("candidate_label", "")
+        prop = binding.get("candidate_property", "")
+        valid = bool(
+            isinstance(text, str)
+            and text.strip()
+            and isinstance(label, str)
+            and label in all_labels
+            and (
+                not prop
+                or (
+                    isinstance(prop, str)
+                    and prop in schema.get_node_properties(label)
+                )
+            )
+        )
+        if not valid:
+            dropped["entity_bindings"].append(binding)
+            continue
+        clean_binding = {
+            "text": text,
+            "candidate_label": label,
+            "candidate_property": prop,
+        }
+        sel.entity_bindings.append(clean_binding)
+        sel.labels.add(label)
+        if prop:
+            sel.node_properties.setdefault(label, set()).add(prop)
+
+    # Return fields are executable prompt constraints, so validate every
+    # qualified schema reference. Bare count(*) is schema-independent and safe.
+    for item in list_field("return_contract"):
+        if not isinstance(item, str) or not item.strip():
+            dropped["return_contract"].append(item)
+            continue
+        refs = re.findall(
+            r"\b([A-Za-z_][A-Za-z0-9_]*)\.([A-Za-z_][A-Za-z0-9_]*)\b",
+            item,
+        )
+        valid_refs = True
+        for owner, prop in refs:
+            if owner in all_labels and prop in schema.get_node_properties(owner):
+                sel.labels.add(owner)
+                sel.node_properties.setdefault(owner, set()).add(prop)
+            elif owner in all_rels and prop in schema.get_rel_properties(owner):
+                sel.relationships.add(owner)
+                sel.rel_properties.setdefault(owner, set()).add(prop)
+            else:
+                valid_refs = False
+                break
+        safe_unqualified = bool(
+            re.fullmatch(r"(?i)\s*count\s*\(\s*\*\s*\)\s*", item)
+            or item.strip() in all_labels
+        )
+        if (refs and valid_refs) or (not refs and safe_unqualified):
+            sel.return_contract.append(item)
+        else:
+            dropped["return_contract"].append(item)
+
+    metric_contract = raw.get("metric_contract", "")
+    if isinstance(metric_contract, str) and metric_contract.strip():
+        metric_lower = metric_contract.lower()
+        schema_properties = {
+            prop.lower()
+            for label in all_labels
+            for prop in schema.get_node_properties(label)
+        } | {
+            prop.lower()
+            for rel_type in all_rels
+            for prop in schema.get_rel_properties(rel_type)
+        }
+        references_schema_property = any(
+            re.search(rf"\b{re.escape(prop)}\b", metric_lower)
+            for prop in schema_properties
+        )
+        uses_schema_independent_aggregate = bool(
+            re.search(r"\b(count|sum|average|avg|min|max)\b", metric_lower)
+        )
+        if references_schema_property or uses_schema_independent_aggregate:
+            sel.metric_contract = metric_contract.strip()
+        else:
+            dropped["metric_contract"].append(metric_contract)
+
+    # Free-form notes are useful for diagnostics but unsafe as executable
+    # prompt context because they can contain unsupported assumptions.
+    dropped["notes"].extend(
+        note for note in list_field("notes") if isinstance(note, str)
+    )
+    sel.notes = []
     
     return sel, dropped
 
 
 def _expand_paths(sel: GroundingSelection, schema: SchemaGraph) -> GroundingSelection:
     """If labels are selected but no paths connect them, find shortest paths."""
+    # A relationship type with one runtime shape is unambiguous even when the
+    # LLM omitted its endpoint labels/path. Never guess when a type is polymorphic.
+    selected_rel_types = set(sel.relationships)
+    existing_rel_types = {
+        path.get("relationship", "") for path in sel.paths
+    }
+    for rel_type in sorted(selected_rel_types - existing_rel_types):
+        candidates = [path for path in schema.paths if path.rel_type == rel_type]
+        if len(candidates) != 1:
+            continue
+        step = candidates[0]
+        sel.paths.append(
+            {
+                "from": step.start,
+                "relationship": step.rel_type,
+                "to": step.end,
+            }
+        )
+        sel.labels.add(step.start)
+        sel.labels.add(step.end)
+
     if len(sel.labels) < 2:
         return sel
     

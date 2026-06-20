@@ -78,6 +78,7 @@ def text2cypher():
                 "rewritten": results.get("rewritten", ""),
                 "verified_triples": results.get("verified_triples", []),
                 "instance_triples": results.get("instance_triples", []),
+                "trace_id": results.get("trace_id", ""),
             }
         )
 
@@ -91,6 +92,7 @@ def text2cypher():
                 "rewritten": "",
                 "verified_triples": [],
                 "instance_triples": [],
+                "trace_id": "",
             }
         ), 500
 
@@ -125,6 +127,7 @@ def rag_endpoint():
                 "input_question": question,
                 "output": result.get("output", ""),
                 "cypher_query": result.get("cypher_query", ""),
+                "trace_id": result.get("trace_id", ""),
                 "error": None,
             }
         )

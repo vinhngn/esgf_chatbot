@@ -148,7 +148,10 @@ def _parse_node_properties(text: str, graph: SchemaGraph) -> None:
             line = line.strip()
             if not line:
                 continue
-            m = re.match(r"([A-Za-z_][A-Za-z0-9_]*)\s*:\s*\{([^}]*)\}", line)
+            m = re.match(
+                r"([A-Za-z_][A-Za-z0-9_]*)\s*(?::\s*)?\{([^}]*)\}",
+                line,
+            )
             if m:
                 label = m.group(1)
                 node = graph.nodes.setdefault(label, ParsedNode(label=label))
@@ -171,7 +174,10 @@ def _parse_relationship_properties(text: str, graph: SchemaGraph) -> None:
             line = line.strip()
             if not line:
                 continue
-            m = re.match(r"([A-Za-z_][A-Za-z0-9_]*)\s*:\s*\{([^}]*)\}", line)
+            m = re.match(
+                r"([A-Za-z_][A-Za-z0-9_]*)\s*(?::\s*)?\{([^}]*)\}",
+                line,
+            )
             if m:
                 rel_type = m.group(1)
                 rel = graph.relationships.setdefault(rel_type, ParsedRelationship(rel_type=rel_type))

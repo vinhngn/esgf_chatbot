@@ -29,6 +29,7 @@ from templates.cypher_templates import get_cypher_template
 from templates.entity_definitions import get_entity_definitions
 from templates.match_properties_map import get_match_properties_map
 from utils.helpers import normalize_value
+from utils.pipeline_trace import new_trace_id, trace_event
 
 from services.triple_service import build_enhanced_question, extract_triples_with_retry
 
@@ -131,10 +132,29 @@ def _run_pipeline(
         decoded_query      : str | None
     """
     db_name = get_settings().database_name
+    trace_id = new_trace_id()
+    trace_event(
+        logger,
+        trace_id,
+        "RAG-01",
+        "RAG request received before preprocessing",
+        {
+            "question": question,
+            "conversation_messages": len(conversation_history),
+            "database": db_name,
+        },
+    )
     if not conversation_history:
         cached = _get_cached_pipeline(db_name, question)
         if cached is not None:
             logger.info("[RAGService] cache hit for %s", question)
+            trace_event(
+                logger,
+                trace_id,
+                "RAG-02",
+                "Pipeline cache hit; no new preprocessing or grounding call",
+                {"cached_trace_id": cached.get("trace_id")},
+            )
             return cached
 
     interpreter_llm = get_interpreter_llm()
@@ -156,6 +176,17 @@ def _run_pipeline(
     logger.info("[RAGService] rewritten=%r", rewritten)
     logger.info("[RAGService] verified_triples=%s", verified_triples)
     logger.info("[RAGService] instance_triples=%s", instance_triples)
+    trace_event(
+        logger,
+        trace_id,
+        "RAG-02",
+        "Interpreter preprocessing return value",
+        {
+            "rewritten_question": rewritten,
+            "verified_schema_triples": verified_triples,
+            "instance_triples": instance_triples,
+        },
+    )
 
     # --- Step 2: Build enriched question ---
     enhanced_question = build_enhanced_question(
@@ -165,9 +196,16 @@ def _run_pipeline(
         instance_triples=instance_triples,
         conversation_history=conversation_history,
     )
+    trace_event(
+        logger,
+        trace_id,
+        "RAG-03",
+        "Enhanced question passed into the Text-to-Cypher chain",
+        enhanced_question,
+    )
 
     # --- Step 3: Invoke chain ---
-    chain_result = invoke_chain(enhanced_question)
+    chain_result = invoke_chain(enhanced_question, trace_id=trace_id)
 
     encoded_query, decoded_query = (
         _extract_cypher_queries(chain_result)
@@ -182,6 +220,7 @@ def _run_pipeline(
         "chain_result": chain_result,
         "encoded_query": encoded_query,
         "decoded_query": decoded_query,
+        "trace_id": trace_id,
     }
     if not conversation_history:
         _set_cached_pipeline(db_name, question, payload)
@@ -229,10 +268,22 @@ def process_question(
             "rewritten": rewritten,
             "verified_triples": verified_triples,
             "instance_triples": instance_triples,
+            "trace_id": pipe.get("trace_id", ""),
         }
 
     # Normalize Neo4j result
     raw_result = normalize_value(chain_result.get("result"))
+    trace_event(
+        logger,
+        pipe.get("trace_id", "unknown"),
+        "RAG-04",
+        "Database result passed to the final answer formatter",
+        {
+            "result_type": type(raw_result).__name__,
+            "row_count": len(raw_result) if isinstance(raw_result, list) else None,
+            "sample_rows": raw_result[:2] if isinstance(raw_result, list) else str(raw_result)[:1000],
+        },
+    )
 
     # --- Step 4: LLM-formatted response ---
     conversation_text = "\n".join(
@@ -257,7 +308,22 @@ def process_question(
             '"Please click here to access the knowledge graph: [[button_query]]"\n'
             "Do not use any other wording for the link."
         )
+        trace_event(
+            logger,
+            pipe.get("trace_id", "unknown"),
+            "RAG-05",
+            "Full prompt sent to the final answer LLM",
+            final_prompt,
+            verbose_only=True,
+        )
         final_response = main_llm.invoke(final_prompt).content.strip()
+        trace_event(
+            logger,
+            pipe.get("trace_id", "unknown"),
+            "RAG-06",
+            "Final answer LLM return value: user-facing text",
+            final_response,
+        )
         final_response = final_response.replace("[[button_query]]", neo4j_link)
 
     return {
@@ -267,6 +333,7 @@ def process_question(
         "rewritten": rewritten,
         "verified_triples": verified_triples,
         "instance_triples": instance_triples,
+        "trace_id": pipe.get("trace_id", ""),
     }
 
 
@@ -288,10 +355,22 @@ def get_raw_results(question: str, schema: str = "") -> dict:
     Falls back to direct OpenAI call if the chain fails.
     """
     db_name = get_settings().database_name
+    trace_id = new_trace_id()
+    trace_event(
+        logger,
+        trace_id,
+        "T2C-01",
+        "Raw Text-to-Cypher endpoint skips triple preprocessing",
+        {
+            "question_passed_to_chain": question,
+            "database": db_name,
+            "explicit_schema_supplied": bool(schema),
+        },
+    )
 
     # Skip triple extraction — pass raw question directly to chain.
     # Triple extraction adds noise to the question and confuses the Cypher LLM.
-    chain_result = invoke_chain(question, schema)
+    chain_result = invoke_chain(question, schema, trace_id=trace_id)
 
     decoded_query = None
     if isinstance(chain_result, dict):
@@ -327,8 +406,14 @@ def get_raw_results(question: str, schema: str = "") -> dict:
     # --- Fallback: if chain produced no cypher, try direct OpenAI call ---
     if not decoded_query:
         logger.info("[RAGService] Chain produced no cypher, trying direct fallback...")
+        trace_event(
+            logger,
+            trace_id,
+            "T2C-02",
+            "Primary chain returned no Cypher; invoke direct fallback LLM",
+        )
         try:
-            fallback_cypher = _direct_cypher_fallback(question)
+            fallback_cypher = _direct_cypher_fallback(question, trace_id=trace_id)
             if fallback_cypher:
                 decoded_query = fallback_cypher
                 try:
@@ -340,6 +425,13 @@ def get_raw_results(question: str, schema: str = "") -> dict:
                             result = []
                         error = None
                         logger.info("[RAGService] Fallback succeeded: %d rows", len(result))
+                        trace_event(
+                            logger,
+                            trace_id,
+                            "T2C-04",
+                            "Fallback Cypher executed successfully",
+                            {"row_count": len(result), "sample_rows": result[:2]},
+                        )
                 except Exception as exec_err:
                     logger.warning("[RAGService] Fallback execution failed: %s", exec_err)
         except Exception as fb_err:
@@ -352,10 +444,11 @@ def get_raw_results(question: str, schema: str = "") -> dict:
         "rewritten": "",
         "verified_triples": [],
         "instance_triples": [],
+        "trace_id": trace_id,
     }
 
 
-def _direct_cypher_fallback(question: str) -> str:
+def _direct_cypher_fallback(question: str, trace_id: str = "unknown") -> str:
     """
     Direct OpenAI call to generate Cypher, used as a last-resort fallback.
     """
@@ -373,10 +466,25 @@ def _direct_cypher_fallback(question: str) -> str:
     prompt = template.replace("{schema}", schema).replace(
         "{question}", f"Question: {question}\n\nCypher Query:"
     )
+    trace_event(
+        logger,
+        trace_id,
+        "T2C-03",
+        "Full prompt sent to the direct fallback Cypher LLM",
+        prompt,
+        verbose_only=True,
+    )
 
     try:
         response = llm.invoke(prompt)
         cypher = response.content.strip()
+        trace_event(
+            logger,
+            trace_id,
+            "T2C-03",
+            "Direct fallback LLM return value: one Cypher text string",
+            cypher,
+        )
         cypher = clean_cypher_query(cypher)
         cypher = strip_noisy_return_properties(cypher)
         return cypher
