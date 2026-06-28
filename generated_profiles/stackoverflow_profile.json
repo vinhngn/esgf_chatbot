@@ -1,0 +1,1609 @@
+{
+  "source": "neo4j+s://demo.neo4jlabs.com",
+  "source_type": "neo4j_live",
+  "database": "stackoverflow",
+  "row_count": 14,
+  "schema_profile": {
+    "labels": [
+      {
+        "label": "Answer",
+        "count": 8703794,
+        "properties": []
+      },
+      {
+        "label": "Post",
+        "count": 41782536,
+        "properties": []
+      },
+      {
+        "label": "Question",
+        "count": 16389567,
+        "properties": [
+          {
+            "name": "answers",
+            "non_null": null
+          },
+          {
+            "name": "comments",
+            "non_null": null
+          },
+          {
+            "name": "createdAt",
+            "non_null": null
+          },
+          {
+            "name": "favorites",
+            "non_null": null
+          },
+          {
+            "name": "score",
+            "non_null": null
+          },
+          {
+            "name": "title",
+            "non_null": null
+          },
+          {
+            "name": "updatedAt",
+            "non_null": null
+          },
+          {
+            "name": "views",
+            "non_null": null
+          }
+        ]
+      },
+      {
+        "label": "Tag",
+        "count": 52445,
+        "properties": [
+          {
+            "name": "count",
+            "non_null": null
+          }
+        ]
+      },
+      {
+        "label": "User",
+        "count": 8917507,
+        "properties": [
+          {
+            "name": "accountId",
+            "non_null": null
+          },
+          {
+            "name": "age",
+            "non_null": null
+          },
+          {
+            "name": "createdAt",
+            "non_null": null
+          },
+          {
+            "name": "location",
+            "non_null": null
+          },
+          {
+            "name": "name",
+            "non_null": null
+          },
+          {
+            "name": "reputation",
+            "non_null": null
+          },
+          {
+            "name": "upvotes",
+            "non_null": null
+          },
+          {
+            "name": "views",
+            "non_null": null
+          }
+        ]
+      }
+    ],
+    "relationships": [
+      {
+        "type": "ACCEPTED",
+        "patterns": [
+          {
+            "from": "Post",
+            "to": "Question",
+            "count": null
+          },
+          {
+            "from": "Answer",
+            "to": "Post",
+            "count": null
+          },
+          {
+            "from": "Question",
+            "to": "Question",
+            "count": null
+          },
+          {
+            "from": "Question",
+            "to": "Post",
+            "count": null
+          },
+          {
+            "from": "Post",
+            "to": "Post",
+            "count": null
+          },
+          {
+            "from": "Question",
+            "to": "Answer",
+            "count": null
+          },
+          {
+            "from": "Post",
+            "to": "Answer",
+            "count": null
+          },
+          {
+            "from": "Answer",
+            "to": "Answer",
+            "count": null
+          },
+          {
+            "from": "Answer",
+            "to": "Question",
+            "count": null
+          }
+        ],
+        "properties": []
+      },
+      {
+        "type": "ANSWERED",
+        "patterns": [
+          {
+            "from": "Post",
+            "to": "Post",
+            "count": null
+          },
+          {
+            "from": "Answer",
+            "to": "Question",
+            "count": null
+          },
+          {
+            "from": "Answer",
+            "to": "Answer",
+            "count": null
+          },
+          {
+            "from": "Answer",
+            "to": "Post",
+            "count": null
+          },
+          {
+            "from": "Post",
+            "to": "Question",
+            "count": null
+          },
+          {
+            "from": "Post",
+            "to": "Answer",
+            "count": null
+          }
+        ],
+        "properties": []
+      },
+      {
+        "type": "POSTED",
+        "patterns": [
+          {
+            "from": "User",
+            "to": "Question",
+            "count": null
+          },
+          {
+            "from": "User",
+            "to": "Post",
+            "count": null
+          },
+          {
+            "from": "User",
+            "to": "Answer",
+            "count": null
+          }
+        ],
+        "properties": []
+      },
+      {
+        "type": "SIMILAR",
+        "patterns": [
+          {
+            "from": "Tag",
+            "to": "Tag",
+            "count": null
+          }
+        ],
+        "properties": []
+      },
+      {
+        "type": "TAGGED",
+        "patterns": [
+          {
+            "from": "Question",
+            "to": "Tag",
+            "count": null
+          },
+          {
+            "from": "Answer",
+            "to": "Tag",
+            "count": null
+          },
+          {
+            "from": "Post",
+            "to": "Tag",
+            "count": null
+          }
+        ],
+        "properties": []
+      }
+    ],
+    "summary": {
+      "label_count": 5,
+      "relationship_type_count": 5,
+      "top_labels": [
+        {
+          "label": "Post",
+          "count": 41782536
+        },
+        {
+          "label": "Question",
+          "count": 16389567
+        },
+        {
+          "label": "User",
+          "count": 8917507
+        },
+        {
+          "label": "Answer",
+          "count": 8703794
+        },
+        {
+          "label": "Tag",
+          "count": 52445
+        }
+      ],
+      "top_relationship_patterns": [
+        {
+          "type": "ACCEPTED",
+          "from": "Post",
+          "to": "Question",
+          "count": null
+        },
+        {
+          "type": "ACCEPTED",
+          "from": "Answer",
+          "to": "Post",
+          "count": null
+        },
+        {
+          "type": "ACCEPTED",
+          "from": "Question",
+          "to": "Question",
+          "count": null
+        },
+        {
+          "type": "ANSWERED",
+          "from": "Post",
+          "to": "Post",
+          "count": null
+        },
+        {
+          "type": "ANSWERED",
+          "from": "Answer",
+          "to": "Question",
+          "count": null
+        },
+        {
+          "type": "ANSWERED",
+          "from": "Answer",
+          "to": "Answer",
+          "count": null
+        },
+        {
+          "type": "POSTED",
+          "from": "User",
+          "to": "Question",
+          "count": null
+        },
+        {
+          "type": "POSTED",
+          "from": "User",
+          "to": "Post",
+          "count": null
+        },
+        {
+          "type": "POSTED",
+          "from": "User",
+          "to": "Answer",
+          "count": null
+        },
+        {
+          "type": "SIMILAR",
+          "from": "Tag",
+          "to": "Tag",
+          "count": null
+        },
+        {
+          "type": "TAGGED",
+          "from": "Question",
+          "to": "Tag",
+          "count": null
+        },
+        {
+          "type": "TAGGED",
+          "from": "Answer",
+          "to": "Tag",
+          "count": null
+        },
+        {
+          "type": "TAGGED",
+          "from": "Post",
+          "to": "Tag",
+          "count": null
+        }
+      ]
+    }
+  },
+  "question_summary": {
+    "top_tokens": [
+      [
+        "sample",
+        14
+      ],
+      [
+        "connected",
+        9
+      ],
+      [
+        "through",
+        9
+      ],
+      [
+        "post",
+        6
+      ],
+      [
+        "question",
+        5
+      ],
+      [
+        "tag",
+        5
+      ],
+      [
+        "answer",
+        4
+      ],
+      [
+        "records",
+        3
+      ],
+      [
+        "user",
+        3
+      ],
+      [
+        "nodes",
+        2
+      ],
+      [
+        "accepted",
+        2
+      ],
+      [
+        "answered",
+        2
+      ],
+      [
+        "posted",
+        2
+      ],
+      [
+        "tagged",
+        2
+      ],
+      [
+        "similar",
+        1
+      ]
+    ],
+    "intent_counts": [],
+    "literal_questions": 0,
+    "numeric_questions": 0
+  },
+  "cypher_summary": {
+    "labels": [
+      [
+        "Post",
+        5
+      ],
+      [
+        "Question",
+        5
+      ],
+      [
+        "Answer",
+        4
+      ],
+      [
+        "Tag",
+        4
+      ],
+      [
+        "User",
+        3
+      ]
+    ],
+    "relationships": [
+      [
+        "ACCEPTED",
+        2
+      ],
+      [
+        "ANSWERED",
+        2
+      ],
+      [
+        "POSTED",
+        2
+      ],
+      [
+        "TAGGED",
+        2
+      ],
+      [
+        "SIMILAR",
+        1
+      ]
+    ],
+    "path_motifs": [
+      [
+        "(Post)-[:ACCEPTED]->(Question)",
+        1
+      ],
+      [
+        "(Answer)-[:ACCEPTED]->(Post)",
+        1
+      ],
+      [
+        "(Post)-[:ANSWERED]->(Post)",
+        1
+      ],
+      [
+        "(Answer)-[:ANSWERED]->(Question)",
+        1
+      ],
+      [
+        "(User)-[:POSTED]->(Question)",
+        1
+      ],
+      [
+        "(User)-[:POSTED]->(Post)",
+        1
+      ],
+      [
+        "(Tag)-[:SIMILAR]->(Tag)",
+        1
+      ],
+      [
+        "(Question)-[:TAGGED]->(Tag)",
+        1
+      ],
+      [
+        "(Answer)-[:TAGGED]->(Tag)",
+        1
+      ]
+    ],
+    "shape_signatures": [
+      [
+        "clauses=MATCH,RETURN,LIMIT|motifs=|returns=node",
+        2
+      ],
+      [
+        "clauses=MATCH,RETURN,LIMIT|motifs=|returns=expression,expression,expression",
+        2
+      ],
+      [
+        "clauses=MATCH,RETURN,LIMIT|motifs=|returns=expression",
+        1
+      ],
+      [
+        "clauses=MATCH,RETURN,LIMIT|motifs=(Post)-[:ACCEPTED]->(Question)|returns=node,relationship,node",
+        1
+      ],
+      [
+        "clauses=MATCH,RETURN,LIMIT|motifs=(Answer)-[:ACCEPTED]->(Post)|returns=node,relationship,node",
+        1
+      ],
+      [
+        "clauses=MATCH,RETURN,LIMIT|motifs=(Post)-[:ANSWERED]->(Post)|returns=node,relationship,node",
+        1
+      ],
+      [
+        "clauses=MATCH,RETURN,LIMIT|motifs=(Answer)-[:ANSWERED]->(Question)|returns=node,relationship,node",
+        1
+      ],
+      [
+        "clauses=MATCH,RETURN,LIMIT|motifs=(User)-[:POSTED]->(Question)|returns=node,relationship,node",
+        1
+      ],
+      [
+        "clauses=MATCH,RETURN,LIMIT|motifs=(User)-[:POSTED]->(Post)|returns=node,relationship,node",
+        1
+      ],
+      [
+        "clauses=MATCH,RETURN,LIMIT|motifs=(Tag)-[:SIMILAR]->(Tag)|returns=node,relationship,node",
+        1
+      ],
+      [
+        "clauses=MATCH,RETURN,LIMIT|motifs=(Question)-[:TAGGED]->(Tag)|returns=node,relationship,node",
+        1
+      ],
+      [
+        "clauses=MATCH,RETURN,LIMIT|motifs=(Answer)-[:TAGGED]->(Tag)|returns=node,relationship,node",
+        1
+      ]
+    ],
+    "return_kinds": [
+      [
+        "node",
+        20
+      ],
+      [
+        "relationship",
+        9
+      ],
+      [
+        "expression",
+        7
+      ]
+    ],
+    "filters": []
+  },
+  "intent_to_shape_signatures": {},
+  "motif_to_return_contracts": {
+    "(Answer)-[:ACCEPTED]->(Post)": [
+      [
+        "node,relationship,node",
+        1
+      ]
+    ],
+    "(Answer)-[:ANSWERED]->(Question)": [
+      [
+        "node,relationship,node",
+        1
+      ]
+    ],
+    "(Answer)-[:TAGGED]->(Tag)": [
+      [
+        "node,relationship,node",
+        1
+      ]
+    ],
+    "(Post)-[:ACCEPTED]->(Question)": [
+      [
+        "node,relationship,node",
+        1
+      ]
+    ],
+    "(Post)-[:ANSWERED]->(Post)": [
+      [
+        "node,relationship,node",
+        1
+      ]
+    ],
+    "(Question)-[:TAGGED]->(Tag)": [
+      [
+        "node,relationship,node",
+        1
+      ]
+    ],
+    "(Tag)-[:SIMILAR]->(Tag)": [
+      [
+        "node,relationship,node",
+        1
+      ]
+    ],
+    "(User)-[:POSTED]->(Post)": [
+      [
+        "node,relationship,node",
+        1
+      ]
+    ],
+    "(User)-[:POSTED]->(Question)": [
+      [
+        "node,relationship,node",
+        1
+      ]
+    ]
+  },
+  "token_to_path_motifs": {
+    "accepted": [
+      [
+        "(Post)-[:ACCEPTED]->(Question)",
+        1
+      ],
+      [
+        "(Answer)-[:ACCEPTED]->(Post)",
+        1
+      ]
+    ],
+    "answer": [
+      [
+        "(Answer)-[:ACCEPTED]->(Post)",
+        1
+      ],
+      [
+        "(Answer)-[:ANSWERED]->(Question)",
+        1
+      ],
+      [
+        "(Answer)-[:TAGGED]->(Tag)",
+        1
+      ]
+    ],
+    "answered": [
+      [
+        "(Post)-[:ANSWERED]->(Post)",
+        1
+      ],
+      [
+        "(Answer)-[:ANSWERED]->(Question)",
+        1
+      ]
+    ],
+    "connected": [
+      [
+        "(Post)-[:ACCEPTED]->(Question)",
+        1
+      ],
+      [
+        "(Answer)-[:ACCEPTED]->(Post)",
+        1
+      ],
+      [
+        "(Post)-[:ANSWERED]->(Post)",
+        1
+      ],
+      [
+        "(Answer)-[:ANSWERED]->(Question)",
+        1
+      ],
+      [
+        "(User)-[:POSTED]->(Question)",
+        1
+      ],
+      [
+        "(User)-[:POSTED]->(Post)",
+        1
+      ],
+      [
+        "(Tag)-[:SIMILAR]->(Tag)",
+        1
+      ],
+      [
+        "(Question)-[:TAGGED]->(Tag)",
+        1
+      ]
+    ],
+    "post": [
+      [
+        "(Post)-[:ANSWERED]->(Post)",
+        2
+      ],
+      [
+        "(Post)-[:ACCEPTED]->(Question)",
+        1
+      ],
+      [
+        "(Answer)-[:ACCEPTED]->(Post)",
+        1
+      ],
+      [
+        "(User)-[:POSTED]->(Post)",
+        1
+      ]
+    ],
+    "posted": [
+      [
+        "(User)-[:POSTED]->(Question)",
+        1
+      ],
+      [
+        "(User)-[:POSTED]->(Post)",
+        1
+      ]
+    ],
+    "question": [
+      [
+        "(Post)-[:ACCEPTED]->(Question)",
+        1
+      ],
+      [
+        "(Answer)-[:ANSWERED]->(Question)",
+        1
+      ],
+      [
+        "(User)-[:POSTED]->(Question)",
+        1
+      ],
+      [
+        "(Question)-[:TAGGED]->(Tag)",
+        1
+      ]
+    ],
+    "sample": [
+      [
+        "(Post)-[:ACCEPTED]->(Question)",
+        1
+      ],
+      [
+        "(Answer)-[:ACCEPTED]->(Post)",
+        1
+      ],
+      [
+        "(Post)-[:ANSWERED]->(Post)",
+        1
+      ],
+      [
+        "(Answer)-[:ANSWERED]->(Question)",
+        1
+      ],
+      [
+        "(User)-[:POSTED]->(Question)",
+        1
+      ],
+      [
+        "(User)-[:POSTED]->(Post)",
+        1
+      ],
+      [
+        "(Tag)-[:SIMILAR]->(Tag)",
+        1
+      ],
+      [
+        "(Question)-[:TAGGED]->(Tag)",
+        1
+      ]
+    ],
+    "similar": [
+      [
+        "(Tag)-[:SIMILAR]->(Tag)",
+        1
+      ]
+    ],
+    "tag": [
+      [
+        "(Tag)-[:SIMILAR]->(Tag)",
+        2
+      ],
+      [
+        "(Question)-[:TAGGED]->(Tag)",
+        1
+      ],
+      [
+        "(Answer)-[:TAGGED]->(Tag)",
+        1
+      ]
+    ],
+    "tagged": [
+      [
+        "(Question)-[:TAGGED]->(Tag)",
+        1
+      ],
+      [
+        "(Answer)-[:TAGGED]->(Tag)",
+        1
+      ]
+    ],
+    "through": [
+      [
+        "(Post)-[:ACCEPTED]->(Question)",
+        1
+      ],
+      [
+        "(Answer)-[:ACCEPTED]->(Post)",
+        1
+      ],
+      [
+        "(Post)-[:ANSWERED]->(Post)",
+        1
+      ],
+      [
+        "(Answer)-[:ANSWERED]->(Question)",
+        1
+      ],
+      [
+        "(User)-[:POSTED]->(Question)",
+        1
+      ],
+      [
+        "(User)-[:POSTED]->(Post)",
+        1
+      ],
+      [
+        "(Tag)-[:SIMILAR]->(Tag)",
+        1
+      ],
+      [
+        "(Question)-[:TAGGED]->(Tag)",
+        1
+      ]
+    ],
+    "user": [
+      [
+        "(User)-[:POSTED]->(Question)",
+        1
+      ],
+      [
+        "(User)-[:POSTED]->(Post)",
+        1
+      ]
+    ]
+  },
+  "examples": [
+    {
+      "row": 1,
+      "question": "List sample Answer nodes.",
+      "question_profile": {
+        "tokens": [
+          "sample",
+          "answer",
+          "nodes"
+        ],
+        "intents": [],
+        "literals": [],
+        "numbers": []
+      },
+      "cypher": "MATCH (n:`Answer`) RETURN n LIMIT 5",
+      "cypher_shape": {
+        "labels": [
+          "Answer"
+        ],
+        "relationships": [],
+        "path_motifs": [],
+        "clauses": [
+          "MATCH",
+          "RETURN",
+          "LIMIT"
+        ],
+        "return_items": [
+          {
+            "expression": "n",
+            "alias": "",
+            "kind": "node",
+            "owner": "",
+            "property": ""
+          }
+        ],
+        "filters": [],
+        "signature": "clauses=MATCH,RETURN,LIMIT|motifs=|returns=node"
+      }
+    },
+    {
+      "row": 2,
+      "question": "List sample Post nodes.",
+      "question_profile": {
+        "tokens": [
+          "sample",
+          "post",
+          "nodes"
+        ],
+        "intents": [],
+        "literals": [],
+        "numbers": []
+      },
+      "cypher": "MATCH (n:`Post`) RETURN n LIMIT 5",
+      "cypher_shape": {
+        "labels": [
+          "Post"
+        ],
+        "relationships": [],
+        "path_motifs": [],
+        "clauses": [
+          "MATCH",
+          "RETURN",
+          "LIMIT"
+        ],
+        "return_items": [
+          {
+            "expression": "n",
+            "alias": "",
+            "kind": "node",
+            "owner": "",
+            "property": ""
+          }
+        ],
+        "filters": [],
+        "signature": "clauses=MATCH,RETURN,LIMIT|motifs=|returns=node"
+      }
+    },
+    {
+      "row": 3,
+      "question": "List sample Question records.",
+      "question_profile": {
+        "tokens": [
+          "sample",
+          "question",
+          "records"
+        ],
+        "intents": [],
+        "literals": [],
+        "numbers": []
+      },
+      "cypher": "MATCH (n:`Question`) RETURN n.`answers` AS answers, n.`comments` AS comments, n.`createdAt` AS createdAt LIMIT 5",
+      "cypher_shape": {
+        "labels": [
+          "Question"
+        ],
+        "relationships": [],
+        "path_motifs": [],
+        "clauses": [
+          "MATCH",
+          "RETURN",
+          "LIMIT"
+        ],
+        "return_items": [
+          {
+            "expression": "n.`answers`",
+            "alias": "answers",
+            "kind": "expression",
+            "owner": "",
+            "property": ""
+          },
+          {
+            "expression": "n.`comments`",
+            "alias": "comments",
+            "kind": "expression",
+            "owner": "",
+            "property": ""
+          },
+          {
+            "expression": "n.`createdAt`",
+            "alias": "createdAt",
+            "kind": "expression",
+            "owner": "",
+            "property": ""
+          }
+        ],
+        "filters": [],
+        "signature": "clauses=MATCH,RETURN,LIMIT|motifs=|returns=expression,expression,expression"
+      }
+    },
+    {
+      "row": 4,
+      "question": "List sample Tag records.",
+      "question_profile": {
+        "tokens": [
+          "sample",
+          "tag",
+          "records"
+        ],
+        "intents": [],
+        "literals": [],
+        "numbers": []
+      },
+      "cypher": "MATCH (n:`Tag`) RETURN n.`count` AS count LIMIT 5",
+      "cypher_shape": {
+        "labels": [
+          "Tag"
+        ],
+        "relationships": [],
+        "path_motifs": [],
+        "clauses": [
+          "MATCH",
+          "RETURN",
+          "LIMIT"
+        ],
+        "return_items": [
+          {
+            "expression": "n.`count`",
+            "alias": "count",
+            "kind": "expression",
+            "owner": "",
+            "property": ""
+          }
+        ],
+        "filters": [],
+        "signature": "clauses=MATCH,RETURN,LIMIT|motifs=|returns=expression"
+      }
+    },
+    {
+      "row": 5,
+      "question": "List sample User records.",
+      "question_profile": {
+        "tokens": [
+          "sample",
+          "user",
+          "records"
+        ],
+        "intents": [],
+        "literals": [],
+        "numbers": []
+      },
+      "cypher": "MATCH (n:`User`) RETURN n.`accountId` AS accountId, n.`age` AS age, n.`createdAt` AS createdAt LIMIT 5",
+      "cypher_shape": {
+        "labels": [
+          "User"
+        ],
+        "relationships": [],
+        "path_motifs": [],
+        "clauses": [
+          "MATCH",
+          "RETURN",
+          "LIMIT"
+        ],
+        "return_items": [
+          {
+            "expression": "n.`accountId`",
+            "alias": "accountId",
+            "kind": "expression",
+            "owner": "",
+            "property": ""
+          },
+          {
+            "expression": "n.`age`",
+            "alias": "age",
+            "kind": "expression",
+            "owner": "",
+            "property": ""
+          },
+          {
+            "expression": "n.`createdAt`",
+            "alias": "createdAt",
+            "kind": "expression",
+            "owner": "",
+            "property": ""
+          }
+        ],
+        "filters": [],
+        "signature": "clauses=MATCH,RETURN,LIMIT|motifs=|returns=expression,expression,expression"
+      }
+    },
+    {
+      "row": 6,
+      "question": "List sample Post connected to Question through ACCEPTED.",
+      "question_profile": {
+        "tokens": [
+          "sample",
+          "post",
+          "connected",
+          "question",
+          "through",
+          "accepted"
+        ],
+        "intents": [],
+        "literals": [],
+        "numbers": []
+      },
+      "cypher": "MATCH (a:`Post`)-[r:`ACCEPTED`]->(b:`Question`) RETURN a, r, b LIMIT 5",
+      "cypher_shape": {
+        "labels": [
+          "Post",
+          "Question"
+        ],
+        "relationships": [
+          "ACCEPTED"
+        ],
+        "path_motifs": [
+          "(Post)-[:ACCEPTED]->(Question)"
+        ],
+        "clauses": [
+          "MATCH",
+          "RETURN",
+          "LIMIT"
+        ],
+        "return_items": [
+          {
+            "expression": "a",
+            "alias": "",
+            "kind": "node",
+            "owner": "",
+            "property": ""
+          },
+          {
+            "expression": "r",
+            "alias": "",
+            "kind": "relationship",
+            "owner": "",
+            "property": ""
+          },
+          {
+            "expression": "b",
+            "alias": "",
+            "kind": "node",
+            "owner": "",
+            "property": ""
+          }
+        ],
+        "filters": [],
+        "signature": "clauses=MATCH,RETURN,LIMIT|motifs=(Post)-[:ACCEPTED]->(Question)|returns=node,relationship,node"
+      }
+    },
+    {
+      "row": 7,
+      "question": "List sample Answer connected to Post through ACCEPTED.",
+      "question_profile": {
+        "tokens": [
+          "sample",
+          "answer",
+          "connected",
+          "post",
+          "through",
+          "accepted"
+        ],
+        "intents": [],
+        "literals": [],
+        "numbers": []
+      },
+      "cypher": "MATCH (a:`Answer`)-[r:`ACCEPTED`]->(b:`Post`) RETURN a, r, b LIMIT 5",
+      "cypher_shape": {
+        "labels": [
+          "Answer",
+          "Post"
+        ],
+        "relationships": [
+          "ACCEPTED"
+        ],
+        "path_motifs": [
+          "(Answer)-[:ACCEPTED]->(Post)"
+        ],
+        "clauses": [
+          "MATCH",
+          "RETURN",
+          "LIMIT"
+        ],
+        "return_items": [
+          {
+            "expression": "a",
+            "alias": "",
+            "kind": "node",
+            "owner": "",
+            "property": ""
+          },
+          {
+            "expression": "r",
+            "alias": "",
+            "kind": "relationship",
+            "owner": "",
+            "property": ""
+          },
+          {
+            "expression": "b",
+            "alias": "",
+            "kind": "node",
+            "owner": "",
+            "property": ""
+          }
+        ],
+        "filters": [],
+        "signature": "clauses=MATCH,RETURN,LIMIT|motifs=(Answer)-[:ACCEPTED]->(Post)|returns=node,relationship,node"
+      }
+    },
+    {
+      "row": 8,
+      "question": "List sample Post connected to Post through ANSWERED.",
+      "question_profile": {
+        "tokens": [
+          "sample",
+          "post",
+          "connected",
+          "post",
+          "through",
+          "answered"
+        ],
+        "intents": [],
+        "literals": [],
+        "numbers": []
+      },
+      "cypher": "MATCH (a:`Post`)-[r:`ANSWERED`]->(b:`Post`) RETURN a, r, b LIMIT 5",
+      "cypher_shape": {
+        "labels": [
+          "Post"
+        ],
+        "relationships": [
+          "ANSWERED"
+        ],
+        "path_motifs": [
+          "(Post)-[:ANSWERED]->(Post)"
+        ],
+        "clauses": [
+          "MATCH",
+          "RETURN",
+          "LIMIT"
+        ],
+        "return_items": [
+          {
+            "expression": "a",
+            "alias": "",
+            "kind": "node",
+            "owner": "",
+            "property": ""
+          },
+          {
+            "expression": "r",
+            "alias": "",
+            "kind": "relationship",
+            "owner": "",
+            "property": ""
+          },
+          {
+            "expression": "b",
+            "alias": "",
+            "kind": "node",
+            "owner": "",
+            "property": ""
+          }
+        ],
+        "filters": [],
+        "signature": "clauses=MATCH,RETURN,LIMIT|motifs=(Post)-[:ANSWERED]->(Post)|returns=node,relationship,node"
+      }
+    },
+    {
+      "row": 9,
+      "question": "List sample Answer connected to Question through ANSWERED.",
+      "question_profile": {
+        "tokens": [
+          "sample",
+          "answer",
+          "connected",
+          "question",
+          "through",
+          "answered"
+        ],
+        "intents": [],
+        "literals": [],
+        "numbers": []
+      },
+      "cypher": "MATCH (a:`Answer`)-[r:`ANSWERED`]->(b:`Question`) RETURN a, r, b LIMIT 5",
+      "cypher_shape": {
+        "labels": [
+          "Answer",
+          "Question"
+        ],
+        "relationships": [
+          "ANSWERED"
+        ],
+        "path_motifs": [
+          "(Answer)-[:ANSWERED]->(Question)"
+        ],
+        "clauses": [
+          "MATCH",
+          "RETURN",
+          "LIMIT"
+        ],
+        "return_items": [
+          {
+            "expression": "a",
+            "alias": "",
+            "kind": "node",
+            "owner": "",
+            "property": ""
+          },
+          {
+            "expression": "r",
+            "alias": "",
+            "kind": "relationship",
+            "owner": "",
+            "property": ""
+          },
+          {
+            "expression": "b",
+            "alias": "",
+            "kind": "node",
+            "owner": "",
+            "property": ""
+          }
+        ],
+        "filters": [],
+        "signature": "clauses=MATCH,RETURN,LIMIT|motifs=(Answer)-[:ANSWERED]->(Question)|returns=node,relationship,node"
+      }
+    },
+    {
+      "row": 10,
+      "question": "List sample User connected to Question through POSTED.",
+      "question_profile": {
+        "tokens": [
+          "sample",
+          "user",
+          "connected",
+          "question",
+          "through",
+          "posted"
+        ],
+        "intents": [],
+        "literals": [],
+        "numbers": []
+      },
+      "cypher": "MATCH (a:`User`)-[r:`POSTED`]->(b:`Question`) RETURN a, r, b LIMIT 5",
+      "cypher_shape": {
+        "labels": [
+          "User",
+          "Question"
+        ],
+        "relationships": [
+          "POSTED"
+        ],
+        "path_motifs": [
+          "(User)-[:POSTED]->(Question)"
+        ],
+        "clauses": [
+          "MATCH",
+          "RETURN",
+          "LIMIT"
+        ],
+        "return_items": [
+          {
+            "expression": "a",
+            "alias": "",
+            "kind": "node",
+            "owner": "",
+            "property": ""
+          },
+          {
+            "expression": "r",
+            "alias": "",
+            "kind": "relationship",
+            "owner": "",
+            "property": ""
+          },
+          {
+            "expression": "b",
+            "alias": "",
+            "kind": "node",
+            "owner": "",
+            "property": ""
+          }
+        ],
+        "filters": [],
+        "signature": "clauses=MATCH,RETURN,LIMIT|motifs=(User)-[:POSTED]->(Question)|returns=node,relationship,node"
+      }
+    },
+    {
+      "row": 11,
+      "question": "List sample User connected to Post through POSTED.",
+      "question_profile": {
+        "tokens": [
+          "sample",
+          "user",
+          "connected",
+          "post",
+          "through",
+          "posted"
+        ],
+        "intents": [],
+        "literals": [],
+        "numbers": []
+      },
+      "cypher": "MATCH (a:`User`)-[r:`POSTED`]->(b:`Post`) RETURN a, r, b LIMIT 5",
+      "cypher_shape": {
+        "labels": [
+          "User",
+          "Post"
+        ],
+        "relationships": [
+          "POSTED"
+        ],
+        "path_motifs": [
+          "(User)-[:POSTED]->(Post)"
+        ],
+        "clauses": [
+          "MATCH",
+          "RETURN",
+          "LIMIT"
+        ],
+        "return_items": [
+          {
+            "expression": "a",
+            "alias": "",
+            "kind": "node",
+            "owner": "",
+            "property": ""
+          },
+          {
+            "expression": "r",
+            "alias": "",
+            "kind": "relationship",
+            "owner": "",
+            "property": ""
+          },
+          {
+            "expression": "b",
+            "alias": "",
+            "kind": "node",
+            "owner": "",
+            "property": ""
+          }
+        ],
+        "filters": [],
+        "signature": "clauses=MATCH,RETURN,LIMIT|motifs=(User)-[:POSTED]->(Post)|returns=node,relationship,node"
+      }
+    },
+    {
+      "row": 12,
+      "question": "List sample Tag connected to Tag through SIMILAR.",
+      "question_profile": {
+        "tokens": [
+          "sample",
+          "tag",
+          "connected",
+          "tag",
+          "through",
+          "similar"
+        ],
+        "intents": [],
+        "literals": [],
+        "numbers": []
+      },
+      "cypher": "MATCH (a:`Tag`)-[r:`SIMILAR`]->(b:`Tag`) RETURN a, r, b LIMIT 5",
+      "cypher_shape": {
+        "labels": [
+          "Tag"
+        ],
+        "relationships": [
+          "SIMILAR"
+        ],
+        "path_motifs": [
+          "(Tag)-[:SIMILAR]->(Tag)"
+        ],
+        "clauses": [
+          "MATCH",
+          "RETURN",
+          "LIMIT"
+        ],
+        "return_items": [
+          {
+            "expression": "a",
+            "alias": "",
+            "kind": "node",
+            "owner": "",
+            "property": ""
+          },
+          {
+            "expression": "r",
+            "alias": "",
+            "kind": "relationship",
+            "owner": "",
+            "property": ""
+          },
+          {
+            "expression": "b",
+            "alias": "",
+            "kind": "node",
+            "owner": "",
+            "property": ""
+          }
+        ],
+        "filters": [],
+        "signature": "clauses=MATCH,RETURN,LIMIT|motifs=(Tag)-[:SIMILAR]->(Tag)|returns=node,relationship,node"
+      }
+    },
+    {
+      "row": 13,
+      "question": "List sample Question connected to Tag through TAGGED.",
+      "question_profile": {
+        "tokens": [
+          "sample",
+          "question",
+          "connected",
+          "tag",
+          "through",
+          "tagged"
+        ],
+        "intents": [],
+        "literals": [],
+        "numbers": []
+      },
+      "cypher": "MATCH (a:`Question`)-[r:`TAGGED`]->(b:`Tag`) RETURN a, r, b LIMIT 5",
+      "cypher_shape": {
+        "labels": [
+          "Question",
+          "Tag"
+        ],
+        "relationships": [
+          "TAGGED"
+        ],
+        "path_motifs": [
+          "(Question)-[:TAGGED]->(Tag)"
+        ],
+        "clauses": [
+          "MATCH",
+          "RETURN",
+          "LIMIT"
+        ],
+        "return_items": [
+          {
+            "expression": "a",
+            "alias": "",
+            "kind": "node",
+            "owner": "",
+            "property": ""
+          },
+          {
+            "expression": "r",
+            "alias": "",
+            "kind": "relationship",
+            "owner": "",
+            "property": ""
+          },
+          {
+            "expression": "b",
+            "alias": "",
+            "kind": "node",
+            "owner": "",
+            "property": ""
+          }
+        ],
+        "filters": [],
+        "signature": "clauses=MATCH,RETURN,LIMIT|motifs=(Question)-[:TAGGED]->(Tag)|returns=node,relationship,node"
+      }
+    },
+    {
+      "row": 14,
+      "question": "List sample Answer connected to Tag through TAGGED.",
+      "question_profile": {
+        "tokens": [
+          "sample",
+          "answer",
+          "connected",
+          "tag",
+          "through",
+          "tagged"
+        ],
+        "intents": [],
+        "literals": [],
+        "numbers": []
+      },
+      "cypher": "MATCH (a:`Answer`)-[r:`TAGGED`]->(b:`Tag`) RETURN a, r, b LIMIT 5",
+      "cypher_shape": {
+        "labels": [
+          "Answer",
+          "Tag"
+        ],
+        "relationships": [
+          "TAGGED"
+        ],
+        "path_motifs": [
+          "(Answer)-[:TAGGED]->(Tag)"
+        ],
+        "clauses": [
+          "MATCH",
+          "RETURN",
+          "LIMIT"
+        ],
+        "return_items": [
+          {
+            "expression": "a",
+            "alias": "",
+            "kind": "node",
+            "owner": "",
+            "property": ""
+          },
+          {
+            "expression": "r",
+            "alias": "",
+            "kind": "relationship",
+            "owner": "",
+            "property": ""
+          },
+          {
+            "expression": "b",
+            "alias": "",
+            "kind": "node",
+            "owner": "",
+            "property": ""
+          }
+        ],
+        "filters": [],
+        "signature": "clauses=MATCH,RETURN,LIMIT|motifs=(Answer)-[:TAGGED]->(Tag)|returns=node,relationship,node"
+      }
+    }
+  ]
+}

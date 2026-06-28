@@ -10,10 +10,11 @@ build/
 nul
 
 # Data files
-*.json
+
 !templates/domain_configs.json
 *.csv
 *.log
+
 
 # Analysis & Test scripts
 scripts/

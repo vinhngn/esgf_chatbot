@@ -90,12 +90,17 @@ def strip_noisy_return_properties(cypher: str) -> str:
         return cypher
 
     return_body = match.group(1)
-    return_core = re.split(
-        r"\bORDER BY\b|\bLIMIT\b|\bSKIP\b",
+    suffix_match = re.search(
+        r"\bORDER\s+BY\b|\bLIMIT\b|\bSKIP\b",
         return_body,
         flags=re.IGNORECASE,
-    )[0].strip()
-    suffix = return_body[len(return_core):]
+    )
+    if suffix_match:
+        return_core = return_body[: suffix_match.start()].strip()
+        suffix = " " + return_body[suffix_match.start():].strip()
+    else:
+        return_core = return_body.strip()
+        suffix = ""
 
     items = _split_top_level_commas(return_core)
     if len(items) <= 1:

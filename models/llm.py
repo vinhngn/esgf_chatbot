@@ -19,13 +19,18 @@ _grounding_llm: ChatOpenAI | None = None
 _cypher_llm: ChatOpenAI | None = None
 _qa_llm: ChatOpenAI | None = None
 
-def _create_llm(temperature: float, model: str = "gpt-4o-mini") -> ChatOpenAI:
+def _create_llm(temperature: float, model: str | None = None) -> ChatOpenAI:
     settings = get_settings()
+    kwargs = {
+        "api_key": settings.OPENAI_API_KEY or "local",
+        "temperature": temperature,
+        "model": model or settings.OPENAI_MODEL,
+        "request_timeout": 30,
+    }
+    if settings.OPENAI_BASE_URL:
+        kwargs["base_url"] = settings.OPENAI_BASE_URL
     return ChatOpenAI(
-        api_key=settings.OPENAI_API_KEY,
-        temperature=temperature,
-        model=model,
-        request_timeout=30,
+        **kwargs,
     )
 
 def get_main_llm() -> ChatOpenAI:
