@@ -21,6 +21,8 @@ def _print_preview(profile: dict, output_path: Path, preview: int) -> None:
         "source_type": profile.get("source_type", "csv"),
         "row_count": profile["row_count"],
         "schema_summary": schema_summary,
+        "query_recipe_profile": profile.get("query_recipe_profile", {}),
+        "value_profile_labels": list((profile.get("value_profile") or {}).keys())[:preview],
         "top_intents": profile["question_summary"]["intent_counts"][:preview],
         "top_path_motifs": profile["cypher_summary"]["path_motifs"][:preview],
         "top_shape_signatures": profile["cypher_summary"]["shape_signatures"][:preview],
@@ -55,6 +57,9 @@ def _build_from_live(args: argparse.Namespace) -> None:
         database=database,
         output_path=out,
         sample_limit=args.sample_limit,
+        max_hops=args.max_hops,
+        value_limit=args.value_limit,
+        include_value_profile=not args.no_values,
     )
     _print_preview(profile, out, args.preview)
 
@@ -92,7 +97,10 @@ def main() -> None:
     live_parser.add_argument("--password", default="", help="Neo4j password. Defaults to database name.")
     live_parser.add_argument("--out", default="", help="Output JSON path. Defaults to generated_profiles/<database>_profile.json.")
     live_parser.add_argument("--preview", type=int, default=5, help="Number of top motifs/signatures to print.")
-    live_parser.add_argument("--sample-limit", type=int, default=1000, help="Max sampled nodes/rels per label/type for property and pattern profiling.")
+    live_parser.add_argument("--sample-limit", type=int, default=0, help="Max sampled nodes/rels per label/type for fallback profiling. 0 means unlimited.")
+    live_parser.add_argument("--max-hops", type=int, default=3, help="Max schema path hops to turn into motifs and recipes.")
+    live_parser.add_argument("--value-limit", type=int, default=0, help="Top values per profiled property. 0 means unlimited.")
+    live_parser.add_argument("--no-values", action="store_true", help="Skip live value profiling.")
     live_parser.set_defaults(func=_build_from_live)
 
     args = parser.parse_args()

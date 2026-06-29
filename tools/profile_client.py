@@ -24,7 +24,7 @@ def _ask(prompt: str, default: str = "") -> str:
     return value or default
 
 
-def _ask_int(prompt: str, default: int) -> int:
+def _ask_non_negative_int(prompt: str, default: int) -> int:
     while True:
         raw = _ask(prompt, str(default))
         try:
@@ -32,8 +32,8 @@ def _ask_int(prompt: str, default: int) -> int:
         except ValueError:
             print("Please enter a number.")
             continue
-        if value <= 0:
-            print("Please enter a positive number.")
+        if value < 0:
+            print("Please enter zero or a positive number.")
             continue
         return value
 
@@ -58,6 +58,8 @@ def _print_profile_summary(profile: dict, output_path: Path, preview: int) -> No
         "source_type": profile.get("source_type", "csv"),
         "row_count": profile["row_count"],
         "schema_summary": schema_summary,
+        "query_recipe_profile": profile.get("query_recipe_profile", {}),
+        "value_profile_labels": list((profile.get("value_profile") or {}).keys())[:preview],
         "top_path_motifs": profile["cypher_summary"]["path_motifs"][:preview],
         "top_shape_signatures": profile["cypher_summary"]["shape_signatures"][:preview],
         "output": str(output_path),
@@ -85,7 +87,10 @@ def _interactive_live(args: argparse.Namespace) -> None:
         use_default_password = _ask_yes_no(f"Use password '{default_password}'?", True)
         password = default_password if use_default_password else getpass.getpass("Password: ")
 
-    sample_limit = args.sample_limit or _ask_int("Sample limit", 200)
+    sample_limit = args.sample_limit if args.sample_limit is not None else _ask_non_negative_int("Sample limit (0 = unlimited)", 0)
+    max_hops = args.max_hops if args.max_hops is not None else _ask_non_negative_int("Max schema path hops", 3)
+    value_limit = args.value_limit if args.value_limit is not None else _ask_non_negative_int("Value profile limit (0 = unlimited)", 0)
+    include_values = args.include_values if args.include_values is not None else _ask_yes_no("Include value profile?", True)
     preview = args.preview
     out = Path(args.out) if args.out else profile_path(database)
     if out.exists() and not args.force:
@@ -99,6 +104,8 @@ def _interactive_live(args: argparse.Namespace) -> None:
     print(f"- database: {database}")
     print(f"- username: {username}")
     print(f"- output: {out}")
+    print(f"- max_hops: {max_hops}")
+    print(f"- value_profile: {include_values}")
 
     profile = build_profile_from_neo4j(
         uri=uri,
@@ -107,6 +114,9 @@ def _interactive_live(args: argparse.Namespace) -> None:
         database=database,
         output_path=out,
         sample_limit=sample_limit,
+        max_hops=max_hops,
+        value_limit=value_limit,
+        include_value_profile=include_values,
     )
     print("\nProfile built successfully.\n")
     _print_profile_summary(profile, out, preview)
@@ -140,7 +150,12 @@ def main() -> None:
     parser.add_argument("--password", default="", help="Neo4j password for live mode.")
     parser.add_argument("--csv-path", default="", help="CSV path for csv mode.")
     parser.add_argument("--out", default="", help="Output JSON path.")
-    parser.add_argument("--sample-limit", type=int, default=0, help="Live sampling limit. Interactive default is 200.")
+    parser.add_argument("--sample-limit", type=int, default=None, help="Live sampling limit. 0 means unlimited.")
+    parser.add_argument("--max-hops", type=int, default=None, help="Max schema path hops to turn into motifs and recipes.")
+    parser.add_argument("--value-limit", type=int, default=None, help="Top values per profiled property. 0 means unlimited.")
+    value_group = parser.add_mutually_exclusive_group()
+    value_group.add_argument("--include-values", dest="include_values", action="store_true", default=None, help="Include live value profile.")
+    value_group.add_argument("--no-values", dest="include_values", action="store_false", help="Skip live value profile.")
     parser.add_argument("--preview", type=int, default=5, help="Preview rows to print.")
     parser.add_argument("--force", action="store_true", help="Overwrite an existing profile without asking.")
     args = parser.parse_args()

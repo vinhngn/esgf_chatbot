@@ -68,6 +68,7 @@ def classify_question(question: str) -> list[str]:
         "same_entity_multi_role": r"\b(same person|also|both|never)\b",
         "relationship_property": r"\b(role|roles|rating|summary|unit price|quantity|discount)\b",
         "date_or_year": r"\b(year|date|recent|newest|latest|released|created)\b",
+        "nested_topk_filter": r"\b(include|includes|including|with|have|has|ordered|placed)\b.*\b(top|highest|most|largest|greatest|lowest|least|smallest|expensive|cheapest)\b",
     }
     for name, pattern in patterns.items():
         if re.search(pattern, lowered):

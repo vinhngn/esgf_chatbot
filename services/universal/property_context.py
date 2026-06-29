@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import re
 from typing import Any
 
@@ -38,7 +39,14 @@ def _quote_ident(name: str) -> str:
     return "`" + name.replace("`", "``") + "`"
 
 
-def _property_counts(graph: Any, label: str, properties: list[str]) -> dict[str, int]:
+def _runtime_sample_limit() -> int:
+    try:
+        return int(os.getenv("T2C_RUNTIME_PROPERTY_SAMPLE_LIMIT", "2000"))
+    except ValueError:
+        return 2000
+
+
+def _property_counts(graph: Any, label: str, properties: list[str], sample_limit: int) -> dict[str, int]:
     if not properties:
         return {}
     projections = ["count(n) AS __total"]
@@ -47,8 +55,16 @@ def _property_counts(graph: Any, label: str, properties: list[str]) -> dict[str,
         alias = f"p{idx}"
         alias_to_prop[alias] = prop
         projections.append(f"count(n.{_quote_ident(prop)}) AS {alias}")
-    cypher = f"MATCH (n:{_quote_ident(label)}) RETURN " + ", ".join(projections)
-    rows = graph.query(cypher)
+    if sample_limit > 0:
+        cypher = (
+            f"MATCH (n:{_quote_ident(label)}) "
+            "WITH n LIMIT $sample_limit RETURN "
+            + ", ".join(projections)
+        )
+        rows = graph.query(cypher, params={"sample_limit": sample_limit})
+    else:
+        cypher = f"MATCH (n:{_quote_ident(label)}) RETURN " + ", ".join(projections)
+        rows = graph.query(cypher)
     if not rows:
         return {}
     row = rows[0]
@@ -67,6 +83,7 @@ def build_runtime_property_context(
     graph: Any,
     max_labels: int = 8,
     max_properties_per_label: int = 12,
+    sample_limit: int | None = None,
 ) -> tuple[str, dict]:
     """Build compact property evidence from schema plus live Neo4j counts."""
     schema_graph = parse_schema_text(runtime_schema)
@@ -96,14 +113,19 @@ def build_runtime_property_context(
         "Use these schema-valid properties for projection, filtering, and ordering.",
         "Prefer properties with non_null > 0. If ORDER BY/LIMIT uses a nullable property, add an IS NOT NULL guard when it preserves intent.",
     ]
-    debug: dict[str, Any] = {"labels": labels, "properties": {}}
+    resolved_sample_limit = _runtime_sample_limit() if sample_limit is None else sample_limit
+    debug: dict[str, Any] = {
+        "labels": labels,
+        "properties": {},
+        "sample_limit": resolved_sample_limit,
+    }
 
     for label in labels:
         props = sorted(schema_graph.get_node_properties(label).keys())[:max_properties_per_label]
         if not props:
             continue
         try:
-            counts = _property_counts(graph, label, props)
+            counts = _property_counts(graph, label, props, resolved_sample_limit)
         except Exception as exc:
             counts = {}
             debug.setdefault("errors", {})[label] = str(exc)
@@ -111,7 +133,8 @@ def build_runtime_property_context(
         prop_bits = []
         for prop in props:
             if prop in counts:
-                prop_bits.append(f"{prop}(non_null={counts[prop]}/{total})")
+                suffix = "sample" if resolved_sample_limit > 0 else "full"
+                prop_bits.append(f"{prop}(non_null={counts[prop]}/{total} {suffix})")
             else:
                 prop_bits.append(prop)
         lines.append(f"- {label}: " + ", ".join(prop_bits))
