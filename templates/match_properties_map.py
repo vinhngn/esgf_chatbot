@@ -89,7 +89,7 @@ _PROPERTIES_MAP = {
 
 def get_match_properties_map(db_name: str | None = None) -> dict:
     """Get match properties map for the given database (or current config)."""
-    db = db_name or get_settings().database_name
+    db = db_name or get_settings().profile_database_name
     return _PROPERTIES_MAP.get(db, match_climate_properties_map)
 
 

@@ -76,8 +76,6 @@ def _extract_recipe_contract(question: str, recipe: dict) -> dict:
     relationships = list(dict.fromkeys(
         re.findall(r"\[[^\]]*:`?([A-Za-z_][A-Za-z0-9_]*)`?[^\]]*\]", cypher)
     ))
-    return_items = recipe.get("shape", "")
-    q_tokens = _text_tokens(question)
     ordered_question_tokens = [
         token
         for token in re.findall(r"[a-z0-9]+", (question or "").lower())

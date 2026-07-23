@@ -15,6 +15,13 @@ _env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
 load_dotenv(_env_path)
 
 
+def _env_bool(name: str, default: bool) -> bool:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
+
+
 class Settings:
     """Application settings loaded from .env"""
 
@@ -29,6 +36,18 @@ class Settings:
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
     OPENAI_BASE_URL: str = os.getenv("OPENAI_BASE_URL", "")
     OPENAI_MODEL: str = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+    OPENAI_REQUEST_TIMEOUT: float = float(os.getenv("OPENAI_REQUEST_TIMEOUT", "30"))
+
+    # Local OpenAI-compatible provider
+    LOCAL_LLM_BASE_URL: str = os.getenv("LOCAL_LLM_BASE_URL", "http://localhost:20128/v1")
+    LOCAL_LLM_API_KEY: str = os.getenv("LOCAL_LLM_API_KEY", "local")
+    LOCAL_LLM_MODEL: str = os.getenv("LOCAL_LLM_MODEL", "antigravity/gemini-2.5-flash")
+    LOCAL_LLM_REQUEST_TIMEOUT: float = float(os.getenv("LOCAL_LLM_REQUEST_TIMEOUT", "120"))
+
+    # Provider routing
+    LLM_LOCAL_FIRST: bool = _env_bool("LLM_LOCAL_FIRST", False)
+    LLM_FALLBACK_ENABLED: bool = _env_bool("LLM_FALLBACK_ENABLED", True)
+    LLM_PROVIDER_MAX_RETRIES: int = int(os.getenv("LLM_PROVIDER_MAX_RETRIES", "0"))
 
     # App
     FREE_QUESTIONS_PER_SESSION: int = int(

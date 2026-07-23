@@ -51,9 +51,11 @@ def trace_event(
     verbose_only: bool = False,
 ) -> None:
     """Log one pipeline checkpoint with a stable, grep-friendly prefix."""
-    if verbose_only and not verbose_trace_enabled():
-        return
     prefix = f"[PipelineTrace:{trace_id}] [{stage}] {title}"
+    if not verbose_trace_enabled():
+        if not verbose_only:
+            logger.debug(prefix)
+        return
     if payload is None:
         logger.info(prefix)
         return

@@ -581,7 +581,7 @@ def get_prompt_sections(
     question: str | None = None,
     original_question: str | None = None,
 ) -> str:
-    db = db_name or get_settings().database_name
+    db = db_name or get_settings().profile_database_name
     config = _DOMAIN_CONFIGS.get(db, {})
     all_examples = config.get("examples", [])
     selected_examples = (
@@ -607,7 +607,7 @@ def get_cypher_template(
     original_question: str | None = None,
 ) -> str:
     """Return a complete PromptTemplate-compatible Cypher prompt."""
-    db = db_name or get_settings().database_name
+    db = db_name or get_settings().profile_database_name
     config = _DOMAIN_CONFIGS.get(db, {})
     all_examples = config.get("examples", [])
     selected_examples = (

@@ -9,13 +9,19 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from config import get_settings
-from services.profile_analyzer import build_profile_from_csv, build_profile_from_neo4j
-from services.profile_analyzer.store import profile_path
+from config import get_settings  # noqa: E402
+from services.profile_analyzer import build_profile_from_csv, build_profile_from_neo4j  # noqa: E402
+from services.profile_analyzer.store import profile_path  # noqa: E402
 
 
 DEMO_URI = "neo4j+s://demo.neo4jlabs.com"
 DEMO_DATABASES = ("movies", "northwind", "recommendations", "twitter", "stackoverflow")
+CYPHERBENCH_PORTS = {
+    "company": 15062,
+    "fictional_character": 15063,
+    "flight_accident": 15064,
+    "geography": 15065,
+}
 
 
 def _ask(prompt: str, default: str = "") -> str:
@@ -71,10 +77,15 @@ def _interactive_live(args: argparse.Namespace) -> None:
     settings = get_settings()
     print("\nText-to-Cypher Live Profile Client")
     print("Leave blank to accept the value in brackets.\n")
-    print("Known Neo4j demo DBs: " + ", ".join(DEMO_DATABASES))
+    print("Neo4j Labs demo DBs: " + ", ".join(DEMO_DATABASES))
+    print(
+        "CypherBench via SSH tunnel: "
+        + ", ".join(f"{name}=localhost:{port}" for name, port in CYPHERBENCH_PORTS.items())
+    )
 
     uri = _ask("Neo4j URI", args.uri or settings.NEO4J_URI or DEMO_URI)
     database = _ask("Database", args.database or settings.NEO4J_DATABASE or "stackoverflow").lower()
+    profile_name = _ask("Logical profile name", args.profile_name or database).lower()
     settings_db = (settings.NEO4J_DATABASE or "").strip().lower()
     same_as_env_db = bool(settings_db and settings_db == database)
     default_user = args.username or (settings.NEO4J_USERNAME if same_as_env_db else "") or database
@@ -92,7 +103,7 @@ def _interactive_live(args: argparse.Namespace) -> None:
     value_limit = args.value_limit if args.value_limit is not None else _ask_non_negative_int("Value profile limit (0 = unlimited)", 0)
     include_values = args.include_values if args.include_values is not None else _ask_yes_no("Include value profile?", True)
     preview = args.preview
-    out = Path(args.out) if args.out else profile_path(database)
+    out = Path(args.out) if args.out else profile_path(profile_name)
     if out.exists() and not args.force:
         overwrite = _ask_yes_no(f"Profile already exists at {out}. Overwrite?", False)
         if not overwrite:
@@ -102,6 +113,7 @@ def _interactive_live(args: argparse.Namespace) -> None:
     print("\nBuilding profile...")
     print(f"- uri: {uri}")
     print(f"- database: {database}")
+    print(f"- profile: {profile_name}")
     print(f"- username: {username}")
     print(f"- output: {out}")
     print(f"- max_hops: {max_hops}")
@@ -112,6 +124,7 @@ def _interactive_live(args: argparse.Namespace) -> None:
         username=username,
         password=password,
         database=database,
+        profile_name=profile_name,
         output_path=out,
         sample_limit=sample_limit,
         max_hops=max_hops,
@@ -145,7 +158,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Interactive client for building Text-to-Cypher profile JSON files.")
     parser.add_argument("--mode", choices=("live", "csv"), default="live", help="Profile source mode.")
     parser.add_argument("--uri", default="", help="Neo4j URI for live mode.")
-    parser.add_argument("--database", default="", help="Database/profile name.")
+    parser.add_argument("--database", default="", help="Physical Neo4j database name.")
+    parser.add_argument("--profile-name", default="", help="Logical profile name when it differs from the physical Neo4j database.")
     parser.add_argument("--username", default="", help="Neo4j username for live mode.")
     parser.add_argument("--password", default="", help="Neo4j password for live mode.")
     parser.add_argument("--csv-path", default="", help="CSV path for csv mode.")

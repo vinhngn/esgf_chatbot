@@ -141,7 +141,7 @@ def verify_triples(
         if p in schema_relationships and s in schema_labels and o in schema_labels:
             verified.append((s, p, o))
 
-    logger.info("[TripleService] structural verified=%d", len(verified))
+    logger.debug("[TripleService] structural verified=%d", len(verified))
 
     # Phase 2: instance-level probing
     for s_label, rel, o_label in verified:
@@ -173,7 +173,7 @@ def verify_triples(
                 s_label, rel, o_label, e,
             )
 
-    logger.info(
+    logger.debug(
         "[TripleService] verify_triples -> verified=%d, instances=%d",
         len(verified), len(instance_triples),
     )
@@ -200,7 +200,7 @@ def extract_triples_with_retry(
     raw_triples: list[tuple[str, str, str]] = []
 
     for attempt in range(MAX_ATTEMPTS):
-        logger.info("[TripleService] extract attempt %d/%d", attempt + 1, MAX_ATTEMPTS)
+        logger.debug("[TripleService] extract attempt %d/%d", attempt + 1, MAX_ATTEMPTS)
         if attempt == 0:
             try:
                 rewritten, triples = interpret_question(
@@ -225,7 +225,7 @@ def extract_triples_with_retry(
         if temp_verified:
             verified_triples = temp_verified
             instance_triples = temp_instances
-            logger.info(
+            logger.debug(
                 "[TripleService] Got %d verified triple(s), %d instance(s) on attempt %d",
                 len(verified_triples), len(instance_triples), attempt + 1,
             )
@@ -234,7 +234,7 @@ def extract_triples_with_retry(
     if not verified_triples:
         verified_triples = raw_triples
 
-    logger.info(
+    logger.debug(
         "[TripleService] Final -> rewritten=%r verified=%d",
         rewritten, len(verified_triples),
     )

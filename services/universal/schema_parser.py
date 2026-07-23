@@ -5,7 +5,6 @@ No domain-specific hardcode.
 """
 from __future__ import annotations
 import re
-from collections import defaultdict
 from dataclasses import dataclass, field
 
 @dataclass

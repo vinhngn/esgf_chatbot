@@ -42,7 +42,7 @@ def sidebar():
             unsafe_allow_html=True,
         )
 
-        database = get_settings().database_name
+        database = get_settings().profile_database_name
 
         if database == "twitter":
             sample_questions = [

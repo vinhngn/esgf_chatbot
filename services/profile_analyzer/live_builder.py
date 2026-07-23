@@ -566,6 +566,7 @@ def build_profile_from_neo4j(
     username: str,
     password: str,
     database: str,
+    profile_name: str | None = None,
     output_path: str | Path | None = None,
     sample_limit: int = 0,
     max_hops: int = 3,
@@ -603,7 +604,7 @@ def build_profile_from_neo4j(
     profile = {
         "source": uri,
         "source_type": "neo4j_live",
-        "database": database.lower(),
+        "database": (profile_name or database).lower(),
         "row_count": len(examples),
         "schema_profile": {
             "labels": labels,

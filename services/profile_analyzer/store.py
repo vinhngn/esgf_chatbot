@@ -18,7 +18,7 @@ def profile_dir() -> Path:
 
 
 def profile_path(database: str | None = None) -> Path:
-    db_name = (database or get_settings().database_name or "unknown").strip().lower()
+    db_name = (database or get_settings().profile_database_name or "unknown").strip().lower()
     return profile_dir() / f"{db_name}_profile.json"
 
 
@@ -28,9 +28,11 @@ def profile_exists(database: str | None = None) -> bool:
 
 def profile_build_command(database: str | None = None) -> str:
     settings = get_settings()
-    db_name = (database or settings.database_name or "unknown").strip().lower()
+    db_name = (database or settings.profile_database_name or "unknown").strip().lower()
+    username_arg = f" --username {settings.NEO4J_USERNAME}" if settings.NEO4J_USERNAME else ""
     return (
-        "py tools/build_query_profile.py live "
+        "py tools/profile_client.py --mode live "
         f"--uri {settings.NEO4J_URI or 'neo4j+s://demo.neo4jlabs.com'} "
-        f"--database {db_name} --username {db_name} --password {db_name}"
+        f"--database {settings.NEO4J_DATABASE} --profile-name {db_name}"
+        f"{username_arg}"
     )

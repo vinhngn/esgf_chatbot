@@ -107,7 +107,7 @@ _DEFINITIONS_MAP = {
 
 def get_entity_definitions(db_name: str | None = None) -> str:
     """Get entity definitions for the given database (or current config)."""
-    db = db_name or get_settings().database_name
+    db = db_name or get_settings().profile_database_name
     return _DEFINITIONS_MAP.get(db, entity_climate_definitions)
 
 

@@ -1,5 +1,5 @@
 """
 Templates package.
-All template selection is driven by config.get_settings().database_name
+Template selection is driven by config.get_settings().profile_database_name.
 instead of reading secrets.toml directly.
 """

@@ -3,7 +3,7 @@ Flask REST API — View layer only.
 Business logic lives in services/rag_service.py.
 
 Endpoints:
-    POST /api/text2cypher  — question → triple extraction → Cypher → raw DB results
+    POST /api/text2cypher  — question → Cypher → raw DB results
     POST /api/rag          — question → Cypher → LLM-formatted response
     POST /api/set_database — info endpoint (DB set via .env)
     GET  /api/databases    — list available databases
@@ -43,7 +43,7 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 @app.post("/api/text2cypher")
 def text2cypher():
     """
-    Question → triple extraction → Cypher → raw DB results (no LLM formatting).
+    Question → Cypher → raw DB results (no triple extraction or answer formatting).
 
     Expected by t2c_eval_framework.
 
@@ -147,9 +147,10 @@ def set_database():
     settings = get_settings()
     return jsonify(
         {
-            "current_database": settings.database_name,
+            "current_database": settings.profile_database_name,
+            "physical_database": settings.database_name,
             "available": available,
-            "note": "Change NEO4J_DATABASE in .env to switch databases.",
+            "note": "Set NEO4J_DATABASE for the physical DB and T2C_PROFILE_DATABASE for its logical profile.",
         }
     )
 
@@ -169,7 +170,8 @@ def health():
         return jsonify(
             {
                 "status": "ok",
-                "database": settings.database_name,
+                "database": settings.profile_database_name,
+                "physical_database": settings.database_name,
                 "labels": len(labels),
                 "relationships": len(rels),
             }
@@ -186,9 +188,10 @@ def list_databases():
     settings = get_settings()
     return jsonify(
         {
-            "current": settings.database_name,
+            "current": settings.profile_database_name,
+            "physical_database": settings.database_name,
             "available": available,
-            "note": "Change NEO4J_DATABASE in .env to switch databases.",
+            "note": "Set NEO4J_DATABASE for the physical DB and T2C_PROFILE_DATABASE for its logical profile.",
         }
     )
 
@@ -210,7 +213,10 @@ if __name__ == "__main__":
     port = settings.FLASK_PORT
     host = settings.FLASK_HOST
 
-    print(f"Flask API | DB: {settings.database_name}")
+    print(
+        f"Flask API | profile={settings.profile_database_name} "
+        f"physical_db={settings.database_name}"
+    )
     print(f"Listening on http://{host}:{port}")
     print("  POST /api/text2cypher  — raw results (for t2c)")
     print("  POST /api/rag          — LLM-formatted response")

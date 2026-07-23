@@ -7,7 +7,6 @@ import re
 from typing import Any
 from config import get_settings
 from models.graph import get_graph, maybe_refresh_schema
-from models.llm import get_cypher_llm, get_grounding_llm
 from templates.cypher_templates import get_prompt_sections
 from services.profile_analyzer.context import (
     format_profile_context,
@@ -858,10 +857,12 @@ def _get_grounded_schema(
     trace_id: str,
 ) -> tuple[str, dict]:
     """Get grounded schema via LLM schema linker. Falls back to full schema on failure."""
+    from models.llm import get_grounding_llm
+
     try:
         from services.universal.schema_grounder import build_grounded_schema
         grounding_llm = get_grounding_llm()
-        db_name = get_settings().database_name
+        db_name = get_settings().profile_database_name
         result = build_grounded_schema(
             question=question,
             runtime_schema=runtime_schema,
@@ -954,6 +955,8 @@ def invoke_chain(
     schema: str = "",
     trace_id: str | None = None,
 ) -> dict | str:
+    from models.llm import get_cypher_llm
+
     trace_id = trace_id or new_trace_id()
     if schema and _profile_first_enabled():
         profile_cypher = _exact_profile_cypher(question)
@@ -992,7 +995,8 @@ def invoke_chain(
         "CHAIN-01",
         "Text-to-Cypher request received",
         {
-            "database": get_settings().database_name,
+            "database": get_settings().profile_database_name,
+            "physical_database": get_settings().database_name,
             "question": question,
             "schema_source": "request/CSV" if schema else "Neo4j runtime",
             "schema_chars": len(full_schema),
@@ -1104,7 +1108,6 @@ def invoke_chain(
             verbose_only=True,
         )
         response = llm.invoke(prompt)
-        database_name = get_settings().database_name
         raw_cypher_response = response.content.strip()
         trace_event(
             logger,
@@ -1118,9 +1121,13 @@ def invoke_chain(
         )
         current_cypher = clean_cypher_query(raw_cypher_response)
         current_cypher = _repair_backticked_label_with_inline_map(current_cypher)
-        current_cypher = repair_northwind_order_line_properties(current_cypher)
         current_cypher = rewrite_bare_node_returns(current_cypher, question=question)
-        current_cypher = repair_northwind_projection_and_metrics(current_cypher, question=question)
+        if get_settings().profile_database_name == "northwind":
+            current_cypher = repair_northwind_order_line_properties(current_cypher)
+            current_cypher = repair_northwind_projection_and_metrics(
+                current_cypher,
+                question=question,
+            )
         current_cypher = _ensure_rank_order(current_cypher, question)
         current_cypher = _ensure_requested_limit(current_cypher, question)
         current_cypher = _ensure_ordered_property_not_null(current_cypher)

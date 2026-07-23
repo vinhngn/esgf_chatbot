@@ -23,7 +23,6 @@ from collections import OrderedDict
 from config import get_settings
 from models.chain import invoke_chain
 from models.graph import get_graph, get_schema_labels, get_schema_relationships
-from models.llm import get_interpreter_llm, get_main_llm
 from retry import retry
 from templates.cypher_templates import get_cypher_template
 from templates.entity_definitions import get_entity_definitions
@@ -131,7 +130,9 @@ def _run_pipeline(
         encoded_query      : str | None
         decoded_query      : str | None
     """
-    db_name = get_settings().database_name
+    from models.llm import get_interpreter_llm
+
+    db_name = get_settings().profile_database_name
     trace_id = new_trace_id()
     trace_event(
         logger,
@@ -147,7 +148,7 @@ def _run_pipeline(
     if not conversation_history:
         cached = _get_cached_pipeline(db_name, question)
         if cached is not None:
-            logger.info("[RAGService] cache hit for %s", question)
+            logger.debug("[RAGService] cache hit for %s", question)
             trace_event(
                 logger,
                 trace_id,
@@ -173,9 +174,9 @@ def _run_pipeline(
         conversation_history=conversation_history,
     )
 
-    logger.info("[RAGService] rewritten=%r", rewritten)
-    logger.info("[RAGService] verified_triples=%s", verified_triples)
-    logger.info("[RAGService] instance_triples=%s", instance_triples)
+    logger.debug("[RAGService] rewritten=%r", rewritten)
+    logger.debug("[RAGService] verified_triples=%s", verified_triples)
+    logger.debug("[RAGService] instance_triples=%s", instance_triples)
     trace_event(
         logger,
         trace_id,
@@ -246,6 +247,8 @@ def process_question(
     Returns dict with keys:
         input, output, cypher_query, rewritten, verified_triples, instance_triples
     """
+    from models.llm import get_main_llm
+
     conversation_history = conversation_history or []
     main_llm = get_main_llm()
 
@@ -354,7 +357,7 @@ def get_raw_results(question: str, schema: str = "") -> dict:
     for cleaner, faster Cypher generation.
     Falls back to direct OpenAI call if the chain fails.
     """
-    db_name = get_settings().database_name
+    db_name = get_settings().profile_database_name
     trace_id = new_trace_id()
     trace_event(
         logger,
@@ -450,9 +453,8 @@ def get_raw_results(question: str, schema: str = "") -> dict:
 
 def _direct_cypher_fallback(question: str, trace_id: str = "unknown") -> str:
     """
-    Direct OpenAI call to generate Cypher, used as a last-resort fallback.
+    Direct routed-LLM call to generate Cypher, used as a last resort.
     """
-    import re as _re
     from models.llm import get_cypher_llm
     from models.graph import get_graph
     from utils.helpers import clean_cypher_query, strip_noisy_return_properties
@@ -499,16 +501,25 @@ def _direct_cypher_fallback(question: str, trace_id: str = "unknown") -> str:
 
 
 def get_available_databases() -> list[str]:
-    """Return the list of databases that have a Cypher template."""
+    """Return logical databases known through templates or generated profiles."""
     from templates.cypher_templates import _DOMAIN_CONFIGS
+    from services.profile_analyzer.store import profile_dir
 
-    return list(_DOMAIN_CONFIGS.keys())
+    databases = set(_DOMAIN_CONFIGS)
+    directory = profile_dir()
+    if directory.exists():
+        suffix = "_profile.json"
+        databases.update(
+            path.name[: -len(suffix)]
+            for path in directory.glob(f"*{suffix}")
+        )
+    return sorted(databases)
 
 
 def get_database_info() -> dict:
     """Return current database config + template info (for debugging)."""
     settings = get_settings()
-    db_name = settings.database_name
+    db_name = settings.profile_database_name
     return {
         "database": db_name,
         "cypher_template": get_cypher_template(db_name),
@@ -519,7 +530,7 @@ def get_database_info() -> dict:
 
 def get_schema_info(database: str | None = None) -> dict:
     """Return schema info (entity defs + property map) for a given database."""
-    db = database or get_settings().database_name
+    db = database or get_settings().profile_database_name
     return {
         "database": db,
         "entity_definitions": get_entity_definitions(db),

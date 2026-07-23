@@ -14,7 +14,7 @@ import json
 import logging
 import re
 from dataclasses import dataclass, field
-from services.universal.schema_parser import SchemaGraph, ParsedPath
+from services.universal.schema_parser import SchemaGraph
 from utils.pipeline_trace import trace_event
 
 logger = logging.getLogger(__name__)
