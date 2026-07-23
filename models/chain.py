@@ -394,7 +394,7 @@ def _profile_first_cypher(question: str, learned_context: str) -> str:
 def _exact_profile_cypher(question: str) -> str:
     if not _profile_first_enabled():
         return ""
-    path = profile_path(get_settings().database_name)
+    path = profile_path(get_settings().profile_database_name)
     if not path.exists():
         return ""
     target = _normalise_question_for_match(question)
@@ -726,7 +726,7 @@ def _build_coder_prompt(
 def _get_learned_profile_context(question: str, trace_id: str) -> str:
     """Load auto-generated query/data profile context when available."""
     settings = get_settings()
-    path = profile_path(settings.database_name)
+    path = profile_path(settings.profile_database_name)
     if not path.exists():
         trace_event(
             logger,
@@ -734,16 +734,16 @@ def _get_learned_profile_context(question: str, trace_id: str) -> str:
             "CHAIN-04B",
             "Learned profile context unavailable; continue without it",
             {
-                "database": settings.database_name,
+                "database": settings.profile_database_name,
                 "profile_path": str(path),
-                "build_command": profile_build_command(settings.database_name),
+                "build_command": profile_build_command(settings.profile_database_name),
             },
         )
         return (
             "=== LEARNED DATA/QUERY PROFILE CONTEXT ===\n"
             "No learned profile is available for this database.\n"
             f"Profile expected at: {path}\n"
-            f"Build command: {profile_build_command(settings.database_name)}"
+            f"Build command: {profile_build_command(settings.profile_database_name)}"
         )
     try:
         profile = load_profile(path)
@@ -908,7 +908,7 @@ def _schema_grounding_mode() -> str:
 
 def _has_profile_for_current_database() -> bool:
     try:
-        return profile_path(get_settings().database_name).exists()
+        return profile_path(get_settings().profile_database_name).exists()
     except Exception:
         return False
 
@@ -1011,7 +1011,7 @@ def invoke_chain(
             "CHAIN-02",
             "Profile exists: skip schema-grounding LLM and use runtime schema plus profile context",
             {
-                "profile_path": str(profile_path(get_settings().database_name)),
+                "profile_path": str(profile_path(get_settings().profile_database_name)),
                 "schema_grounding_mode": _schema_grounding_mode(),
             },
         )

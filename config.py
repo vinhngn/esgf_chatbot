@@ -23,6 +23,7 @@ class Settings:
     NEO4J_USERNAME: str = os.getenv("NEO4J_USERNAME", "")
     NEO4J_PASSWORD: str = os.getenv("NEO4J_PASSWORD", "")
     NEO4J_DATABASE: str = os.getenv("NEO4J_DATABASE", "climate")
+    T2C_PROFILE_DATABASE: str = os.getenv("T2C_PROFILE_DATABASE", "")
 
     # OpenAI
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
@@ -43,6 +44,10 @@ class Settings:
     @property
     def database_name(self) -> str:
         return self.NEO4J_DATABASE.lower()
+
+    @property
+    def profile_database_name(self) -> str:
+        return (self.T2C_PROFILE_DATABASE or self.NEO4J_DATABASE).lower()
 
 
 @lru_cache(maxsize=1)

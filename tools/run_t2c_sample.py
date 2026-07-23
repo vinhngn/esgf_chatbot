@@ -33,9 +33,13 @@ def _load_t2c(root: Path):
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run a bounded T2C benchmark sample without editing T2C config files.")
     parser.add_argument("--t2c-root", default=r"D:\Agent\t2c_eval_framework")
-    parser.add_argument("--db", required=True, choices=["movies", "northwind", "recommendations", "twitter"])
+    parser.add_argument("--db", required=True, help="Logical database/profile name and CSV stem.")
     parser.add_argument("--rows", type=int, default=50)
     parser.add_argument("--endpoint", default="http://127.0.0.1:8954/api/text2cypher")
+    parser.add_argument("--neo4j-uri", default="", help="Override the Neo4j URI from T2C config.")
+    parser.add_argument("--neo4j-username", default="", help="Defaults to --db for Neo4j demo databases.")
+    parser.add_argument("--neo4j-password", default="", help="Defaults to --db for Neo4j demo databases.")
+    parser.add_argument("--neo4j-database", default="", help="Physical Neo4j database. Defaults to --db.")
     parser.add_argument("--output-suffix", default="")
     parser.add_argument("--query-timeout", type=int, default=20)
     parser.add_argument("--result-limit", type=int, default=1000)
@@ -48,10 +52,12 @@ def main() -> None:
     modules = _load_t2c(root)
     config = modules["ConfigLoader"].load(str(root / "config" / "config.yml"))
     config["neo4j"].update({
-        "username": args.db,
-        "password": args.db,
-        "database": args.db,
+        "username": args.neo4j_username or args.db,
+        "password": args.neo4j_password or args.db,
+        "database": args.neo4j_database or args.db,
     })
+    if args.neo4j_uri:
+        config["neo4j"]["uri"] = args.neo4j_uri
     config["webhook"]["endpoint"] = args.endpoint
     config["evaluation"].update({
         "max_rows": args.rows,
@@ -77,12 +83,16 @@ def main() -> None:
             cleaned = (cypher or "").strip().rstrip(";")
             if not cleaned:
                 return cleaned
-            return f"CALL {{ {cleaned} }} RETURN * LIMIT {args.result_limit}"
+            if re.search(r"(?i)\bLIMIT\s+\d+\s*$", cleaned):
+                return cleaned
+            return f"{cleaned} LIMIT {args.result_limit}"
 
         def run(self, cypher: str, database: str = None):
             if not cypher or not cypher.strip() or self.driver is None:
                 return []
             db = database or self.default_db
+            if args.neo4j_database and db == args.db:
+                db = args.neo4j_database
             capped_cypher = self._cap_query(cypher)
             cache_key = (db, capped_cypher)
             if cache_key in self._result_cache:
