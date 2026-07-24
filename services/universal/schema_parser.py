@@ -1,16 +1,20 @@
-﻿"""
+"""
 Universal schema parser for ANY Neo4j database.
 Parses runtime schema text into structured data for grounding.
 No domain-specific hardcode.
 """
+
 from __future__ import annotations
+
 import re
 from dataclasses import dataclass, field
+
 
 @dataclass
 class ParsedNode:
     label: str
     properties: dict[str, str] = field(default_factory=dict)
+
 
 @dataclass
 class ParsedRelationship:
@@ -19,12 +23,14 @@ class ParsedRelationship:
     end_labels: list[str] = field(default_factory=list)
     properties: dict[str, str] = field(default_factory=dict)
 
+
 @dataclass
 class ParsedPath:
     start: str
     rel_type: str
     end: str
     direction: str = "outgoing"
+
 
 @dataclass
 class SchemaGraph:
@@ -67,7 +73,9 @@ class SchemaGraph:
                     queue.append((neighbor, new_path))
         return visited_paths
 
-    def find_shortest_path(self, label_a: str, label_b: str, max_hops: int = 3) -> list[ParsedPath] | None:
+    def find_shortest_path(
+        self, label_a: str, label_b: str, max_hops: int = 3
+    ) -> list[ParsedPath] | None:
         if label_a == label_b:
             return []
         queue: list[tuple[str, list[ParsedPath]]] = [(label_a, [])]
@@ -140,7 +148,8 @@ def parse_schema_text(schema_text: str) -> SchemaGraph:
 def _parse_node_properties(text: str, graph: SchemaGraph) -> None:
     node_section = re.search(
         r"Node properties:\s*\n(.*?)(?:Relationship|The relationships|$)",
-        text, re.DOTALL | re.IGNORECASE,
+        text,
+        re.DOTALL | re.IGNORECASE,
     )
     if node_section:
         for line in node_section.group(1).splitlines():
@@ -166,7 +175,8 @@ def _parse_node_properties(text: str, graph: SchemaGraph) -> None:
 def _parse_relationship_properties(text: str, graph: SchemaGraph) -> None:
     rel_section = re.search(
         r"Relationship properties:\s*\n(.*?)(?:The relationships|$)",
-        text, re.DOTALL | re.IGNORECASE,
+        text,
+        re.DOTALL | re.IGNORECASE,
     )
     if rel_section:
         for line in rel_section.group(1).splitlines():
@@ -179,7 +189,9 @@ def _parse_relationship_properties(text: str, graph: SchemaGraph) -> None:
             )
             if m:
                 rel_type = m.group(1)
-                rel = graph.relationships.setdefault(rel_type, ParsedRelationship(rel_type=rel_type))
+                rel = graph.relationships.setdefault(
+                    rel_type, ParsedRelationship(rel_type=rel_type)
+                )
                 rel.properties.update(_parse_props_from_braces(m.group(2)))
 
 

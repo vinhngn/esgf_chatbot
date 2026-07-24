@@ -1,1 +1,1 @@
-﻿"""Universal schema services - DB agnostic."""
+"""Universal schema services - DB agnostic."""

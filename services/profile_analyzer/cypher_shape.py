@@ -94,28 +94,46 @@ def _return_body(cypher: str) -> str:
 def _extract_variable_maps(cypher: str) -> tuple[dict[str, str], dict[str, str]]:
     node_vars: dict[str, str] = {}
     rel_vars: dict[str, str] = {}
-    for match in re.finditer(r"\(\s*([A-Za-z_][A-Za-z0-9_]*)?\s*:\s*`?([A-Za-z_][A-Za-z0-9_]*)`?", cypher):
+    for match in re.finditer(
+        r"\(\s*([A-Za-z_][A-Za-z0-9_]*)?\s*:\s*`?([A-Za-z_][A-Za-z0-9_]*)`?", cypher
+    ):
         var, label = match.group(1), match.group(2)
         if var:
             node_vars[var] = label
-    for match in re.finditer(r"\[\s*([A-Za-z_][A-Za-z0-9_]*)?\s*:\s*`?([A-Za-z_][A-Za-z0-9_]*)`?", cypher):
+    for match in re.finditer(
+        r"\[\s*([A-Za-z_][A-Za-z0-9_]*)?\s*:\s*`?([A-Za-z_][A-Za-z0-9_]*)`?", cypher
+    ):
         var, rel = match.group(1), match.group(2)
         if var:
             rel_vars[var] = rel
     return node_vars, rel_vars
 
 
-def _parse_return_item(item: str, node_vars: dict[str, str], rel_vars: dict[str, str]) -> ReturnItem:
+def _parse_return_item(
+    item: str, node_vars: dict[str, str], rel_vars: dict[str, str]
+) -> ReturnItem:
     parts = re.split(r"(?i)\s+AS\s+", item, maxsplit=1)
     expression = parts[0].strip()
     alias = parts[1].strip() if len(parts) > 1 else ""
     if re.search(r"(?i)\b(count|avg|sum|min|max|collect|size)\s*\(", expression):
         kind = "aggregate"
     elif re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", expression):
-        kind = "node" if expression in node_vars else "relationship" if expression in rel_vars else "variable"
+        kind = (
+            "node"
+            if expression in node_vars
+            else "relationship"
+            if expression in rel_vars
+            else "variable"
+        )
     elif match := re.fullmatch(r"([A-Za-z_][A-Za-z0-9_]*)\.([A-Za-z_][A-Za-z0-9_]*)", expression):
         owner, prop = match.group(1), match.group(2)
-        kind = "node_property" if owner in node_vars else "relationship_property" if owner in rel_vars else "property"
+        kind = (
+            "node_property"
+            if owner in node_vars
+            else "relationship_property"
+            if owner in rel_vars
+            else "property"
+        )
         return ReturnItem(expression=expression, alias=alias, kind=kind, owner=owner, property=prop)
     else:
         kind = "expression"
@@ -147,7 +165,10 @@ def _node_label(node_text: str, node_vars: dict[str, str]) -> str:
 
 def _extract_filters(cypher: str) -> list[str]:
     filters: list[str] = []
-    for where_body in re.findall(r"(?is)\bWHERE\b\s+(.*?)(?=\bMATCH\b|\bWITH\b|\bRETURN\b|\bORDER\s+BY\b|\bLIMIT\b|$)", cypher):
+    for where_body in re.findall(
+        r"(?is)\bWHERE\b\s+(.*?)(?=\bMATCH\b|\bWITH\b|\bRETURN\b|\bORDER\s+BY\b|\bLIMIT\b|$)",
+        cypher,
+    ):
         comparisons = re.findall(
             r"[A-Za-z_][A-Za-z0-9_]*\.[A-Za-z_][A-Za-z0-9_]*\s*(?:=|<>|<=|>=|<|>|CONTAINS|STARTS WITH|ENDS WITH|IS NOT NULL|IS NULL)",
             where_body,
@@ -159,8 +180,12 @@ def _extract_filters(cypher: str) -> list[str]:
 
 def parse_cypher_shape(cypher: str) -> CypherShape:
     node_vars, rel_vars = _extract_variable_maps(cypher)
-    labels = _unique(list(node_vars.values()) + re.findall(r"\([^)]+:\s*`?([A-Za-z_][A-Za-z0-9_]*)`?", cypher))
-    relationships = _unique(list(rel_vars.values()) + re.findall(r"\[[^\]]*:\s*`?([A-Za-z_][A-Za-z0-9_]*)`?", cypher))
+    labels = _unique(
+        list(node_vars.values()) + re.findall(r"\([^)]+:\s*`?([A-Za-z_][A-Za-z0-9_]*)`?", cypher)
+    )
+    relationships = _unique(
+        list(rel_vars.values()) + re.findall(r"\[[^\]]*:\s*`?([A-Za-z_][A-Za-z0-9_]*)`?", cypher)
+    )
     clauses = [
         name
         for name, pattern in {

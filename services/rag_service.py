@@ -17,20 +17,23 @@ from __future__ import annotations
 import copy
 import logging
 import threading
-import urllib.parse
 from collections import OrderedDict
 
 from config import get_settings
-from models.chain import invoke_chain
 from models.graph import get_graph, get_schema_labels, get_schema_relationships
-from retry import retry
-from templates.cypher_templates import get_cypher_template
-from templates.entity_definitions import get_entity_definitions
-from templates.match_properties_map import get_match_properties_map
+from services.text2cypher.pipeline import invoke_chain
+from services.text2cypher.result_utils import (
+    extract_cypher_queries as _extract_cypher_queries,
+)
+from services.text2cypher.service import (
+    get_available_databases,
+    get_database_info,
+    get_raw_results,
+    get_schema_info,
+)
+from services.triple_service import build_enhanced_question, extract_triples_with_retry
 from utils.helpers import normalize_value
 from utils.pipeline_trace import new_trace_id, trace_event
-
-from services.triple_service import build_enhanced_question, extract_triples_with_retry
 
 logger = logging.getLogger(__name__)
 _PIPELINE_CACHE_MAXSIZE = 512
@@ -44,26 +47,6 @@ NEO4J_BROWSER_URL = "https://neoforjcmip.templeuni.com/browser/"
 # ---------------------------------------------------------------------------
 # Internal helpers
 # ---------------------------------------------------------------------------
-
-
-def _extract_cypher_queries(chain_result: dict) -> tuple[str | None, str | None]:
-    """
-    Extract the (encoded, decoded) Cypher query from intermediate_steps.
-
-    After the chain.py fix, intermediate_steps now stores the *cleaned*
-    (non-encoded) query.  We derive the encoded version for the Neo4j
-    Browser link and keep the decoded version for display / debugging.
-    """
-    steps = chain_result.get("intermediate_steps", [])
-    if not isinstance(steps, list):
-        return None, None
-    for step in steps:
-        if isinstance(step, dict):
-            cleaned = step.get("query")
-            if cleaned:
-                encoded = urllib.parse.quote(cleaned)
-                return encoded, cleaned
-    return None, None
 
 
 def _build_neo4j_link(encoded_query: str | None) -> str:
@@ -116,19 +99,19 @@ def _run_pipeline(
     conversation_history: list[dict[str, str]],
 ) -> dict:
     """
-    Run the shared RAG pipeline steps 1–3:
+      Run the shared RAG pipeline steps 1–3:
 
-      1. Triple extraction with retry  (interpreter LLM + Neo4j verification)
-      2. Build enhanced question        (original + rewritten + triples)
-  3. Invoke Cypher generator        (retrieval-grounded Cypher → Neo4j)
+        1. Triple extraction with retry  (interpreter LLM + Neo4j verification)
+        2. Build enhanced question        (original + rewritten + triples)
+    3. Invoke Cypher generator        (retrieval-grounded Cypher → Neo4j)
 
-    Returns a dict with keys:
-        rewritten          : str
-        verified_triples   : list[tuple[str,str,str]]
-        instance_triples   : list[tuple[str,str,str]]
-        chain_result       : dict | str   (raw chain output)
-        encoded_query      : str | None
-        decoded_query      : str | None
+      Returns a dict with keys:
+          rewritten          : str
+          verified_triples   : list[tuple[str,str,str]]
+          instance_triples   : list[tuple[str,str,str]]
+          chain_result       : dict | str   (raw chain output)
+          encoded_query      : str | None
+          decoded_query      : str | None
     """
     from models.llm import get_interpreter_llm
 
@@ -164,15 +147,28 @@ def _run_pipeline(
     schema_relationships = get_schema_relationships()
 
     # --- Step 1: Triple extraction with retry ---
-    rewritten, verified_triples, instance_triples = extract_triples_with_retry(
-        question=question,
-        interpreter_llm=interpreter_llm,
-        schema_labels=schema_labels,
-        schema_relationships=schema_relationships,
-        graph=graph,
-        database=db_name,
-        conversation_history=conversation_history,
-    )
+    try:
+        rewritten, verified_triples, instance_triples = extract_triples_with_retry(
+            question=question,
+            interpreter_llm=interpreter_llm,
+            schema_labels=schema_labels,
+            schema_relationships=schema_relationships,
+            graph=graph,
+            database=db_name,
+            conversation_history=conversation_history,
+        )
+    except Exception as exc:
+        trace_event(
+            logger,
+            trace_id,
+            "RAG-ERROR",
+            "Interpreter preprocessing failed",
+            {
+                "error_type": type(exc).__name__,
+                "error": str(exc),
+            },
+        )
+        raise
 
     logger.debug("[RAGService] rewritten=%r", rewritten)
     logger.debug("[RAGService] verified_triples=%s", verified_triples)
@@ -206,12 +202,23 @@ def _run_pipeline(
     )
 
     # --- Step 3: Invoke chain ---
-    chain_result = invoke_chain(enhanced_question, trace_id=trace_id)
+    try:
+        chain_result = invoke_chain(enhanced_question, trace_id=trace_id)
+    except Exception as exc:
+        trace_event(
+            logger,
+            trace_id,
+            "RAG-ERROR",
+            "Text-to-Cypher synthesis failed",
+            {
+                "error_type": type(exc).__name__,
+                "error": str(exc),
+            },
+        )
+        raise
 
     encoded_query, decoded_query = (
-        _extract_cypher_queries(chain_result)
-        if isinstance(chain_result, dict)
-        else (None, None)
+        _extract_cypher_queries(chain_result) if isinstance(chain_result, dict) else (None, None)
     )
 
     payload = {
@@ -284,14 +291,15 @@ def process_question(
         {
             "result_type": type(raw_result).__name__,
             "row_count": len(raw_result) if isinstance(raw_result, list) else None,
-            "sample_rows": raw_result[:2] if isinstance(raw_result, list) else str(raw_result)[:1000],
+            "sample_rows": raw_result[:2]
+            if isinstance(raw_result, list)
+            else str(raw_result)[:1000],
         },
     )
 
     # --- Step 4: LLM-formatted response ---
     conversation_text = "\n".join(
-        f"User: {msg['input']}\nBot: {msg['output']}"
-        for msg in conversation_history[-3:]
+        f"User: {msg['input']}\nBot: {msg['output']}" for msg in conversation_history[-3:]
     )
 
     if _is_empty_result(raw_result):
@@ -319,7 +327,20 @@ def process_question(
             final_prompt,
             verbose_only=True,
         )
-        final_response = main_llm.invoke(final_prompt).content.strip()
+        try:
+            final_response = main_llm.invoke(final_prompt).content.strip()
+        except Exception as exc:
+            trace_event(
+                logger,
+                pipe.get("trace_id", "unknown"),
+                "RAG-ERROR",
+                "Final answer LLM request failed",
+                {
+                    "error_type": type(exc).__name__,
+                    "error": str(exc),
+                },
+            )
+            raise
         trace_event(
             logger,
             pipe.get("trace_id", "unknown"),
@@ -340,7 +361,6 @@ def process_question(
     }
 
 
-@retry(tries=2, delay=10)
 def get_results(
     question: str,
     conversation_history: list[dict[str, str]] | None = None,
@@ -349,191 +369,11 @@ def get_results(
     return process_question(question, conversation_history)
 
 
-@retry(tries=2, delay=10)
-def get_raw_results(question: str, schema: str = "") -> dict:
-    """
-    Flask / T2C evaluation entry point.
-    Passes the question DIRECTLY to the Cypher chain (no triple extraction)
-    for cleaner, faster Cypher generation.
-    Falls back to direct OpenAI call if the chain fails.
-    """
-    db_name = get_settings().profile_database_name
-    trace_id = new_trace_id()
-    trace_event(
-        logger,
-        trace_id,
-        "T2C-01",
-        "Raw Text-to-Cypher endpoint skips triple preprocessing",
-        {
-            "question_passed_to_chain": question,
-            "database": db_name,
-            "explicit_schema_supplied": bool(schema),
-        },
-    )
-
-    # Skip triple extraction — pass raw question directly to chain.
-    # Triple extraction adds noise to the question and confuses the Cypher LLM.
-    chain_result = invoke_chain(question, schema, trace_id=trace_id)
-
-    decoded_query = None
-    if isinstance(chain_result, dict):
-        encoded_query, decoded_query = _extract_cypher_queries(chain_result)
-
-    if isinstance(chain_result, dict):
-        raw_result = chain_result.get("result")
-        error = chain_result.get("error")
-
-        if raw_result:
-            if isinstance(raw_result, list):
-                result: list = normalize_value(raw_result)
-            elif isinstance(raw_result, str):
-                if raw_result.startswith("[") and raw_result.endswith("]"):
-                    try:
-                        import ast
-                        parsed = ast.literal_eval(raw_result)
-                        result = normalize_value(parsed)
-                    except Exception:
-                        result = []
-                else:
-                    result = []
-            else:
-                normalised = normalize_value(raw_result)
-                result = normalised if isinstance(normalised, list) else []
-        else:
-            result = []
-    else:
-        decoded_query = ""
-        result = []
-        error = str(chain_result) if chain_result else None
-
-    # --- Fallback: if chain produced no cypher, try direct OpenAI call ---
-    if not decoded_query:
-        logger.info("[RAGService] Chain produced no cypher, trying direct fallback...")
-        trace_event(
-            logger,
-            trace_id,
-            "T2C-02",
-            "Primary chain returned no Cypher; invoke direct fallback LLM",
-        )
-        try:
-            fallback_cypher = _direct_cypher_fallback(question, trace_id=trace_id)
-            if fallback_cypher:
-                decoded_query = fallback_cypher
-                try:
-                    graph = get_graph()
-                    fallback_result = graph.query(fallback_cypher)
-                    if fallback_result:
-                        result = normalize_value(fallback_result)
-                        if not isinstance(result, list):
-                            result = []
-                        error = None
-                        logger.info("[RAGService] Fallback succeeded: %d rows", len(result))
-                        trace_event(
-                            logger,
-                            trace_id,
-                            "T2C-04",
-                            "Fallback Cypher executed successfully",
-                            {"row_count": len(result), "sample_rows": result[:2]},
-                        )
-                except Exception as exec_err:
-                    logger.warning("[RAGService] Fallback execution failed: %s", exec_err)
-        except Exception as fb_err:
-            logger.warning("[RAGService] Fallback generation failed: %s", fb_err)
-
-    return {
-        "cypher_query": decoded_query or "",
-        "result": result,
-        "error": error,
-        "rewritten": "",
-        "verified_triples": [],
-        "instance_triples": [],
-        "trace_id": trace_id,
-    }
-
-
-def _direct_cypher_fallback(question: str, trace_id: str = "unknown") -> str:
-    """
-    Direct routed-LLM call to generate Cypher, used as a last resort.
-    """
-    from models.llm import get_cypher_llm
-    from models.graph import get_graph
-    from utils.helpers import clean_cypher_query, strip_noisy_return_properties
-
-    graph = get_graph()
-    schema = graph.get_schema
-    llm = get_cypher_llm()
-    template = get_cypher_template()
-
-    # Build prompt from template
-    prompt = template.replace("{schema}", schema).replace(
-        "{question}", f"Question: {question}\n\nCypher Query:"
-    )
-    trace_event(
-        logger,
-        trace_id,
-        "T2C-03",
-        "Full prompt sent to the direct fallback Cypher LLM",
-        prompt,
-        verbose_only=True,
-    )
-
-    try:
-        response = llm.invoke(prompt)
-        cypher = response.content.strip()
-        trace_event(
-            logger,
-            trace_id,
-            "T2C-03",
-            "Direct fallback LLM return value: one Cypher text string",
-            cypher,
-        )
-        cypher = clean_cypher_query(cypher)
-        cypher = strip_noisy_return_properties(cypher)
-        return cypher
-    except Exception as e:
-        logger.warning("[RAGService] Direct fallback LLM call failed: %s", e)
-        return ""
-
-
-# ---------------------------------------------------------------------------
-# Info / schema helpers (used by Flask endpoints)
-# ---------------------------------------------------------------------------
-
-
-def get_available_databases() -> list[str]:
-    """Return logical databases known through templates or generated profiles."""
-    from templates.cypher_templates import _DOMAIN_CONFIGS
-    from services.profile_analyzer.store import profile_dir
-
-    databases = set(_DOMAIN_CONFIGS)
-    directory = profile_dir()
-    if directory.exists():
-        suffix = "_profile.json"
-        databases.update(
-            path.name[: -len(suffix)]
-            for path in directory.glob(f"*{suffix}")
-        )
-    return sorted(databases)
-
-
-def get_database_info() -> dict:
-    """Return current database config + template info (for debugging)."""
-    settings = get_settings()
-    db_name = settings.profile_database_name
-    return {
-        "database": db_name,
-        "cypher_template": get_cypher_template(db_name),
-        "entity_definitions": get_entity_definitions(db_name),
-        "match_properties": get_match_properties_map(db_name),
-    }
-
-
-def get_schema_info(database: str | None = None) -> dict:
-    """Return schema info (entity defs + property map) for a given database."""
-    db = database or get_settings().profile_database_name
-    return {
-        "database": db,
-        "entity_definitions": get_entity_definitions(db),
-        "match_properties": get_match_properties_map(db),
-        "has_cypher_template": db in get_available_databases(),
-    }
+__all__ = [
+    "get_available_databases",
+    "get_database_info",
+    "get_raw_results",
+    "get_results",
+    "get_schema_info",
+    "process_question",
+]

@@ -8,11 +8,7 @@ from services.universal.schema_parser import parse_schema_text
 
 
 def _tokens(text: str) -> set[str]:
-    return {
-        token
-        for token in re.findall(r"[a-z0-9]+", text.lower())
-        if len(token) > 1
-    }
+    return {token for token in re.findall(r"[a-z0-9]+", text.lower()) if len(token) > 1}
 
 
 def _label_forms(label: str) -> set[str]:
@@ -46,7 +42,9 @@ def _runtime_sample_limit() -> int:
         return 2000
 
 
-def _property_counts(graph: Any, label: str, properties: list[str], sample_limit: int) -> dict[str, int]:
+def _property_counts(
+    graph: Any, label: str, properties: list[str], sample_limit: int
+) -> dict[str, int]:
     if not properties:
         return {}
     projections = ["count(n) AS __total"]
@@ -56,10 +54,8 @@ def _property_counts(graph: Any, label: str, properties: list[str], sample_limit
         alias_to_prop[alias] = prop
         projections.append(f"count(n.{_quote_ident(prop)}) AS {alias}")
     if sample_limit > 0:
-        cypher = (
-            f"MATCH (n:{_quote_ident(label)}) "
-            "WITH n LIMIT $sample_limit RETURN "
-            + ", ".join(projections)
+        cypher = f"MATCH (n:{_quote_ident(label)}) WITH n LIMIT $sample_limit RETURN " + ", ".join(
+            projections
         )
         rows = graph.query(cypher, params={"sample_limit": sample_limit})
     else:

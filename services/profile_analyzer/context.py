@@ -39,15 +39,21 @@ def _cypher_tokens(cypher: str) -> set[str]:
 
 
 def _return_tokens(cypher: str) -> set[str]:
-    match = re.search(r"(?is)\bRETURN\b\s+(.*?)(?:\bORDER\s+BY\b|\bSKIP\b|\bLIMIT\b|$)", cypher or "")
+    match = re.search(
+        r"(?is)\bRETURN\b\s+(.*?)(?:\bORDER\s+BY\b|\bSKIP\b|\bLIMIT\b|$)", cypher or ""
+    )
     if not match:
         return set()
     return _cypher_tokens(match.group(1)) | _text_tokens(match.group(1))
 
 
-def _example_score(example: dict, q_profile: dict, q_tokens: set[str], motif_scores: dict[str, float]) -> float:
+def _example_score(
+    example: dict, q_profile: dict, q_tokens: set[str], motif_scores: dict[str, float]
+) -> float:
     example_profile = example.get("question_profile", {})
-    example_tokens = set(example_profile.get("tokens", [])) | _text_tokens(example.get("question", ""))
+    example_tokens = set(example_profile.get("tokens", [])) | _text_tokens(
+        example.get("question", "")
+    )
     cypher_tokens = _cypher_tokens(example.get("cypher", ""))
     return_tokens = _return_tokens(example.get("cypher", ""))
     token_score = _overlap_score(list(q_tokens), list(example_tokens))
@@ -70,22 +76,19 @@ def _example_score(example: dict, q_profile: dict, q_tokens: set[str], motif_sco
 
 def _extract_recipe_contract(question: str, recipe: dict) -> dict:
     cypher = recipe.get("cypher", "")
-    labels = list(dict.fromkeys(
-        re.findall(r"\([^)]*:`?([A-Za-z_][A-Za-z0-9_]*)`?", cypher)
-    ))
-    relationships = list(dict.fromkeys(
-        re.findall(r"\[[^\]]*:`?([A-Za-z_][A-Za-z0-9_]*)`?[^\]]*\]", cypher)
-    ))
+    labels = list(dict.fromkeys(re.findall(r"\([^)]*:`?([A-Za-z_][A-Za-z0-9_]*)`?", cypher)))
+    relationships = list(
+        dict.fromkeys(re.findall(r"\[[^\]]*:`?([A-Za-z_][A-Za-z0-9_]*)`?[^\]]*\]", cypher))
+    )
     ordered_question_tokens = [
-        token
-        for token in re.findall(r"[a-z0-9]+", (question or "").lower())
-        if token
+        token for token in re.findall(r"[a-z0-9]+", (question or "").lower()) if token
     ]
     ranked_targets = []
     for label in labels:
         label_forms = _text_tokens(label)
         matching_positions = [
-            index for index, token in enumerate(ordered_question_tokens)
+            index
+            for index, token in enumerate(ordered_question_tokens)
             if _text_tokens(token) & label_forms
         ]
         if matching_positions:
@@ -99,8 +102,7 @@ def _extract_recipe_contract(question: str, recipe: dict) -> dict:
     return_items = _split_return_items(return_body)
     return_has_distinct = bool(re.search(r"(?i)^\s*DISTINCT\b", return_body))
     normalized_return_items = [
-        re.sub(r"(?i)^\s*DISTINCT\s+", "", item).strip()
-        for item in return_items
+        re.sub(r"(?i)^\s*DISTINCT\s+", "", item).strip() for item in return_items
     ]
     node_return_labels = []
     for item in normalized_return_items:
@@ -165,7 +167,9 @@ def _alias_label_map(cypher: str) -> dict[str, str]:
     return aliases
 
 
-def _build_query_plan_contract(question: str, selected_recipes: list[dict], q_profile: dict) -> dict:
+def _build_query_plan_contract(
+    question: str, selected_recipes: list[dict], q_profile: dict
+) -> dict:
     if not selected_recipes:
         return {}
     primary = selected_recipes[0]
@@ -217,11 +221,13 @@ def _build_query_plan_contract(question: str, selected_recipes: list[dict], q_pr
         plan["expected_operation"] = "retrieve"
     backups = []
     for recipe in selected_recipes[1:3]:
-        backups.append({
-            "score": recipe.get("score"),
-            "scaffold_cypher": recipe.get("cypher", ""),
-            "target_label": recipe.get("contract", {}).get("primary_target_label", ""),
-        })
+        backups.append(
+            {
+                "score": recipe.get("score"),
+                "scaffold_cypher": recipe.get("cypher", ""),
+                "target_label": recipe.get("contract", {}).get("primary_target_label", ""),
+            }
+        )
     if backups:
         plan["backup_scaffolds"] = backups
     return plan
@@ -271,10 +277,13 @@ def select_profile_context(question: str, profile: dict, *, top_k: int = 5) -> d
             "question": example["question"],
             "cypher": example["cypher"],
             "shape": example["cypher_shape"]["signature"],
-            "contract": _extract_recipe_contract(question, {
-                "cypher": example["cypher"],
-                "shape": example["cypher_shape"]["signature"],
-            }),
+            "contract": _extract_recipe_contract(
+                question,
+                {
+                    "cypher": example["cypher"],
+                    "shape": example["cypher_shape"]["signature"],
+                },
+            ),
         }
         for score, example in scored_examples[:3]
     ]
@@ -297,7 +306,11 @@ def select_profile_context(question: str, profile: dict, *, top_k: int = 5) -> d
                 )
                 if _path_score(path, q_tokens) > 0
             ],
-            key=lambda path: (-_path_score(path, q_tokens), path.get("hops", 0), path.get("signature", "")),
+            key=lambda path: (
+                -_path_score(path, q_tokens),
+                path.get("hops", 0),
+                path.get("signature", ""),
+            ),
         )[:20],
         "query_recipe_profile": profile.get("query_recipe_profile", {}),
         "value_profile": profile.get("value_profile", {}),
@@ -348,20 +361,23 @@ def format_profile_context(context: dict) -> str:
                 count = item.get("count")
                 count_text = count if count is not None else "unknown"
                 lines.append(
-                    f"- ({item['from']})-[:{item['type']}]->({item['to']}) "
-                    f"count={count_text}"
+                    f"- ({item['from']})-[:{item['type']}]->({item['to']}) count={count_text}"
                 )
     qp = context.get("question_profile", {})
     lines.append(f"Question intents: {', '.join(qp.get('intents', [])) or 'none'}")
     lines.append(f"Core tokens: {', '.join(qp.get('tokens', [])[:30]) or 'none'}")
     if context.get("query_plan_contract"):
         lines.append("QUERY PLAN CONTRACT JSON:")
-        lines.append(json.dumps(context["query_plan_contract"], ensure_ascii=True, separators=(",", ":")))
+        lines.append(
+            json.dumps(context["query_plan_contract"], ensure_ascii=True, separators=(",", ":"))
+        )
     if context.get("selected_recipes"):
         primary = context["selected_recipes"][0]
         contract = primary.get("contract", {})
         lines.append("Primary selected query recipe:")
-        lines.append(f"- source row {primary['row']} score={primary['score']}: {primary['question']}")
+        lines.append(
+            f"- source row {primary['row']} score={primary['score']}: {primary['question']}"
+        )
         lines.append(f"- scaffold: {primary['cypher']}")
         if contract.get("labels") or contract.get("relationships"):
             lines.append(

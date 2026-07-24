@@ -11,7 +11,6 @@ from langchain_openai import ChatOpenAI
 
 from config import get_settings
 
-
 logger = logging.getLogger(__name__)
 _lock = threading.Lock()
 
@@ -47,12 +46,18 @@ class RoutedChatModel:
             except Exception as exc:
                 last_error = exc
                 has_fallback = index + 1 < len(self._providers)
-                logger.warning(
-                    "[LLM] Provider %s failed (%s)%s",
-                    provider.name,
-                    type(exc).__name__,
-                    "; switching provider" if has_fallback else "",
-                )
+                if has_fallback:
+                    logger.warning(
+                        "[LLM] Provider %s failed (%s); switching provider",
+                        provider.name,
+                        type(exc).__name__,
+                    )
+                else:
+                    logger.debug(
+                        "[LLM] Provider %s failed (%s)",
+                        provider.name,
+                        type(exc).__name__,
+                    )
         assert last_error is not None
         raise last_error
 

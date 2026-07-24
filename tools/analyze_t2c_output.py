@@ -9,7 +9,9 @@ from pathlib import Path
 
 
 def _return_body(cypher: str) -> str:
-    match = re.search(r"(?is)\bRETURN\b\s+(.*?)(?:\bORDER\s+BY\b|\bSKIP\b|\bLIMIT\b|$)", cypher or "")
+    match = re.search(
+        r"(?is)\bRETURN\b\s+(.*?)(?:\bORDER\s+BY\b|\bSKIP\b|\bLIMIT\b|$)", cypher or ""
+    )
     return match.group(1).strip() if match else ""
 
 
@@ -87,12 +89,14 @@ def main() -> None:
             buckets[bucket] += 1
             examples.setdefault(bucket, [])
             if len(examples[bucket]) < args.examples and bucket != "correct":
-                examples[bucket].append({
-                    "row": index,
-                    "question": row.get("nl_question", ""),
-                    "gold": row.get("original_cypher", ""),
-                    "generated": row.get("generated_cypher", ""),
-                })
+                examples[bucket].append(
+                    {
+                        "row": index,
+                        "question": row.get("nl_question", ""),
+                        "gold": row.get("original_cypher", ""),
+                        "generated": row.get("generated_cypher", ""),
+                    }
+                )
 
     correct = buckets.get("correct", 0)
     print(f"file={path}")

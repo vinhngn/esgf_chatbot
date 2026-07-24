@@ -4,11 +4,37 @@ import re
 from collections import Counter
 from dataclasses import dataclass, field
 
-
 _STOPWORDS = {
-    "a", "an", "and", "are", "as", "at", "be", "by", "for", "from", "has",
-    "have", "in", "is", "it", "list", "of", "on", "or", "show", "the",
-    "their", "them", "to", "what", "which", "who", "with", "that", "all",
+    "a",
+    "an",
+    "and",
+    "are",
+    "as",
+    "at",
+    "be",
+    "by",
+    "for",
+    "from",
+    "has",
+    "have",
+    "in",
+    "is",
+    "it",
+    "list",
+    "of",
+    "on",
+    "or",
+    "show",
+    "the",
+    "their",
+    "them",
+    "to",
+    "what",
+    "which",
+    "who",
+    "with",
+    "that",
+    "all",
 }
 
 _TOKEN_NORMALS = {

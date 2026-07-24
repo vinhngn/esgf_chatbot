@@ -72,12 +72,10 @@ def build_profile_from_csv(
         "question_summary": summarize_questions(questions),
         "cypher_summary": summarize_shapes(shapes),
         "intent_to_shape_signatures": {
-            intent: counter.most_common(10)
-            for intent, counter in sorted(intent_to_shapes.items())
+            intent: counter.most_common(10) for intent, counter in sorted(intent_to_shapes.items())
         },
         "motif_to_return_contracts": {
-            motif: counter.most_common(10)
-            for motif, counter in sorted(motif_to_returns.items())
+            motif: counter.most_common(10) for motif, counter in sorted(motif_to_returns.items())
         },
         "token_to_path_motifs": {
             token: counter.most_common(8)

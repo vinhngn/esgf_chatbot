@@ -1,4 +1,5 @@
 """Structured, controllable logging for the Text-to-Cypher pipeline."""
+
 from __future__ import annotations
 
 import json
@@ -51,6 +52,15 @@ def trace_event(
     verbose_only: bool = False,
 ) -> None:
     """Log one pipeline checkpoint with a stable, grep-friendly prefix."""
+    from services.observability.trace_store import record_trace_event
+
+    record_trace_event(
+        trace_id,
+        stage,
+        title,
+        payload,
+        verbose_only=verbose_only,
+    )
     prefix = f"[PipelineTrace:{trace_id}] [{stage}] {title}"
     if not verbose_trace_enabled():
         if not verbose_only:

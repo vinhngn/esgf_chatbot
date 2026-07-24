@@ -12,7 +12,6 @@ import urllib.request
 from datetime import datetime
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 AGENT_ROOT = ROOT.parent
 INPUT_ROOT = AGENT_ROOT / "t2c_eval_framework" / "inputs"

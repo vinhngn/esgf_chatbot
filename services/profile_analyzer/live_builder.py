@@ -10,7 +10,6 @@ from neo4j import GraphDatabase
 from services.profile_analyzer.cypher_shape import parse_cypher_shape, summarize_shapes
 from services.profile_analyzer.question_profile import profile_question, summarize_questions
 
-
 METRIC_HINTS = {
     "age",
     "answers",
@@ -138,7 +137,9 @@ def _sample_node_properties(session: Any, label: str, sample_limit: int) -> list
     return [str(row["property"]) for row in rows if row.get("property")]
 
 
-def _node_property_index(session: Any, labels: list[str], sample_limit: int) -> dict[str, list[str]]:
+def _node_property_index(
+    session: Any, labels: list[str], sample_limit: int
+) -> dict[str, list[str]]:
     index: dict[str, set[str]] = defaultdict(set)
     for label in labels:
         try:
@@ -168,12 +169,12 @@ def _sample_relationship_properties(session: Any, rel_type: str, sample_limit: i
     return [str(row["property"]) for row in rows if row.get("property")]
 
 
-def _collect_labels(session: Any, sample_limit: int, visual_label_props: dict[str, list[str]]) -> list[dict]:
+def _collect_labels(
+    session: Any, sample_limit: int, visual_label_props: dict[str, list[str]]
+) -> list[dict]:
     rows = _query(session, "CALL db.labels() YIELD label RETURN label ORDER BY label")
     label_names = [
-        str(row["label"])
-        for row in rows
-        if not _is_internal_schema_name(str(row["label"]))
+        str(row["label"]) for row in rows if not _is_internal_schema_name(str(row["label"]))
     ]
     property_index = visual_label_props or _node_property_index(session, label_names, sample_limit)
     labels: list[dict] = []
@@ -197,18 +198,19 @@ def _collect_labels(session: Any, sample_limit: int, visual_label_props: dict[st
     return labels
 
 
-def _collect_relationships(session: Any, sample_limit: int, visual_patterns: list[dict]) -> list[dict]:
-    rel_types = _query(session, "CALL db.relationshipTypes() YIELD relationshipType RETURN relationshipType ORDER BY relationshipType")
+def _collect_relationships(
+    session: Any, sample_limit: int, visual_patterns: list[dict]
+) -> list[dict]:
+    rel_types = _query(
+        session,
+        "CALL db.relationshipTypes() YIELD relationshipType RETURN relationshipType ORDER BY relationshipType",
+    )
     relationships: list[dict] = []
     for row in rel_types:
         rel_type = row["relationshipType"]
         if _is_internal_schema_name(str(rel_type)):
             continue
-        patterns = [
-            pattern
-            for pattern in visual_patterns
-            if pattern["type"] == rel_type
-        ][:20]
+        patterns = [pattern for pattern in visual_patterns if pattern["type"] == rel_type][:20]
         properties: list[str] = []
         relationships.append(
             {
@@ -253,8 +255,7 @@ def _relationship_examples(relationships: list[dict], start_index: int) -> list[
         rel_type = rel_info["type"]
         for pattern in rel_info.get("patterns", [])[:2]:
             question = (
-                f"List sample {pattern['from']} connected to {pattern['to']} "
-                f"through {rel_type}."
+                f"List sample {pattern['from']} connected to {pattern['to']} through {rel_type}."
             )
             cypher = (
                 f"MATCH (a:{_quote_ident(pattern['from'])})"
@@ -268,11 +269,7 @@ def _relationship_examples(relationships: list[dict], start_index: int) -> list[
 
 
 def _preferred_props(label_info: dict, roles: set[str], limit: int = 3) -> list[str]:
-    props = [
-        prop["name"]
-        for prop in label_info.get("properties", [])
-        if prop.get("role") in roles
-    ]
+    props = [prop["name"] for prop in label_info.get("properties", []) if prop.get("role") in roles]
     return props[:limit]
 
 
@@ -335,8 +332,12 @@ def _relationship_recipe_examples(
         for pattern in rel_info.get("patterns", []):
             from_label = pattern["from"]
             to_label = pattern["to"]
-            from_props = _preferred_props(label_index.get(from_label, {}), {"identity", "text"}, limit=2)
-            to_props = _preferred_props(label_index.get(to_label, {}), {"identity", "text"}, limit=2)
+            from_props = _preferred_props(
+                label_index.get(from_label, {}), {"identity", "text"}, limit=2
+            )
+            to_props = _preferred_props(
+                label_index.get(to_label, {}), {"identity", "text"}, limit=2
+            )
             recipes = [
                 (
                     f"Count {to_label} records connected from each {from_label} through {rel_type}.",
@@ -450,7 +451,9 @@ def _path_recipe_examples(paths: list[dict], start_index: int) -> list[dict]:
 def _build_query_recipes(labels: list[dict], relationships: list[dict], paths: list[dict]) -> dict:
     return {
         "label_recipe_count": sum(
-            1 + len(_preferred_props(label, {"metric", "temporal"}, limit=8)) + min(2, len(_preferred_props(label, {"identity", "text"}, limit=3)))
+            1
+            + len(_preferred_props(label, {"metric", "temporal"}, limit=8))
+            + min(2, len(_preferred_props(label, {"identity", "text"}, limit=3)))
             for label in labels
         ),
         "relationship_recipe_count": sum(len(rel.get("patterns", [])) * 3 for rel in relationships),

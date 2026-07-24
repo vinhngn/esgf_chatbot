@@ -28,7 +28,7 @@ def normalize_value(value):
     if isinstance(value, tuple):
         return tuple(normalize_value(v) for v in value)
     # Neo4j temporal types and any other non-serializable objects → str()
-    if hasattr(value, 'iso_format'):
+    if hasattr(value, "iso_format"):
         return value.iso_format()
     if not _is_json_serializable(value):
         return str(value)
@@ -73,7 +73,9 @@ def strip_noisy_return_properties(cypher: str) -> str:
 
     # Properties that should be stripped if they appear alongside other properties
     _NOISY = {
-        "id", "id_str", "import_method",
+        "id",
+        "id_str",
+        "import_method",
     }
 
     match = re.search(r"(?i)\bRETURN\b\s+(.*)", cypher)
@@ -88,7 +90,7 @@ def strip_noisy_return_properties(cypher: str) -> str:
     )
     if suffix_match:
         return_core = return_body[: suffix_match.start()].strip()
-        suffix = " " + return_body[suffix_match.start():].strip()
+        suffix = " " + return_body[suffix_match.start() :].strip()
     else:
         return_core = return_body.strip()
         suffix = ""
@@ -119,115 +121,6 @@ def strip_noisy_return_properties(cypher: str) -> str:
     return cypher[: match.start()] + new_return
 
 
-def repair_northwind_order_line_properties(cypher: str) -> str:
-    """Repair common Northwind mistakes around ORDERS relationship properties."""
-    if not cypher or "ORDERS" not in cypher.upper():
-        return cypher
-
-    repaired = cypher
-
-    # If an ORDERS relationship variable is already bound, order-line unitPrice,
-    # quantity, and discount should come from that relationship for order-line
-    # arithmetic and filters, not from Product or Order nodes.
-    rel_vars = re.findall(r"\[(\w+):ORDERS\]", repaired, flags=re.IGNORECASE)
-    if rel_vars:
-        rel_var = rel_vars[0]
-        if re.search(rf"\b{rel_var}\.quantity\b", repaired):
-            repaired = re.sub(
-                r"\bavg\s*\(\s*toFloat\s*\(\s*\w+\.unitPrice\s*\)\s*\)",
-                f"avg(toFloat({rel_var}.unitPrice))",
-                repaired,
-                flags=re.IGNORECASE,
-            )
-            repaired = re.sub(
-                r"\bavg\s*\(\s*\w+\.unitPrice\s*\)",
-                f"avg(toFloat({rel_var}.unitPrice))",
-                repaired,
-                flags=re.IGNORECASE,
-            )
-        for prop in ("unitPrice", "quantity", "discount"):
-            repaired = re.sub(
-                rf"\b(o|order|p|product)\.{prop}\b",
-                f"{rel_var}.{prop}",
-                repaired,
-                flags=re.IGNORECASE,
-            )
-
-    return repaired
-
-
-def repair_northwind_projection_and_metrics(cypher: str, question: str | None = None) -> str:
-    """Question-aware Northwind cleanup for common projection/metric mistakes."""
-    if not cypher or not question:
-        return cypher
-    lowered = question.lower()
-    repaired = cypher
-
-    if "customerid" not in lowered and "customer id" not in lowered:
-        repaired = re.sub(r"\bc\.customerID\b", "c.companyName", repaired)
-
-    if "productid" not in lowered and "product id" not in lowered:
-        repaired = re.sub(r"\bp\.productID\s*,\s*", "", repaired)
-        repaired = re.sub(r",\s*p\.productID\b", "", repaired)
-
-    if re.search(r"\b(most frequently ordered|ordered the most times)\b", lowered):
-        repaired = re.sub(
-            r"\bSUM\s*\(\s*o\.quantity\s*\)\s+AS\s+\w+",
-            "COUNT(o) AS orderCount",
-            repaired,
-            flags=re.IGNORECASE,
-        )
-        repaired = re.sub(r"\btotalOrders\b", "orderCount", repaired)
-
-    if "product" in lowered and re.search(
-        r"\bRETURN\s+(orderCount|priceVariations|avgDiscount|AverageDiscount|ordersCount)\b",
-        repaired,
-        flags=re.IGNORECASE,
-    ):
-        repaired = re.sub(
-            r"\bRETURN\s+(orderCount|priceVariations|avgDiscount|AverageDiscount|ordersCount)\b",
-            r"RETURN p.productName, \1",
-            repaired,
-            flags=re.IGNORECASE,
-        )
-
-    if re.search(r"\breorder level greater than the average reorder level\b", lowered):
-        repaired = re.sub(
-            r"\bRETURN\s+\w+\.productName\s*,\s*\w+\.reorderLevel\s*,\s*avgReorderLevel\b",
-            lambda match: re.sub(r",.*", "", match.group(0)),
-            repaired,
-            flags=re.IGNORECASE,
-        )
-        repaired = re.sub(
-            r"\bRETURN\s+(\w+)\.productName\s*,\s*\1\.reorderLevel\b",
-            r"RETURN \1.productName",
-            repaired,
-            flags=re.IGNORECASE,
-        )
-
-    if re.search(r"\bfirst\s+\d+\s+products?.*reorder level above\b", lowered) and "ORDER BY" not in repaired.upper():
-        repaired = re.sub(r"\s+LIMIT\s+(\d+)\b", r" ORDER BY p.productName LIMIT \1", repaired, flags=re.IGNORECASE)
-
-    if re.search(r"\bfirst\s+\d+\s+orders?.*freight.*greater", lowered) and "ORDER BY" not in repaired.upper():
-        repaired = re.sub(
-            r"\s+LIMIT\s+(\d+)\b",
-            r" ORDER BY toFloat(o.freight) DESC LIMIT \1",
-            repaired,
-            flags=re.IGNORECASE,
-        )
-
-    if re.search(r"\bmost recent orders?.*orderdate|orders?.*based on orderdate", lowered):
-        repaired = re.sub(
-            r"\bRETURN\s+o\.orderID\s*,\s*o\.orderDate\b",
-            "RETURN o.orderID, o.orderDate, o.customerID, o.shipName, o.shipCity, o.shipCountry",
-            repaired,
-            flags=re.IGNORECASE,
-        )
-
-    return repaired
-
-
-
 def rewrite_bare_node_returns(cypher: str, graph=None, question: str | None = None) -> str:
     """
     Detect RETURN clauses that return bare node variables (e.g. RETURN m, RETURN t)
@@ -253,7 +146,7 @@ def rewrite_bare_node_returns(cypher: str, graph=None, question: str | None = No
         return_body,
         flags=re.IGNORECASE,
     )[0].strip()
-    suffix = return_body[len(return_core):]
+    suffix = return_body[len(return_core) :]
 
     items = _split_top_level_commas(return_core)
     var_to_label = _extract_var_labels(cypher)
@@ -271,7 +164,9 @@ def rewrite_bare_node_returns(cypher: str, graph=None, question: str | None = No
             and " AS " not in item.upper()
         ):
             label = var_to_label[clean_item]
-            props = _question_key_properties(label, question or "", cypher) or _KEY_PROPERTIES.get(label)
+            props = _question_key_properties(label, question or "", cypher) or _KEY_PROPERTIES.get(
+                label
+            )
             if props == ["__KEEP_NODE__"]:
                 new_items.append(item)
                 continue
@@ -349,7 +244,12 @@ def _question_key_properties(label: str, question: str, cypher: str) -> list[str
         props: list[str] = []
         if "productid" in lowered or "product id" in lowered:
             props.append("productID")
-        if "productname" in lowered or "product name" in lowered or "products" in lowered or "product" in lowered:
+        if (
+            "productname" in lowered
+            or "product name" in lowered
+            or "products" in lowered
+            or "product" in lowered
+        ):
             props.append("productName")
         if "reorder level" in lowered:
             props.append("reorderLevel")
@@ -357,9 +257,8 @@ def _question_key_properties(label: str, question: str, cypher: str) -> list[str
             props.append("unitPrice")
         if "units in stock" in lowered or "unitsinstock" in lowered:
             props.append("unitsInStock")
-        if (
-            ("units on order" in lowered or "unitsonorder" in lowered)
-            and not re.search(r"units\s*on\s*order\s*[=<>]|unitsonorder\s*[=<>]", lowered)
+        if ("units on order" in lowered or "unitsonorder" in lowered) and not re.search(
+            r"units\s*on\s*order\s*[=<>]|unitsonorder\s*[=<>]", lowered
         ):
             props.append("unitsOnOrder")
         if "discontinued" in lowered and not props:
@@ -367,7 +266,9 @@ def _question_key_properties(label: str, question: str, cypher: str) -> list[str
         return list(dict.fromkeys(props)) or ["productName"]
 
     if label == "Supplier":
-        if re.search(r"\b(which|identify all|show all)\s+suppliers?\s+(?:who\s+)?supply\b", lowered):
+        if re.search(
+            r"\b(which|identify all|show all)\s+suppliers?\s+(?:who\s+)?supply\b", lowered
+        ):
             return ["__KEEP_NODE__"]
         props = []
         if "supplierid" in lowered or "supplier id" in lowered:
@@ -394,7 +295,12 @@ def _question_key_properties(label: str, question: str, cypher: str) -> list[str
 
     if label == "Order":
         props = []
-        if "orderid" in lowered or "order id" in lowered or "orders" in lowered or "order" in lowered:
+        if (
+            "orderid" in lowered
+            or "order id" in lowered
+            or "orders" in lowered
+            or "order" in lowered
+        ):
             props.append("orderID")
         if "orderdate" in lowered or "order date" in lowered:
             props.append("orderDate")

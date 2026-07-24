@@ -85,23 +85,64 @@ def main() -> None:
     subparsers = parser.add_subparsers(dest="mode")
 
     csv_parser = subparsers.add_parser("csv", help="Build profile from a T2C CSV file.")
-    csv_parser.add_argument("csv_path", help="Path to a CSV containing question and cypher columns.")
-    csv_parser.add_argument("--database", default="", help="Database/profile name. Defaults to CSV stem.")
-    csv_parser.add_argument("--out", default="", help="Output JSON path. Defaults to generated_profiles/<database>_profile.json.")
-    csv_parser.add_argument("--preview", type=int, default=5, help="Number of top motifs/signatures to print.")
+    csv_parser.add_argument(
+        "csv_path", help="Path to a CSV containing question and cypher columns."
+    )
+    csv_parser.add_argument(
+        "--database", default="", help="Database/profile name. Defaults to CSV stem."
+    )
+    csv_parser.add_argument(
+        "--out",
+        default="",
+        help="Output JSON path. Defaults to generated_profiles/<database>_profile.json.",
+    )
+    csv_parser.add_argument(
+        "--preview", type=int, default=5, help="Number of top motifs/signatures to print."
+    )
     csv_parser.set_defaults(func=_build_from_csv)
 
     live_parser = subparsers.add_parser("live", help="Build profile from a live Neo4j database.")
-    live_parser.add_argument("--uri", default="", help="Neo4j URI. Defaults to NEO4J_URI or Neo4j demo URI.")
+    live_parser.add_argument(
+        "--uri", default="", help="Neo4j URI. Defaults to NEO4J_URI or Neo4j demo URI."
+    )
     live_parser.add_argument("--database", required=True, help="Physical Neo4j database name.")
-    live_parser.add_argument("--profile-name", default="", help="Logical profile name. Defaults to the physical database name.")
-    live_parser.add_argument("--username", default="", help="Neo4j username. Defaults to database name.")
-    live_parser.add_argument("--password", default="", help="Neo4j password. Defaults to database name.")
-    live_parser.add_argument("--out", default="", help="Output JSON path. Defaults to generated_profiles/<profile-name>_profile.json.")
-    live_parser.add_argument("--preview", type=int, default=5, help="Number of top motifs/signatures to print.")
-    live_parser.add_argument("--sample-limit", type=int, default=0, help="Max sampled nodes/rels per label/type for fallback profiling. 0 means unlimited.")
-    live_parser.add_argument("--max-hops", type=int, default=3, help="Max schema path hops to turn into motifs and recipes.")
-    live_parser.add_argument("--value-limit", type=int, default=0, help="Top values per profiled property. 0 means unlimited.")
+    live_parser.add_argument(
+        "--profile-name",
+        default="",
+        help="Logical profile name. Defaults to the physical database name.",
+    )
+    live_parser.add_argument(
+        "--username", default="", help="Neo4j username. Defaults to database name."
+    )
+    live_parser.add_argument(
+        "--password", default="", help="Neo4j password. Defaults to database name."
+    )
+    live_parser.add_argument(
+        "--out",
+        default="",
+        help="Output JSON path. Defaults to generated_profiles/<profile-name>_profile.json.",
+    )
+    live_parser.add_argument(
+        "--preview", type=int, default=5, help="Number of top motifs/signatures to print."
+    )
+    live_parser.add_argument(
+        "--sample-limit",
+        type=int,
+        default=0,
+        help="Max sampled nodes/rels per label/type for fallback profiling. 0 means unlimited.",
+    )
+    live_parser.add_argument(
+        "--max-hops",
+        type=int,
+        default=3,
+        help="Max schema path hops to turn into motifs and recipes.",
+    )
+    live_parser.add_argument(
+        "--value-limit",
+        type=int,
+        default=0,
+        help="Top values per profiled property. 0 means unlimited.",
+    )
     live_parser.add_argument("--no-values", action="store_true", help="Skip live value profiling.")
     live_parser.set_defaults(func=_build_from_live)
 

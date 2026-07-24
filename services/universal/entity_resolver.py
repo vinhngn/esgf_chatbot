@@ -4,7 +4,6 @@ import os
 import re
 from typing import Any
 
-
 STOPWORDS = {
     "all",
     "and",
@@ -63,7 +62,12 @@ _INDEX_CACHE: dict[int, list[dict]] = {}
 
 
 def _enabled() -> bool:
-    return os.getenv("T2C_ENTITY_RESOLVER_ENABLED", "true").lower() not in {"0", "false", "no", "off"}
+    return os.getenv("T2C_ENTITY_RESOLVER_ENABLED", "true").lower() not in {
+        "0",
+        "false",
+        "no",
+        "off",
+    }
 
 
 def _max_tokens() -> int:
@@ -254,7 +258,9 @@ def format_entity_resolution_context(resolution: dict) -> str:
         return "\n".join(lines)
     anchors = resolution.get("anchors") or []
     if not anchors:
-        lines.append("No indexed literal anchors were resolved. Do not invent exact entity bindings.")
+        lines.append(
+            "No indexed literal anchors were resolved. Do not invent exact entity bindings."
+        )
         indexed = resolution.get("indexed_properties") or []
         if indexed:
             lines.append("Available indexed lookup properties:")

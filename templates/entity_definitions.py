@@ -3,6 +3,7 @@ Semantic Schema definitions per database type.
 This replaces simple natural language with exact Cypher-style property structures,
 which dramatically improves LLM understanding of property locations.
 """
+
 from config import get_settings
 
 entity_climate_definitions = """

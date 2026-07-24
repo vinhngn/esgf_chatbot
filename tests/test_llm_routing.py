@@ -24,10 +24,12 @@ class FakeLLM:
 def test_primary_success_does_not_call_fallback() -> None:
     primary = FakeLLM(result="primary")
     fallback = FakeLLM(result="fallback")
-    routed = RoutedChatModel([
-        _Provider("openai", primary),
-        _Provider("local", fallback),
-    ])
+    routed = RoutedChatModel(
+        [
+            _Provider("openai", primary),
+            _Provider("local", fallback),
+        ]
+    )
 
     assert routed.invoke("question") == "primary"
     assert primary.calls == 1
@@ -37,10 +39,12 @@ def test_primary_success_does_not_call_fallback() -> None:
 def test_primary_failure_calls_fallback_once() -> None:
     primary = FakeLLM(error=TimeoutError("timeout"))
     fallback = FakeLLM(result="fallback")
-    routed = RoutedChatModel([
-        _Provider("openai", primary),
-        _Provider("local", fallback),
-    ])
+    routed = RoutedChatModel(
+        [
+            _Provider("openai", primary),
+            _Provider("local", fallback),
+        ]
+    )
 
     assert routed.invoke("question") == "fallback"
     assert primary.calls == 1
@@ -48,10 +52,12 @@ def test_primary_failure_calls_fallback_once() -> None:
 
 
 def test_all_fail_raises_last_provider_error() -> None:
-    routed = RoutedChatModel([
-        _Provider("openai", FakeLLM(error=TimeoutError("openai"))),
-        _Provider("local", FakeLLM(error=ConnectionError("local"))),
-    ])
+    routed = RoutedChatModel(
+        [
+            _Provider("openai", FakeLLM(error=TimeoutError("openai"))),
+            _Provider("local", FakeLLM(error=ConnectionError("local"))),
+        ]
+    )
 
     with pytest.raises(ConnectionError, match="local"):
         routed.invoke("question")
@@ -72,7 +78,9 @@ def test_create_llm_respects_local_first(monkeypatch) -> None:
         LLM_FALLBACK_ENABLED=True,
     )
     monkeypatch.setattr(llm_module, "get_settings", lambda: settings)
-    monkeypatch.setattr(llm_module, "_chat_openai", lambda **kwargs: FakeLLM(result=kwargs["model"]))
+    monkeypatch.setattr(
+        llm_module, "_chat_openai", lambda **kwargs: FakeLLM(result=kwargs["model"])
+    )
 
     routed = llm_module._create_llm(temperature=0)
 
@@ -95,7 +103,9 @@ def test_missing_openai_key_uses_local_only(monkeypatch) -> None:
         LLM_FALLBACK_ENABLED=True,
     )
     monkeypatch.setattr(llm_module, "get_settings", lambda: settings)
-    monkeypatch.setattr(llm_module, "_chat_openai", lambda **kwargs: FakeLLM(result=kwargs["model"]))
+    monkeypatch.setattr(
+        llm_module, "_chat_openai", lambda **kwargs: FakeLLM(result=kwargs["model"])
+    )
 
     routed = llm_module._create_llm(temperature=0)
 

@@ -11,8 +11,9 @@ import logging
 import threading
 import time
 
-from config import get_settings
 from langchain_neo4j import Neo4jGraph
+
+from config import get_settings
 from utils.helpers import parse_schema
 
 logger = logging.getLogger(__name__)

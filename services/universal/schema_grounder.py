@@ -10,10 +10,12 @@ Flow:
   5. Format compact grounded schema
 """
 from __future__ import annotations
+
 import json
 import logging
 import re
 from dataclasses import dataclass, field
+
 from services.universal.schema_parser import SchemaGraph
 from utils.pipeline_trace import trace_event
 

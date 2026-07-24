@@ -8,11 +8,11 @@ from __future__ import annotations
 import os
 
 import streamlit as st
-from config import get_settings
+
 from constants import LANGCHAIN_IMG_PATH
 
 
-def sidebar():
+def sidebar(database: str) -> None:
     with st.sidebar:
         base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         gcmd_img_path = os.path.join(base_path, "images", "GCMD+.png")
@@ -41,8 +41,6 @@ def sidebar():
             </style>""",
             unsafe_allow_html=True,
         )
-
-        database = get_settings().profile_database_name
 
         if database == "twitter":
             sample_questions = [
