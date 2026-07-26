@@ -38,6 +38,50 @@ def _recommended_workers(state: StudioState) -> int:
     return 2
 
 
+def _current_target(state: StudioState) -> DatabaseTarget | None:
+    connection = state.runtime.connection
+    session = state.runtime.session
+    if connection is None or session is None:
+        return None
+    return DatabaseTarget(
+        uri=connection.runtime_uri,
+        username=connection.username,
+        password=session.database_password,
+        database=connection.database,
+        logical_database=connection.profile_name,
+    )
+
+
+def _resume_run(state: StudioState, run_id: str, summary: dict) -> None:
+    if not runtime_api_ready(state):
+        st.error("Start the T2C API from Connection before resuming.")
+        return
+    target = _current_target(state)
+    if target is None:
+        st.error("No active Neo4j connection.")
+        return
+    if not _matches_active_database(
+        str(summary["dataset"]),
+        profile_name=target.logical_database,
+        physical_database=target.database,
+    ):
+        st.error(
+            f"Connect to the '{summary['dataset']}' database before resuming this run."
+        )
+        return
+    try:
+        state.benchmarks.resume(
+            run_id,
+            target,
+            endpoint=f"{state.runtime.api_url}/api/text2cypher",
+        )
+    except Exception as exc:
+        st.error(str(exc))
+        return
+    st.session_state["benchmark_run_id"] = run_id
+    st.rerun()
+
+
 def _render_summary(state: StudioState, run_id: str) -> None:
     summary = state.benchmarks.store.run_summary(run_id)
     if summary is None:
@@ -66,6 +110,23 @@ def _render_summary(state: StudioState, run_id: str) -> None:
     ):
         state.benchmarks.stop()
         st.rerun()
+    resumable = status in {
+        RunStatus.INTERRUPTED.value,
+        RunStatus.CANCELLED.value,
+        RunStatus.FAILED.value,
+    }
+    if (
+        resumable
+        and completed < target
+        and st.button(
+            "Resume benchmark",
+            type="primary",
+            width="stretch",
+            disabled=bool(state.benchmarks.active_run_id),
+            key=f"resume-{run_id}",
+        )
+    ):
+        _resume_run(state, run_id, summary)
 
     results = state.benchmarks.store.results(run_id, limit=100)
     if not results:
@@ -89,7 +150,7 @@ def _render_summary(state: StudioState, run_id: str) -> None:
     ]
     st.dataframe(
         table,
-        use_container_width=True,
+        width="stretch",
         hide_index=True,
         column_config={
             "exact": st.column_config.NumberColumn(format="%.2f"),
@@ -189,7 +250,7 @@ def _start_form(state: StudioState) -> None:
         start = st.form_submit_button(
             "Start benchmark",
             type="primary",
-            use_container_width=True,
+            width="stretch",
             disabled=bool(state.benchmarks.active_run_id),
         )
 
@@ -233,13 +294,10 @@ def _start_form(state: StudioState) -> None:
 
     state.store.set_state("t2c_framework_root", str(framework_root.resolve()))
     state.benchmarks.framework_root = framework_root.resolve()
-    target = DatabaseTarget(
-        uri=connection.runtime_uri,
-        username=connection.username,
-        password=session.database_password,
-        database=connection.database,
-        logical_database=connection.profile_name,
-    )
+    target = _current_target(state)
+    if target is None:
+        st.error("No active Neo4j connection.")
+        return
     try:
         run_id = state.benchmarks.start(config, target)
     except Exception as exc:

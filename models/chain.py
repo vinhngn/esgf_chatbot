@@ -1,5 +1,5 @@
 """Backward-compatible import for the Text-to-Cypher pipeline."""
 
-from services.text2cypher.pipeline import invoke_chain
+from neo4j_t2c.pipeline import invoke_chain
 
 __all__ = ["invoke_chain"]

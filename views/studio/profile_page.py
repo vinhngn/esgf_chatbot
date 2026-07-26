@@ -13,31 +13,42 @@ def render(state: StudioState) -> None:
     connection = state.active_connection
     path = connection.profile_path(state.runtime.project_root)
     st.header("Profile")
+    st.caption(
+        f"Selected profile: {connection.profile_name} | "
+        f"Physical database: {connection.database}"
+    )
+    runtime_connection = state.runtime.connection
+    if runtime_connection and runtime_connection.id != connection.id:
+        st.warning(
+            "The running T2C API uses "
+            f"{runtime_connection.profile_name}/{runtime_connection.database}, "
+            "not the database selected on this page."
+        )
     if path.exists():
         st.success(f"Ready: {path.name}")
     else:
         st.warning(f"Missing: {path.name}")
 
-    full_profile = st.checkbox(
-        "Full profile",
-        value=(
-            connection.profile.sample_limit == 0
-            and connection.profile.value_limit == 0
-            and connection.profile.include_values
-        ),
+    comprehensive_profile = st.checkbox(
+        "Comprehensive profile",
+        value=False,
         help=(
-            "Read all fallback schema samples and distinct property values. "
-            "Large databases can take considerably longer."
+            "Use larger but bounded evidence budgets. Schema discovery remains exact; "
+            "the application never loads every distinct database value into memory."
         ),
     )
     with st.form(f"profile-{connection.id}"):
         first, second, third = st.columns(3)
         sample_limit = first.number_input(
             "Fallback sample limit",
-            min_value=0,
-            value=0 if full_profile else connection.profile.sample_limit,
-            help="0 means unlimited.",
-            disabled=full_profile,
+            min_value=1,
+            value=(
+                10_000
+                if comprehensive_profile
+                else max(1, connection.profile.sample_limit or 10_000)
+            ),
+            help="Used only if Neo4j schema procedures cannot expose properties.",
+            disabled=comprehensive_profile,
         )
         max_hops = second.number_input(
             "Maximum path hops",
@@ -47,30 +58,34 @@ def render(state: StudioState) -> None:
         )
         value_limit = third.number_input(
             "Values per property",
-            min_value=0,
-            value=0 if full_profile else connection.profile.value_limit,
-            help="0 means unlimited.",
-            disabled=full_profile,
+            min_value=1,
+            value=(
+                50
+                if comprehensive_profile
+                else max(1, connection.profile.value_limit or 50)
+            ),
+            help="Maximum frequent values retained for each property.",
+            disabled=comprehensive_profile,
         )
         include_values = st.checkbox(
             "Include sampled property values",
-            value=True if full_profile else connection.profile.include_values,
-            disabled=full_profile,
+            value=True if comprehensive_profile else connection.profile.include_values,
+            disabled=comprehensive_profile,
         )
         build = st.form_submit_button(
             "Build or refresh profile",
             type="primary",
-            use_container_width=True,
+            width="stretch",
         )
 
     if build:
         updated = connection.model_copy(
             update={
                 "profile": ProfileOptions(
-                    sample_limit=0 if full_profile else int(sample_limit),
+                    sample_limit=10_000 if comprehensive_profile else int(sample_limit),
                     max_hops=int(max_hops),
-                    value_limit=0 if full_profile else int(value_limit),
-                    include_values=True if full_profile else include_values,
+                    value_limit=50 if comprehensive_profile else int(value_limit),
+                    include_values=True if comprehensive_profile else include_values,
                 )
             }
         )
@@ -85,6 +100,7 @@ def render(state: StudioState) -> None:
                     if state.runtime.connection
                     and state.runtime.connection.id == updated.id
                     else None,
+                    dataset_directory=state.benchmarks.framework_root / "inputs",
                 )
         except Exception as exc:
             st.error(str(exc))
@@ -106,18 +122,56 @@ def render(state: StudioState) -> None:
     labels = profile.get("schema_profile", {}).get("labels", [])
     relationships = profile.get("schema_profile", {}).get("relationships", [])
     paths = profile.get("schema_profile", {}).get("paths", [])
-    one, two, three, four = st.columns(4)
+    vector_indexes = profile.get("schema_profile", {}).get(
+        "vector_indexes",
+        [],
+    )
+    vector_discovery = profile.get("schema_profile", {}).get(
+        "vector_index_discovery",
+        {},
+    )
+    path_discovery = profile.get("schema_profile", {}).get(
+        "path_discovery",
+        {},
+    )
+    one, two, three, four, five = st.columns(5)
     one.metric("Labels", len(labels))
     two.metric("Relationships", len(relationships))
     three.metric("Paths", len(paths))
-    four.metric("Examples", profile.get("row_count", 0))
+    vector_status = vector_discovery.get("status", "unknown")
+    four.metric(
+        "Vector indexes",
+        "Unavailable" if vector_status == "unavailable" else len(vector_indexes),
+    )
+    five.metric("Examples", profile.get("row_count", 0))
 
     with st.expander("Schema summary", expanded=True):
-        st.json(summary)
+        st.json(
+            {
+                "logical_database": profile.get("database"),
+                "physical_database": profile.get("physical_database"),
+                "build_options": profile.get("build_options", {}),
+                "summary": summary,
+                "path_discovery": path_discovery,
+                "vector_index_discovery": vector_discovery,
+            }
+        )
+    if path_discovery.get("status") == "truncated":
+        st.warning(
+            "Schema path discovery reached its configured limit "
+            f"({path_discovery.get('limit')}). Reduce max hops or raise "
+            "T2C_PROFILE_PATH_LIMIT deliberately."
+        )
+    if vector_status == "unavailable":
+        st.warning(
+            "Neo4j vector-index discovery was unavailable: "
+            f"{vector_discovery.get('message') or 'unknown error'}"
+        )
     with st.expander("Generated recipes and examples"):
         st.json(
             {
                 "query_recipe_profile": profile.get("query_recipe_profile", {}),
+                "vector_indexes": vector_indexes,
                 "examples": profile.get("examples", [])[:20],
             }
         )

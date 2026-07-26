@@ -48,9 +48,9 @@ class ModelConfiguration(BaseModel):
 
 
 class ProfileOptions(BaseModel):
-    sample_limit: int = Field(default=0, ge=0)
+    sample_limit: int = Field(default=10_000, ge=0)
     max_hops: int = Field(default=3, ge=1, le=8)
-    value_limit: int = Field(default=0, ge=0)
+    value_limit: int = Field(default=50, ge=0)
     include_values: bool = True
 
 

@@ -49,7 +49,8 @@ class BenchmarkStore:
                     status TEXT NOT NULL,
                     started_at TEXT NOT NULL,
                     finished_at TEXT,
-                    error TEXT NOT NULL DEFAULT ''
+                    error TEXT NOT NULL DEFAULT '',
+                    config_json TEXT NOT NULL DEFAULT ''
                 );
 
                 CREATE TABLE IF NOT EXISTS benchmark_results (
@@ -84,6 +85,15 @@ class BenchmarkStore:
                 ON benchmark_results(run_id, row_id);
                 """
             )
+            columns = {
+                str(row["name"])
+                for row in db.execute("PRAGMA table_info(benchmark_runs)").fetchall()
+            }
+            if "config_json" not in columns:
+                db.execute(
+                    "ALTER TABLE benchmark_runs "
+                    "ADD COLUMN config_json TEXT NOT NULL DEFAULT ''"
+                )
 
     def mark_interrupted_runs(self) -> None:
         with self._connect() as db:
@@ -117,8 +127,9 @@ class BenchmarkStore:
                 INSERT INTO benchmark_runs (
                     run_id, dataset, input_file, endpoint,
                     logical_database, physical_database,
-                    row_limit, workers, target_rows, status, started_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    row_limit, workers, target_rows, status, started_at,
+                    config_json
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     run_id,
@@ -132,8 +143,53 @@ class BenchmarkStore:
                     target_rows,
                     RunStatus.PENDING.value,
                     _now(),
+                    config.model_dump_json(),
                 ),
             )
+
+    def benchmark_config(self, run_id: str) -> BenchmarkConfig:
+        """Load the original run configuration, including legacy run fallback."""
+        with self._connect() as db:
+            row = db.execute(
+                "SELECT * FROM benchmark_runs WHERE run_id = ?",
+                (run_id,),
+            ).fetchone()
+        if row is None:
+            raise KeyError(f"Benchmark run not found: {run_id}")
+
+        config_json = str(row["config_json"] or "")
+        if config_json:
+            return BenchmarkConfig.model_validate_json(config_json)
+        return BenchmarkConfig(
+            dataset=str(row["dataset"]),
+            input_file=Path(str(row["input_file"])),
+            endpoint=str(row["endpoint"]),
+            row_limit=int(row["row_limit"]),
+            workers=int(row["workers"]),
+            result_limit=0,
+        )
+
+    def completed_row_ids(self, run_id: str) -> set[int]:
+        with self._connect() as db:
+            rows = db.execute(
+                "SELECT row_id FROM benchmark_results WHERE run_id = ?",
+                (run_id,),
+            ).fetchall()
+        return {int(row["row_id"]) for row in rows}
+
+    def prepare_resume(self, run_id: str) -> None:
+        """Reset terminal run state without deleting completed row results."""
+        with self._connect() as db:
+            cursor = db.execute(
+                """
+                UPDATE benchmark_runs
+                SET status = ?, finished_at = NULL, error = ''
+                WHERE run_id = ?
+                """,
+                (RunStatus.PENDING.value, run_id),
+            )
+            if cursor.rowcount != 1:
+                raise KeyError(f"Benchmark run not found: {run_id}")
 
     def update_run(
         self,

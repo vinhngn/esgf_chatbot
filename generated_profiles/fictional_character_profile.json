@@ -1,7 +1,4757 @@
 {
-  "source": "D:\\Agent\\t2c_eval_framework\\inputs\\fictional_character.csv",
+  "profile_version": "2.0",
   "database": "fictional_character",
+  "physical_database": "neo4j",
+  "source": "D:\\Agent\\t2c_eval_framework\\inputs\\fictional_character.csv",
+  "source_type": "hybrid",
+  "provenance": {
+    "source": "D:\\Agent\\t2c_eval_framework\\inputs\\fictional_character.csv",
+    "source_type": "hybrid",
+    "generator": "neo4j-t2c",
+    "generator_version": "0.1.0",
+    "sources": [
+      {
+        "source": "D:\\Agent\\t2c_eval_framework\\inputs\\fictional_character.csv",
+        "source_type": "benchmark_csv"
+      },
+      {
+        "source": "bolt://127.0.0.1:15063",
+        "source_type": "neo4j_live"
+      }
+    ]
+  },
+  "schema_fingerprint": "sha256:19c219b01155a1fabb9a701ac805619d66525bd2a74c33c8b51e72a6d9991f7a",
   "row_count": 385,
+  "schema_profile": {
+    "labels": [
+      {
+        "label": "Character",
+        "count": 25299,
+        "properties": [
+          {
+            "name": "aliases",
+            "types": [
+              "StringArray"
+            ],
+            "role": "attribute",
+            "non_null": null
+          },
+          {
+            "name": "birth_name",
+            "types": [
+              "String"
+            ],
+            "role": "text",
+            "non_null": null
+          },
+          {
+            "name": "country_of_citizenship",
+            "types": [
+              "StringArray"
+            ],
+            "role": "attribute",
+            "non_null": null
+          },
+          {
+            "name": "creator",
+            "types": [
+              "String"
+            ],
+            "role": "text",
+            "non_null": null
+          },
+          {
+            "name": "description",
+            "types": [
+              "String"
+            ],
+            "role": "text",
+            "non_null": null
+          },
+          {
+            "name": "eid",
+            "types": [
+              "String"
+            ],
+            "role": "text",
+            "non_null": null
+          },
+          {
+            "name": "gender",
+            "types": [
+              "String"
+            ],
+            "role": "text",
+            "non_null": null
+          },
+          {
+            "name": "name",
+            "types": [
+              "String"
+            ],
+            "role": "text",
+            "non_null": null
+          },
+          {
+            "name": "occupation",
+            "types": [
+              "StringArray"
+            ],
+            "role": "attribute",
+            "non_null": null
+          },
+          {
+            "name": "provenance",
+            "types": [
+              "StringArray"
+            ],
+            "role": "attribute",
+            "non_null": null
+          }
+        ]
+      },
+      {
+        "label": "FictionalUniverse",
+        "count": 1278,
+        "properties": [
+          {
+            "name": "aliases",
+            "types": [
+              "StringArray"
+            ],
+            "role": "attribute",
+            "non_null": null
+          },
+          {
+            "name": "copyright_holder",
+            "types": [
+              "String"
+            ],
+            "role": "text",
+            "non_null": null
+          },
+          {
+            "name": "creator",
+            "types": [
+              "String"
+            ],
+            "role": "text",
+            "non_null": null
+          },
+          {
+            "name": "description",
+            "types": [
+              "String"
+            ],
+            "role": "text",
+            "non_null": null
+          },
+          {
+            "name": "eid",
+            "types": [
+              "String"
+            ],
+            "role": "text",
+            "non_null": null
+          },
+          {
+            "name": "inception_year",
+            "types": [
+              "Long"
+            ],
+            "role": "attribute",
+            "non_null": null
+          },
+          {
+            "name": "name",
+            "types": [
+              "String"
+            ],
+            "role": "text",
+            "non_null": null
+          },
+          {
+            "name": "provenance",
+            "types": [
+              "StringArray"
+            ],
+            "role": "attribute",
+            "non_null": null
+          }
+        ]
+      },
+      {
+        "label": "Location",
+        "count": 594,
+        "properties": [
+          {
+            "name": "aliases",
+            "types": [
+              "StringArray"
+            ],
+            "role": "attribute",
+            "non_null": null
+          },
+          {
+            "name": "description",
+            "types": [
+              "String"
+            ],
+            "role": "text",
+            "non_null": null
+          },
+          {
+            "name": "eid",
+            "types": [
+              "String"
+            ],
+            "role": "text",
+            "non_null": null
+          },
+          {
+            "name": "name",
+            "types": [
+              "String"
+            ],
+            "role": "text",
+            "non_null": null
+          },
+          {
+            "name": "provenance",
+            "types": [
+              "StringArray"
+            ],
+            "role": "attribute",
+            "non_null": null
+          }
+        ]
+      },
+      {
+        "label": "Organization",
+        "count": 1744,
+        "properties": [
+          {
+            "name": "aliases",
+            "types": [
+              "StringArray"
+            ],
+            "role": "attribute",
+            "non_null": null
+          },
+          {
+            "name": "description",
+            "types": [
+              "String"
+            ],
+            "role": "text",
+            "non_null": null
+          },
+          {
+            "name": "eid",
+            "types": [
+              "String"
+            ],
+            "role": "text",
+            "non_null": null
+          },
+          {
+            "name": "name",
+            "types": [
+              "String"
+            ],
+            "role": "text",
+            "non_null": null
+          },
+          {
+            "name": "provenance",
+            "types": [
+              "StringArray"
+            ],
+            "role": "attribute",
+            "non_null": null
+          }
+        ]
+      }
+    ],
+    "relationships": [
+      {
+        "type": "basedIn",
+        "patterns": [
+          {
+            "from": "Organization",
+            "to": "Location",
+            "count": null
+          }
+        ],
+        "properties": []
+      },
+      {
+        "type": "bornIn",
+        "patterns": [
+          {
+            "from": "Character",
+            "to": "Location",
+            "count": null
+          }
+        ],
+        "properties": []
+      },
+      {
+        "type": "diedIn",
+        "patterns": [
+          {
+            "from": "Character",
+            "to": "Location",
+            "count": null
+          }
+        ],
+        "properties": []
+      },
+      {
+        "type": "fromUniverse",
+        "patterns": [
+          {
+            "from": "Organization",
+            "to": "FictionalUniverse",
+            "count": null
+          },
+          {
+            "from": "Character",
+            "to": "FictionalUniverse",
+            "count": null
+          }
+        ],
+        "properties": []
+      },
+      {
+        "type": "hasFather",
+        "patterns": [
+          {
+            "from": "Character",
+            "to": "Character",
+            "count": null
+          }
+        ],
+        "properties": []
+      },
+      {
+        "type": "hasMother",
+        "patterns": [
+          {
+            "from": "Character",
+            "to": "Character",
+            "count": null
+          }
+        ],
+        "properties": []
+      },
+      {
+        "type": "hasSpouse",
+        "patterns": [
+          {
+            "from": "Character",
+            "to": "Character",
+            "count": null
+          }
+        ],
+        "properties": []
+      },
+      {
+        "type": "hasStudent",
+        "patterns": [
+          {
+            "from": "Character",
+            "to": "Character",
+            "count": null
+          }
+        ],
+        "properties": []
+      },
+      {
+        "type": "killedBy",
+        "patterns": [
+          {
+            "from": "Character",
+            "to": "Character",
+            "count": null
+          }
+        ],
+        "properties": []
+      },
+      {
+        "type": "memberOf",
+        "patterns": [
+          {
+            "from": "Character",
+            "to": "Organization",
+            "count": null
+          }
+        ],
+        "properties": []
+      }
+    ],
+    "paths": [
+      {
+        "hops": 1,
+        "signature": "(Character)-[:bornIn]->(Location)",
+        "edges": [
+          {
+            "from": "Character",
+            "type": "bornIn",
+            "to": "Location",
+            "direction": "outgoing"
+          }
+        ]
+      },
+      {
+        "hops": 2,
+        "signature": "(Character)-[:bornIn]->(Location)<-[:basedIn]-(Organization)",
+        "edges": [
+          {
+            "from": "Character",
+            "type": "bornIn",
+            "to": "Location",
+            "direction": "outgoing"
+          },
+          {
+            "from": "Location",
+            "type": "basedIn",
+            "to": "Organization",
+            "direction": "incoming"
+          }
+        ]
+      },
+      {
+        "hops": 3,
+        "signature": "(Character)-[:bornIn]->(Location)<-[:basedIn]-(Organization)-[:fromUniverse]->(FictionalUniverse)",
+        "edges": [
+          {
+            "from": "Character",
+            "type": "bornIn",
+            "to": "Location",
+            "direction": "outgoing"
+          },
+          {
+            "from": "Location",
+            "type": "basedIn",
+            "to": "Organization",
+            "direction": "incoming"
+          },
+          {
+            "from": "Organization",
+            "type": "fromUniverse",
+            "to": "FictionalUniverse",
+            "direction": "outgoing"
+          }
+        ]
+      },
+      {
+        "hops": 1,
+        "signature": "(Character)-[:diedIn]->(Location)",
+        "edges": [
+          {
+            "from": "Character",
+            "type": "diedIn",
+            "to": "Location",
+            "direction": "outgoing"
+          }
+        ]
+      },
+      {
+        "hops": 2,
+        "signature": "(Character)-[:diedIn]->(Location)<-[:basedIn]-(Organization)",
+        "edges": [
+          {
+            "from": "Character",
+            "type": "diedIn",
+            "to": "Location",
+            "direction": "outgoing"
+          },
+          {
+            "from": "Location",
+            "type": "basedIn",
+            "to": "Organization",
+            "direction": "incoming"
+          }
+        ]
+      },
+      {
+        "hops": 3,
+        "signature": "(Character)-[:diedIn]->(Location)<-[:basedIn]-(Organization)-[:fromUniverse]->(FictionalUniverse)",
+        "edges": [
+          {
+            "from": "Character",
+            "type": "diedIn",
+            "to": "Location",
+            "direction": "outgoing"
+          },
+          {
+            "from": "Location",
+            "type": "basedIn",
+            "to": "Organization",
+            "direction": "incoming"
+          },
+          {
+            "from": "Organization",
+            "type": "fromUniverse",
+            "to": "FictionalUniverse",
+            "direction": "outgoing"
+          }
+        ]
+      },
+      {
+        "hops": 1,
+        "signature": "(Character)-[:fromUniverse]->(FictionalUniverse)",
+        "edges": [
+          {
+            "from": "Character",
+            "type": "fromUniverse",
+            "to": "FictionalUniverse",
+            "direction": "outgoing"
+          }
+        ]
+      },
+      {
+        "hops": 2,
+        "signature": "(Character)-[:fromUniverse]->(FictionalUniverse)<-[:fromUniverse]-(Organization)",
+        "edges": [
+          {
+            "from": "Character",
+            "type": "fromUniverse",
+            "to": "FictionalUniverse",
+            "direction": "outgoing"
+          },
+          {
+            "from": "FictionalUniverse",
+            "type": "fromUniverse",
+            "to": "Organization",
+            "direction": "incoming"
+          }
+        ]
+      },
+      {
+        "hops": 3,
+        "signature": "(Character)-[:fromUniverse]->(FictionalUniverse)<-[:fromUniverse]-(Organization)-[:basedIn]->(Location)",
+        "edges": [
+          {
+            "from": "Character",
+            "type": "fromUniverse",
+            "to": "FictionalUniverse",
+            "direction": "outgoing"
+          },
+          {
+            "from": "FictionalUniverse",
+            "type": "fromUniverse",
+            "to": "Organization",
+            "direction": "incoming"
+          },
+          {
+            "from": "Organization",
+            "type": "basedIn",
+            "to": "Location",
+            "direction": "outgoing"
+          }
+        ]
+      },
+      {
+        "hops": 1,
+        "signature": "(Character)-[:hasFather]->(Character)",
+        "edges": [
+          {
+            "from": "Character",
+            "type": "hasFather",
+            "to": "Character",
+            "direction": "outgoing"
+          }
+        ]
+      },
+      {
+        "hops": 1,
+        "signature": "(Character)-[:hasMother]->(Character)",
+        "edges": [
+          {
+            "from": "Character",
+            "type": "hasMother",
+            "to": "Character",
+            "direction": "outgoing"
+          }
+        ]
+      },
+      {
+        "hops": 1,
+        "signature": "(Character)-[:hasSpouse]->(Character)",
+        "edges": [
+          {
+            "from": "Character",
+            "type": "hasSpouse",
+            "to": "Character",
+            "direction": "outgoing"
+          }
+        ]
+      },
+      {
+        "hops": 1,
+        "signature": "(Character)-[:hasStudent]->(Character)",
+        "edges": [
+          {
+            "from": "Character",
+            "type": "hasStudent",
+            "to": "Character",
+            "direction": "outgoing"
+          }
+        ]
+      },
+      {
+        "hops": 1,
+        "signature": "(Character)-[:killedBy]->(Character)",
+        "edges": [
+          {
+            "from": "Character",
+            "type": "killedBy",
+            "to": "Character",
+            "direction": "outgoing"
+          }
+        ]
+      },
+      {
+        "hops": 1,
+        "signature": "(Character)-[:memberOf]->(Organization)",
+        "edges": [
+          {
+            "from": "Character",
+            "type": "memberOf",
+            "to": "Organization",
+            "direction": "outgoing"
+          }
+        ]
+      },
+      {
+        "hops": 2,
+        "signature": "(Character)-[:memberOf]->(Organization)-[:basedIn]->(Location)",
+        "edges": [
+          {
+            "from": "Character",
+            "type": "memberOf",
+            "to": "Organization",
+            "direction": "outgoing"
+          },
+          {
+            "from": "Organization",
+            "type": "basedIn",
+            "to": "Location",
+            "direction": "outgoing"
+          }
+        ]
+      },
+      {
+        "hops": 2,
+        "signature": "(Character)-[:memberOf]->(Organization)-[:fromUniverse]->(FictionalUniverse)",
+        "edges": [
+          {
+            "from": "Character",
+            "type": "memberOf",
+            "to": "Organization",
+            "direction": "outgoing"
+          },
+          {
+            "from": "Organization",
+            "type": "fromUniverse",
+            "to": "FictionalUniverse",
+            "direction": "outgoing"
+          }
+        ]
+      },
+      {
+        "hops": 1,
+        "signature": "(FictionalUniverse)<-[:fromUniverse]-(Organization)",
+        "edges": [
+          {
+            "from": "FictionalUniverse",
+            "type": "fromUniverse",
+            "to": "Organization",
+            "direction": "incoming"
+          }
+        ]
+      },
+      {
+        "hops": 2,
+        "signature": "(FictionalUniverse)<-[:fromUniverse]-(Organization)-[:basedIn]->(Location)",
+        "edges": [
+          {
+            "from": "FictionalUniverse",
+            "type": "fromUniverse",
+            "to": "Organization",
+            "direction": "incoming"
+          },
+          {
+            "from": "Organization",
+            "type": "basedIn",
+            "to": "Location",
+            "direction": "outgoing"
+          }
+        ]
+      },
+      {
+        "hops": 3,
+        "signature": "(FictionalUniverse)<-[:fromUniverse]-(Organization)-[:basedIn]->(Location)<-[:bornIn]-(Character)",
+        "edges": [
+          {
+            "from": "FictionalUniverse",
+            "type": "fromUniverse",
+            "to": "Organization",
+            "direction": "incoming"
+          },
+          {
+            "from": "Organization",
+            "type": "basedIn",
+            "to": "Location",
+            "direction": "outgoing"
+          },
+          {
+            "from": "Location",
+            "type": "bornIn",
+            "to": "Character",
+            "direction": "incoming"
+          }
+        ]
+      },
+      {
+        "hops": 3,
+        "signature": "(FictionalUniverse)<-[:fromUniverse]-(Organization)-[:basedIn]->(Location)<-[:diedIn]-(Character)",
+        "edges": [
+          {
+            "from": "FictionalUniverse",
+            "type": "fromUniverse",
+            "to": "Organization",
+            "direction": "incoming"
+          },
+          {
+            "from": "Organization",
+            "type": "basedIn",
+            "to": "Location",
+            "direction": "outgoing"
+          },
+          {
+            "from": "Location",
+            "type": "diedIn",
+            "to": "Character",
+            "direction": "incoming"
+          }
+        ]
+      },
+      {
+        "hops": 2,
+        "signature": "(FictionalUniverse)<-[:fromUniverse]-(Organization)<-[:memberOf]-(Character)",
+        "edges": [
+          {
+            "from": "FictionalUniverse",
+            "type": "fromUniverse",
+            "to": "Organization",
+            "direction": "incoming"
+          },
+          {
+            "from": "Organization",
+            "type": "memberOf",
+            "to": "Character",
+            "direction": "incoming"
+          }
+        ]
+      },
+      {
+        "hops": 3,
+        "signature": "(FictionalUniverse)<-[:fromUniverse]-(Organization)<-[:memberOf]-(Character)-[:bornIn]->(Location)",
+        "edges": [
+          {
+            "from": "FictionalUniverse",
+            "type": "fromUniverse",
+            "to": "Organization",
+            "direction": "incoming"
+          },
+          {
+            "from": "Organization",
+            "type": "memberOf",
+            "to": "Character",
+            "direction": "incoming"
+          },
+          {
+            "from": "Character",
+            "type": "bornIn",
+            "to": "Location",
+            "direction": "outgoing"
+          }
+        ]
+      },
+      {
+        "hops": 3,
+        "signature": "(FictionalUniverse)<-[:fromUniverse]-(Organization)<-[:memberOf]-(Character)-[:diedIn]->(Location)",
+        "edges": [
+          {
+            "from": "FictionalUniverse",
+            "type": "fromUniverse",
+            "to": "Organization",
+            "direction": "incoming"
+          },
+          {
+            "from": "Organization",
+            "type": "memberOf",
+            "to": "Character",
+            "direction": "incoming"
+          },
+          {
+            "from": "Character",
+            "type": "diedIn",
+            "to": "Location",
+            "direction": "outgoing"
+          }
+        ]
+      },
+      {
+        "hops": 1,
+        "signature": "(FictionalUniverse)<-[:fromUniverse]-(Character)",
+        "edges": [
+          {
+            "from": "FictionalUniverse",
+            "type": "fromUniverse",
+            "to": "Character",
+            "direction": "incoming"
+          }
+        ]
+      },
+      {
+        "hops": 2,
+        "signature": "(FictionalUniverse)<-[:fromUniverse]-(Character)-[:bornIn]->(Location)",
+        "edges": [
+          {
+            "from": "FictionalUniverse",
+            "type": "fromUniverse",
+            "to": "Character",
+            "direction": "incoming"
+          },
+          {
+            "from": "Character",
+            "type": "bornIn",
+            "to": "Location",
+            "direction": "outgoing"
+          }
+        ]
+      },
+      {
+        "hops": 3,
+        "signature": "(FictionalUniverse)<-[:fromUniverse]-(Character)-[:bornIn]->(Location)<-[:basedIn]-(Organization)",
+        "edges": [
+          {
+            "from": "FictionalUniverse",
+            "type": "fromUniverse",
+            "to": "Character",
+            "direction": "incoming"
+          },
+          {
+            "from": "Character",
+            "type": "bornIn",
+            "to": "Location",
+            "direction": "outgoing"
+          },
+          {
+            "from": "Location",
+            "type": "basedIn",
+            "to": "Organization",
+            "direction": "incoming"
+          }
+        ]
+      },
+      {
+        "hops": 2,
+        "signature": "(FictionalUniverse)<-[:fromUniverse]-(Character)-[:diedIn]->(Location)",
+        "edges": [
+          {
+            "from": "FictionalUniverse",
+            "type": "fromUniverse",
+            "to": "Character",
+            "direction": "incoming"
+          },
+          {
+            "from": "Character",
+            "type": "diedIn",
+            "to": "Location",
+            "direction": "outgoing"
+          }
+        ]
+      },
+      {
+        "hops": 3,
+        "signature": "(FictionalUniverse)<-[:fromUniverse]-(Character)-[:diedIn]->(Location)<-[:basedIn]-(Organization)",
+        "edges": [
+          {
+            "from": "FictionalUniverse",
+            "type": "fromUniverse",
+            "to": "Character",
+            "direction": "incoming"
+          },
+          {
+            "from": "Character",
+            "type": "diedIn",
+            "to": "Location",
+            "direction": "outgoing"
+          },
+          {
+            "from": "Location",
+            "type": "basedIn",
+            "to": "Organization",
+            "direction": "incoming"
+          }
+        ]
+      },
+      {
+        "hops": 2,
+        "signature": "(FictionalUniverse)<-[:fromUniverse]-(Character)-[:memberOf]->(Organization)",
+        "edges": [
+          {
+            "from": "FictionalUniverse",
+            "type": "fromUniverse",
+            "to": "Character",
+            "direction": "incoming"
+          },
+          {
+            "from": "Character",
+            "type": "memberOf",
+            "to": "Organization",
+            "direction": "outgoing"
+          }
+        ]
+      },
+      {
+        "hops": 3,
+        "signature": "(FictionalUniverse)<-[:fromUniverse]-(Character)-[:memberOf]->(Organization)-[:basedIn]->(Location)",
+        "edges": [
+          {
+            "from": "FictionalUniverse",
+            "type": "fromUniverse",
+            "to": "Character",
+            "direction": "incoming"
+          },
+          {
+            "from": "Character",
+            "type": "memberOf",
+            "to": "Organization",
+            "direction": "outgoing"
+          },
+          {
+            "from": "Organization",
+            "type": "basedIn",
+            "to": "Location",
+            "direction": "outgoing"
+          }
+        ]
+      },
+      {
+        "hops": 1,
+        "signature": "(Location)<-[:basedIn]-(Organization)",
+        "edges": [
+          {
+            "from": "Location",
+            "type": "basedIn",
+            "to": "Organization",
+            "direction": "incoming"
+          }
+        ]
+      },
+      {
+        "hops": 2,
+        "signature": "(Location)<-[:basedIn]-(Organization)-[:fromUniverse]->(FictionalUniverse)",
+        "edges": [
+          {
+            "from": "Location",
+            "type": "basedIn",
+            "to": "Organization",
+            "direction": "incoming"
+          },
+          {
+            "from": "Organization",
+            "type": "fromUniverse",
+            "to": "FictionalUniverse",
+            "direction": "outgoing"
+          }
+        ]
+      },
+      {
+        "hops": 3,
+        "signature": "(Location)<-[:basedIn]-(Organization)-[:fromUniverse]->(FictionalUniverse)<-[:fromUniverse]-(Character)",
+        "edges": [
+          {
+            "from": "Location",
+            "type": "basedIn",
+            "to": "Organization",
+            "direction": "incoming"
+          },
+          {
+            "from": "Organization",
+            "type": "fromUniverse",
+            "to": "FictionalUniverse",
+            "direction": "outgoing"
+          },
+          {
+            "from": "FictionalUniverse",
+            "type": "fromUniverse",
+            "to": "Character",
+            "direction": "incoming"
+          }
+        ]
+      },
+      {
+        "hops": 2,
+        "signature": "(Location)<-[:basedIn]-(Organization)<-[:memberOf]-(Character)",
+        "edges": [
+          {
+            "from": "Location",
+            "type": "basedIn",
+            "to": "Organization",
+            "direction": "incoming"
+          },
+          {
+            "from": "Organization",
+            "type": "memberOf",
+            "to": "Character",
+            "direction": "incoming"
+          }
+        ]
+      },
+      {
+        "hops": 3,
+        "signature": "(Location)<-[:basedIn]-(Organization)<-[:memberOf]-(Character)-[:fromUniverse]->(FictionalUniverse)",
+        "edges": [
+          {
+            "from": "Location",
+            "type": "basedIn",
+            "to": "Organization",
+            "direction": "incoming"
+          },
+          {
+            "from": "Organization",
+            "type": "memberOf",
+            "to": "Character",
+            "direction": "incoming"
+          },
+          {
+            "from": "Character",
+            "type": "fromUniverse",
+            "to": "FictionalUniverse",
+            "direction": "outgoing"
+          }
+        ]
+      },
+      {
+        "hops": 1,
+        "signature": "(Location)<-[:bornIn]-(Character)",
+        "edges": [
+          {
+            "from": "Location",
+            "type": "bornIn",
+            "to": "Character",
+            "direction": "incoming"
+          }
+        ]
+      },
+      {
+        "hops": 2,
+        "signature": "(Location)<-[:bornIn]-(Character)-[:fromUniverse]->(FictionalUniverse)",
+        "edges": [
+          {
+            "from": "Location",
+            "type": "bornIn",
+            "to": "Character",
+            "direction": "incoming"
+          },
+          {
+            "from": "Character",
+            "type": "fromUniverse",
+            "to": "FictionalUniverse",
+            "direction": "outgoing"
+          }
+        ]
+      },
+      {
+        "hops": 3,
+        "signature": "(Location)<-[:bornIn]-(Character)-[:fromUniverse]->(FictionalUniverse)<-[:fromUniverse]-(Organization)",
+        "edges": [
+          {
+            "from": "Location",
+            "type": "bornIn",
+            "to": "Character",
+            "direction": "incoming"
+          },
+          {
+            "from": "Character",
+            "type": "fromUniverse",
+            "to": "FictionalUniverse",
+            "direction": "outgoing"
+          },
+          {
+            "from": "FictionalUniverse",
+            "type": "fromUniverse",
+            "to": "Organization",
+            "direction": "incoming"
+          }
+        ]
+      },
+      {
+        "hops": 2,
+        "signature": "(Location)<-[:bornIn]-(Character)-[:memberOf]->(Organization)",
+        "edges": [
+          {
+            "from": "Location",
+            "type": "bornIn",
+            "to": "Character",
+            "direction": "incoming"
+          },
+          {
+            "from": "Character",
+            "type": "memberOf",
+            "to": "Organization",
+            "direction": "outgoing"
+          }
+        ]
+      },
+      {
+        "hops": 3,
+        "signature": "(Location)<-[:bornIn]-(Character)-[:memberOf]->(Organization)-[:fromUniverse]->(FictionalUniverse)",
+        "edges": [
+          {
+            "from": "Location",
+            "type": "bornIn",
+            "to": "Character",
+            "direction": "incoming"
+          },
+          {
+            "from": "Character",
+            "type": "memberOf",
+            "to": "Organization",
+            "direction": "outgoing"
+          },
+          {
+            "from": "Organization",
+            "type": "fromUniverse",
+            "to": "FictionalUniverse",
+            "direction": "outgoing"
+          }
+        ]
+      },
+      {
+        "hops": 1,
+        "signature": "(Location)<-[:diedIn]-(Character)",
+        "edges": [
+          {
+            "from": "Location",
+            "type": "diedIn",
+            "to": "Character",
+            "direction": "incoming"
+          }
+        ]
+      },
+      {
+        "hops": 2,
+        "signature": "(Location)<-[:diedIn]-(Character)-[:fromUniverse]->(FictionalUniverse)",
+        "edges": [
+          {
+            "from": "Location",
+            "type": "diedIn",
+            "to": "Character",
+            "direction": "incoming"
+          },
+          {
+            "from": "Character",
+            "type": "fromUniverse",
+            "to": "FictionalUniverse",
+            "direction": "outgoing"
+          }
+        ]
+      },
+      {
+        "hops": 3,
+        "signature": "(Location)<-[:diedIn]-(Character)-[:fromUniverse]->(FictionalUniverse)<-[:fromUniverse]-(Organization)",
+        "edges": [
+          {
+            "from": "Location",
+            "type": "diedIn",
+            "to": "Character",
+            "direction": "incoming"
+          },
+          {
+            "from": "Character",
+            "type": "fromUniverse",
+            "to": "FictionalUniverse",
+            "direction": "outgoing"
+          },
+          {
+            "from": "FictionalUniverse",
+            "type": "fromUniverse",
+            "to": "Organization",
+            "direction": "incoming"
+          }
+        ]
+      },
+      {
+        "hops": 2,
+        "signature": "(Location)<-[:diedIn]-(Character)-[:memberOf]->(Organization)",
+        "edges": [
+          {
+            "from": "Location",
+            "type": "diedIn",
+            "to": "Character",
+            "direction": "incoming"
+          },
+          {
+            "from": "Character",
+            "type": "memberOf",
+            "to": "Organization",
+            "direction": "outgoing"
+          }
+        ]
+      },
+      {
+        "hops": 3,
+        "signature": "(Location)<-[:diedIn]-(Character)-[:memberOf]->(Organization)-[:fromUniverse]->(FictionalUniverse)",
+        "edges": [
+          {
+            "from": "Location",
+            "type": "diedIn",
+            "to": "Character",
+            "direction": "incoming"
+          },
+          {
+            "from": "Character",
+            "type": "memberOf",
+            "to": "Organization",
+            "direction": "outgoing"
+          },
+          {
+            "from": "Organization",
+            "type": "fromUniverse",
+            "to": "FictionalUniverse",
+            "direction": "outgoing"
+          }
+        ]
+      },
+      {
+        "hops": 1,
+        "signature": "(Organization)-[:basedIn]->(Location)",
+        "edges": [
+          {
+            "from": "Organization",
+            "type": "basedIn",
+            "to": "Location",
+            "direction": "outgoing"
+          }
+        ]
+      },
+      {
+        "hops": 2,
+        "signature": "(Organization)-[:basedIn]->(Location)<-[:bornIn]-(Character)",
+        "edges": [
+          {
+            "from": "Organization",
+            "type": "basedIn",
+            "to": "Location",
+            "direction": "outgoing"
+          },
+          {
+            "from": "Location",
+            "type": "bornIn",
+            "to": "Character",
+            "direction": "incoming"
+          }
+        ]
+      },
+      {
+        "hops": 3,
+        "signature": "(Organization)-[:basedIn]->(Location)<-[:bornIn]-(Character)-[:fromUniverse]->(FictionalUniverse)",
+        "edges": [
+          {
+            "from": "Organization",
+            "type": "basedIn",
+            "to": "Location",
+            "direction": "outgoing"
+          },
+          {
+            "from": "Location",
+            "type": "bornIn",
+            "to": "Character",
+            "direction": "incoming"
+          },
+          {
+            "from": "Character",
+            "type": "fromUniverse",
+            "to": "FictionalUniverse",
+            "direction": "outgoing"
+          }
+        ]
+      },
+      {
+        "hops": 2,
+        "signature": "(Organization)-[:basedIn]->(Location)<-[:diedIn]-(Character)",
+        "edges": [
+          {
+            "from": "Organization",
+            "type": "basedIn",
+            "to": "Location",
+            "direction": "outgoing"
+          },
+          {
+            "from": "Location",
+            "type": "diedIn",
+            "to": "Character",
+            "direction": "incoming"
+          }
+        ]
+      },
+      {
+        "hops": 3,
+        "signature": "(Organization)-[:basedIn]->(Location)<-[:diedIn]-(Character)-[:fromUniverse]->(FictionalUniverse)",
+        "edges": [
+          {
+            "from": "Organization",
+            "type": "basedIn",
+            "to": "Location",
+            "direction": "outgoing"
+          },
+          {
+            "from": "Location",
+            "type": "diedIn",
+            "to": "Character",
+            "direction": "incoming"
+          },
+          {
+            "from": "Character",
+            "type": "fromUniverse",
+            "to": "FictionalUniverse",
+            "direction": "outgoing"
+          }
+        ]
+      },
+      {
+        "hops": 1,
+        "signature": "(Organization)-[:fromUniverse]->(FictionalUniverse)",
+        "edges": [
+          {
+            "from": "Organization",
+            "type": "fromUniverse",
+            "to": "FictionalUniverse",
+            "direction": "outgoing"
+          }
+        ]
+      },
+      {
+        "hops": 2,
+        "signature": "(Organization)-[:fromUniverse]->(FictionalUniverse)<-[:fromUniverse]-(Character)",
+        "edges": [
+          {
+            "from": "Organization",
+            "type": "fromUniverse",
+            "to": "FictionalUniverse",
+            "direction": "outgoing"
+          },
+          {
+            "from": "FictionalUniverse",
+            "type": "fromUniverse",
+            "to": "Character",
+            "direction": "incoming"
+          }
+        ]
+      },
+      {
+        "hops": 3,
+        "signature": "(Organization)-[:fromUniverse]->(FictionalUniverse)<-[:fromUniverse]-(Character)-[:bornIn]->(Location)",
+        "edges": [
+          {
+            "from": "Organization",
+            "type": "fromUniverse",
+            "to": "FictionalUniverse",
+            "direction": "outgoing"
+          },
+          {
+            "from": "FictionalUniverse",
+            "type": "fromUniverse",
+            "to": "Character",
+            "direction": "incoming"
+          },
+          {
+            "from": "Character",
+            "type": "bornIn",
+            "to": "Location",
+            "direction": "outgoing"
+          }
+        ]
+      },
+      {
+        "hops": 3,
+        "signature": "(Organization)-[:fromUniverse]->(FictionalUniverse)<-[:fromUniverse]-(Character)-[:diedIn]->(Location)",
+        "edges": [
+          {
+            "from": "Organization",
+            "type": "fromUniverse",
+            "to": "FictionalUniverse",
+            "direction": "outgoing"
+          },
+          {
+            "from": "FictionalUniverse",
+            "type": "fromUniverse",
+            "to": "Character",
+            "direction": "incoming"
+          },
+          {
+            "from": "Character",
+            "type": "diedIn",
+            "to": "Location",
+            "direction": "outgoing"
+          }
+        ]
+      },
+      {
+        "hops": 1,
+        "signature": "(Organization)<-[:memberOf]-(Character)",
+        "edges": [
+          {
+            "from": "Organization",
+            "type": "memberOf",
+            "to": "Character",
+            "direction": "incoming"
+          }
+        ]
+      },
+      {
+        "hops": 2,
+        "signature": "(Organization)<-[:memberOf]-(Character)-[:bornIn]->(Location)",
+        "edges": [
+          {
+            "from": "Organization",
+            "type": "memberOf",
+            "to": "Character",
+            "direction": "incoming"
+          },
+          {
+            "from": "Character",
+            "type": "bornIn",
+            "to": "Location",
+            "direction": "outgoing"
+          }
+        ]
+      },
+      {
+        "hops": 2,
+        "signature": "(Organization)<-[:memberOf]-(Character)-[:diedIn]->(Location)",
+        "edges": [
+          {
+            "from": "Organization",
+            "type": "memberOf",
+            "to": "Character",
+            "direction": "incoming"
+          },
+          {
+            "from": "Character",
+            "type": "diedIn",
+            "to": "Location",
+            "direction": "outgoing"
+          }
+        ]
+      },
+      {
+        "hops": 2,
+        "signature": "(Organization)<-[:memberOf]-(Character)-[:fromUniverse]->(FictionalUniverse)",
+        "edges": [
+          {
+            "from": "Organization",
+            "type": "memberOf",
+            "to": "Character",
+            "direction": "incoming"
+          },
+          {
+            "from": "Character",
+            "type": "fromUniverse",
+            "to": "FictionalUniverse",
+            "direction": "outgoing"
+          }
+        ]
+      }
+    ],
+    "path_discovery": {
+      "status": "complete",
+      "count": 59,
+      "limit": 10000,
+      "max_hops": 3
+    },
+    "vector_indexes": [],
+    "vector_index_discovery": {
+      "status": "available",
+      "count": 0,
+      "error_type": null,
+      "message": ""
+    },
+    "summary": {
+      "label_count": 4,
+      "relationship_type_count": 10,
+      "schema_path_count": 59,
+      "vector_index_count": 0,
+      "vector_index_discovery": {
+        "status": "available",
+        "count": 0,
+        "error_type": null,
+        "message": ""
+      },
+      "path_discovery": {
+        "status": "complete",
+        "count": 59,
+        "limit": 10000,
+        "max_hops": 3
+      },
+      "top_labels": [
+        {
+          "label": "Character",
+          "count": 25299
+        },
+        {
+          "label": "Organization",
+          "count": 1744
+        },
+        {
+          "label": "FictionalUniverse",
+          "count": 1278
+        },
+        {
+          "label": "Location",
+          "count": 594
+        }
+      ],
+      "top_relationship_patterns": [
+        {
+          "type": "basedIn",
+          "from": "Organization",
+          "to": "Location",
+          "count": null
+        },
+        {
+          "type": "bornIn",
+          "from": "Character",
+          "to": "Location",
+          "count": null
+        },
+        {
+          "type": "diedIn",
+          "from": "Character",
+          "to": "Location",
+          "count": null
+        },
+        {
+          "type": "fromUniverse",
+          "from": "Organization",
+          "to": "FictionalUniverse",
+          "count": null
+        },
+        {
+          "type": "fromUniverse",
+          "from": "Character",
+          "to": "FictionalUniverse",
+          "count": null
+        },
+        {
+          "type": "hasFather",
+          "from": "Character",
+          "to": "Character",
+          "count": null
+        },
+        {
+          "type": "hasMother",
+          "from": "Character",
+          "to": "Character",
+          "count": null
+        },
+        {
+          "type": "hasSpouse",
+          "from": "Character",
+          "to": "Character",
+          "count": null
+        },
+        {
+          "type": "hasStudent",
+          "from": "Character",
+          "to": "Character",
+          "count": null
+        },
+        {
+          "type": "killedBy",
+          "from": "Character",
+          "to": "Character",
+          "count": null
+        },
+        {
+          "type": "memberOf",
+          "from": "Character",
+          "to": "Organization",
+          "count": null
+        }
+      ]
+    }
+  },
+  "value_profile": {
+    "Character": {
+      "birth_name": [
+        {
+          "value": "Kal-El",
+          "frequency": 10
+        },
+        {
+          "value": "Aegon Targaryen",
+          "frequency": 6
+        },
+        {
+          "value": "Bruce Wayne",
+          "frequency": 4
+        },
+        {
+          "value": "James Howlett",
+          "frequency": 3
+        },
+        {
+          "value": "Ambarussa",
+          "frequency": 2
+        },
+        {
+          "value": "Bartholomew Henry Allen",
+          "frequency": 2
+        },
+        {
+          "value": "Benjamin Turner",
+          "frequency": 2
+        },
+        {
+          "value": "Brandon Stark",
+          "frequency": 2
+        },
+        {
+          "value": "Elizabeth Allan",
+          "frequency": 2
+        },
+        {
+          "value": "Felicia Hardy",
+          "frequency": 2
+        },
+        {
+          "value": "George Harkness",
+          "frequency": 2
+        },
+        {
+          "value": "Gwendolyne Maxine Stacy",
+          "frequency": 2
+        },
+        {
+          "value": "James Tiberius Kirk",
+          "frequency": 2
+        },
+        {
+          "value": "Jon Umber",
+          "frequency": 2
+        },
+        {
+          "value": "Kara Zor-El",
+          "frequency": 2
+        },
+        {
+          "value": "Reed Richards",
+          "frequency": 2
+        },
+        {
+          "value": "Scott Summers",
+          "frequency": 2
+        },
+        {
+          "value": "Thomas Wayne",
+          "frequency": 2
+        },
+        {
+          "value": "Victor Stone",
+          "frequency": 2
+        },
+        {
+          "value": "Waylon Jones",
+          "frequency": 2
+        },
+        {
+          "value": "Wendy Moira Angela Darling",
+          "frequency": 2
+        },
+        {
+          "value": "Пётр Николаевич Распутин",
+          "frequency": 2
+        },
+        {
+          "value": "Abigail Arcane",
+          "frequency": 1
+        },
+        {
+          "value": "Abulurd Rabban",
+          "frequency": 1
+        },
+        {
+          "value": "Adaldrida Bolger",
+          "frequency": 1
+        },
+        {
+          "value": "Adam Neramani",
+          "frequency": 1
+        },
+        {
+          "value": "Adolf Hitler",
+          "frequency": 1
+        },
+        {
+          "value": "Adrian Alexander Veidt",
+          "frequency": 1
+        },
+        {
+          "value": "Aenys Targaryen",
+          "frequency": 1
+        },
+        {
+          "value": "Aerys Targaryen",
+          "frequency": 1
+        },
+        {
+          "value": "Ahri'ahn",
+          "frequency": 1
+        },
+        {
+          "value": "Aicanáro",
+          "frequency": 1
+        },
+        {
+          "value": "Aiko Yumi",
+          "frequency": 1
+        },
+        {
+          "value": "Alannys Harlaw",
+          "frequency": 1
+        },
+        {
+          "value": "Albert Francis Simmons",
+          "frequency": 1
+        },
+        {
+          "value": "Albert Julian Rothstein",
+          "frequency": 1
+        },
+        {
+          "value": "Albert Pratt",
+          "frequency": 1
+        },
+        {
+          "value": "Albrecht Krieger",
+          "frequency": 1
+        },
+        {
+          "value": "Albus Percival Wulfric Brian Dumbledore",
+          "frequency": 1
+        },
+        {
+          "value": "Alerie Hightower",
+          "frequency": 1
+        },
+        {
+          "value": "Alexander Joseph Luthor",
+          "frequency": 1
+        },
+        {
+          "value": "Alexander LaVelle Harris",
+          "frequency": 1
+        },
+        {
+          "value": "Alexander Luthor",
+          "frequency": 1
+        },
+        {
+          "value": "Alexander Summers",
+          "frequency": 1
+        },
+        {
+          "value": "Alexandra Danvers",
+          "frequency": 1
+        },
+        {
+          "value": "Alfred Pennyworth",
+          "frequency": 1
+        },
+        {
+          "value": "Alison Blaire",
+          "frequency": 1
+        },
+        {
+          "value": "Amdír",
+          "frequency": 1
+        },
+        {
+          "value": "Amroth",
+          "frequency": 1
+        },
+        {
+          "value": "Amunet Black",
+          "frequency": 1
+        }
+      ],
+      "creator": [
+        {
+          "value": "Eiichiro Oda",
+          "frequency": 947
+        },
+        {
+          "value": "J. K. Rowling",
+          "frequency": 269
+        },
+        {
+          "value": "Stan Lee",
+          "frequency": 258
+        },
+        {
+          "value": "George R. R. Martin",
+          "frequency": 155
+        },
+        {
+          "value": "Robert Jordan",
+          "frequency": 140
+        },
+        {
+          "value": "J. R. R. Tolkien",
+          "frequency": 105
+        },
+        {
+          "value": "Masashi Kishimoto",
+          "frequency": 99
+        },
+        {
+          "value": "John Byrne",
+          "frequency": 88
+        },
+        {
+          "value": "David Wise",
+          "frequency": 87
+        },
+        {
+          "value": "Isaac Asimov",
+          "frequency": 74
+        },
+        {
+          "value": "Andrzej Sapkowski",
+          "frequency": 69
+        },
+        {
+          "value": "Jack Kirby",
+          "frequency": 65
+        },
+        {
+          "value": "Suzanne Collins",
+          "frequency": 64
+        },
+        {
+          "value": "Ed Greenwood",
+          "frequency": 62
+        },
+        {
+          "value": "Roy Thomas",
+          "frequency": 61
+        },
+        {
+          "value": "Joss Whedon",
+          "frequency": 60
+        },
+        {
+          "value": "Dave Cockrum",
+          "frequency": 56
+        },
+        {
+          "value": "Sören Olsson",
+          "frequency": 55
+        },
+        {
+          "value": "Robert E. Howard",
+          "frequency": 54
+        },
+        {
+          "value": "Matt Groening",
+          "frequency": 49
+        },
+        {
+          "value": "Stephen King",
+          "frequency": 49
+        },
+        {
+          "value": "George Lucas",
+          "frequency": 48
+        },
+        {
+          "value": "Liam ohayon",
+          "frequency": 46
+        },
+        {
+          "value": "Gardner Fox",
+          "frequency": 45
+        },
+        {
+          "value": "Len Wein",
+          "frequency": 45
+        },
+        {
+          "value": "Margaret Weis",
+          "frequency": 45
+        },
+        {
+          "value": "Jim Lee",
+          "frequency": 43
+        },
+        {
+          "value": "Frank Herbert",
+          "frequency": 36
+        },
+        {
+          "value": "Francis Moss",
+          "frequency": 35
+        },
+        {
+          "value": "Hajime Isayama",
+          "frequency": 34
+        },
+        {
+          "value": "George Pérez",
+          "frequency": 32
+        },
+        {
+          "value": "Astrid Lindgren",
+          "frequency": 31
+        },
+        {
+          "value": "Naoko Takeuchi",
+          "frequency": 31
+        },
+        {
+          "value": "Robert Kirkman",
+          "frequency": 31
+        },
+        {
+          "value": "Albert Uderzo",
+          "frequency": 30
+        },
+        {
+          "value": "Roger Zelazny",
+          "frequency": 30
+        },
+        {
+          "value": "Satoshi Tajiri",
+          "frequency": 30
+        },
+        {
+          "value": "Akira Toriyama",
+          "frequency": 29
+        },
+        {
+          "value": "C. S. Lewis",
+          "frequency": 29
+        },
+        {
+          "value": "Don Heck",
+          "frequency": 29
+        },
+        {
+          "value": "Michael Ryan",
+          "frequency": 29
+        },
+        {
+          "value": "Rob Liefeld",
+          "frequency": 29
+        },
+        {
+          "value": "Chris Claremont",
+          "frequency": 28
+        },
+        {
+          "value": "L. Frank Baum",
+          "frequency": 28
+        },
+        {
+          "value": "Rick Riordan",
+          "frequency": 28
+        },
+        {
+          "value": "Ted Elliott",
+          "frequency": 28
+        },
+        {
+          "value": "Alan Moore",
+          "frequency": 27
+        },
+        {
+          "value": "Bob Kane",
+          "frequency": 27
+        },
+        {
+          "value": "Terry Pratchett",
+          "frequency": 27
+        },
+        {
+          "value": "Bill Mantlo",
+          "frequency": 26
+        }
+      ],
+      "description": [
+        {
+          "value": "fictional character in Marvel Comics",
+          "frequency": 1185
+        },
+        {
+          "value": "fictional character from One Piece",
+          "frequency": 963
+        },
+        {
+          "value": "Romance of the Three Kingdoms character",
+          "frequency": 863
+        },
+        {
+          "value": "fictional character",
+          "frequency": 565
+        },
+        {
+          "value": "Dream of the Red Chamber character",
+          "frequency": 564
+        },
+        {
+          "value": "Water Margin character",
+          "frequency": 506
+        },
+        {
+          "value": "Jin Ping Mei character",
+          "frequency": 499
+        },
+        {
+          "value": "comics character",
+          "frequency": 419
+        },
+        {
+          "value": "DC Comics character",
+          "frequency": 341
+        },
+        {
+          "value": "fictional character from Granblue Fantasy",
+          "frequency": 335
+        },
+        {
+          "value": "fictional character from J.R.R. Tolkien's legendarium",
+          "frequency": 303
+        },
+        {
+          "value": "fictional character from the 1987–1996 Teenage Mutant Ninja Turtles animated television series",
+          "frequency": 235
+        },
+        {
+          "value": "fictional species in Minecraft",
+          "frequency": 201
+        },
+        {
+          "value": "character in A Song of Ice and Fire",
+          "frequency": 196
+        },
+        {
+          "value": "fictional character in Jin Ping Mei",
+          "frequency": 170
+        },
+        {
+          "value": "playable character from the game League of Legends",
+          "frequency": 162
+        },
+        {
+          "value": "Star Wars character",
+          "frequency": 161
+        },
+        {
+          "value": "fictional character from The Wheel of Time",
+          "frequency": 145
+        },
+        {
+          "value": "fictional Teenage Mutant Ninja Turtles character",
+          "frequency": 138
+        },
+        {
+          "value": "fictional character from the Marvel Cinematic Universe",
+          "frequency": 133
+        },
+        {
+          "value": "fictional character from Dungeons & Dragons",
+          "frequency": 130
+        },
+        {
+          "value": "fictional character from Uma Musume Pretty Derby",
+          "frequency": 112
+        },
+        {
+          "value": "fictional character from Bleach",
+          "frequency": 109
+        },
+        {
+          "value": "fictional character from That Time I Got Reincarnated as a Slime",
+          "frequency": 97
+        },
+        {
+          "value": "fictional deity from Dungeons & Dragons",
+          "frequency": 95
+        },
+        {
+          "value": "fictional character from Is It Wrong to Try to Pick Up Girls in a Dungeon?",
+          "frequency": 93
+        },
+        {
+          "value": "character from Adventure Time",
+          "frequency": 92
+        },
+        {
+          "value": "fictional character in Romance of the Three Kingdoms",
+          "frequency": 91
+        },
+        {
+          "value": "fictional character from Naruto",
+          "frequency": 87
+        },
+        {
+          "value": "Middle-earth",
+          "frequency": 85
+        },
+        {
+          "value": "fictional character from Re:Zero",
+          "frequency": 84
+        },
+        {
+          "value": "Marvel Comics character",
+          "frequency": 82
+        },
+        {
+          "value": "Middle-Earth character",
+          "frequency": 81
+        },
+        {
+          "value": "fictional character from the My Little Pony Universe",
+          "frequency": 81
+        },
+        {
+          "value": "fictional character from The King of Fighters",
+          "frequency": 80
+        },
+        {
+          "value": "fictional character from the 2003–2009 Teenage Mutant Ninja Turtles animated television series",
+          "frequency": 79
+        },
+        {
+          "value": "The Simpsons character",
+          "frequency": 78
+        },
+        {
+          "value": "fictional character from the television series Arrow",
+          "frequency": 78
+        },
+        {
+          "value": "fictional charachter from the Foundation-Universe by Isaac Asimov",
+          "frequency": 76
+        },
+        {
+          "value": "comic book character",
+          "frequency": 75
+        },
+        {
+          "value": "fictional character from Mushoku Tensei",
+          "frequency": 67
+        },
+        {
+          "value": "fictional Teenage Mutant Ninja Turtles Adventures character",
+          "frequency": 66
+        },
+        {
+          "value": "character in Star Wars",
+          "frequency": 63
+        },
+        {
+          "value": "fictional character from Star Wars",
+          "frequency": 63
+        },
+        {
+          "value": "fictional character from Princess Connect!",
+          "frequency": 59
+        },
+        {
+          "value": "character in Go, Dog. Go!",
+          "frequency": 58
+        },
+        {
+          "value": "character Adventure Time",
+          "frequency": 56
+        },
+        {
+          "value": "fictional character from the 1987–1996 animated Teenage Mutant Ninja Turtles television series",
+          "frequency": 55
+        },
+        {
+          "value": "fictional character from the television series Supergirl",
+          "frequency": 54
+        },
+        {
+          "value": "fictional character from Touhou Project",
+          "frequency": 52
+        }
+      ],
+      "eid": [
+        {
+          "value": "Character#Q1000118",
+          "frequency": 1
+        },
+        {
+          "value": "Character#Q100155230",
+          "frequency": 1
+        },
+        {
+          "value": "Character#Q100155242",
+          "frequency": 1
+        },
+        {
+          "value": "Character#Q100155256",
+          "frequency": 1
+        },
+        {
+          "value": "Character#Q100155267",
+          "frequency": 1
+        },
+        {
+          "value": "Character#Q100155271",
+          "frequency": 1
+        },
+        {
+          "value": "Character#Q100155275",
+          "frequency": 1
+        },
+        {
+          "value": "Character#Q100155306",
+          "frequency": 1
+        },
+        {
+          "value": "Character#Q100155312",
+          "frequency": 1
+        },
+        {
+          "value": "Character#Q100156218",
+          "frequency": 1
+        },
+        {
+          "value": "Character#Q100156219",
+          "frequency": 1
+        },
+        {
+          "value": "Character#Q100156220",
+          "frequency": 1
+        },
+        {
+          "value": "Character#Q100156221",
+          "frequency": 1
+        },
+        {
+          "value": "Character#Q100156223",
+          "frequency": 1
+        },
+        {
+          "value": "Character#Q100156226",
+          "frequency": 1
+        },
+        {
+          "value": "Character#Q100156229",
+          "frequency": 1
+        },
+        {
+          "value": "Character#Q100159038",
+          "frequency": 1
+        },
+        {
+          "value": "Character#Q100159046",
+          "frequency": 1
+        },
+        {
+          "value": "Character#Q100165454",
+          "frequency": 1
+        },
+        {
+          "value": "Character#Q100165493",
+          "frequency": 1
+        },
+        {
+          "value": "Character#Q100165565",
+          "frequency": 1
+        },
+        {
+          "value": "Character#Q100165760",
+          "frequency": 1
+        },
+        {
+          "value": "Character#Q100166254",
+          "frequency": 1
+        },
+        {
+          "value": "Character#Q100166277",
+          "frequency": 1
+        },
+        {
+          "value": "Character#Q100166294",
+          "frequency": 1
+        },
+        {
+          "value": "Character#Q100166418",
+          "frequency": 1
+        },
+        {
+          "value": "Character#Q100166484",
+          "frequency": 1
+        },
+        {
+          "value": "Character#Q100229216",
+          "frequency": 1
+        },
+        {
+          "value": "Character#Q100232585",
+          "frequency": 1
+        },
+        {
+          "value": "Character#Q100232586",
+          "frequency": 1
+        },
+        {
+          "value": "Character#Q100254962",
+          "frequency": 1
+        },
+        {
+          "value": "Character#Q100254963",
+          "frequency": 1
+        },
+        {
+          "value": "Character#Q100254964",
+          "frequency": 1
+        },
+        {
+          "value": "Character#Q100254965",
+          "frequency": 1
+        },
+        {
+          "value": "Character#Q100254966",
+          "frequency": 1
+        },
+        {
+          "value": "Character#Q100254967",
+          "frequency": 1
+        },
+        {
+          "value": "Character#Q100254968",
+          "frequency": 1
+        },
+        {
+          "value": "Character#Q100254969",
+          "frequency": 1
+        },
+        {
+          "value": "Character#Q100254970",
+          "frequency": 1
+        },
+        {
+          "value": "Character#Q100254971",
+          "frequency": 1
+        },
+        {
+          "value": "Character#Q100254972",
+          "frequency": 1
+        },
+        {
+          "value": "Character#Q100254975",
+          "frequency": 1
+        },
+        {
+          "value": "Character#Q100254976",
+          "frequency": 1
+        },
+        {
+          "value": "Character#Q100254977",
+          "frequency": 1
+        },
+        {
+          "value": "Character#Q100254978",
+          "frequency": 1
+        },
+        {
+          "value": "Character#Q100254979",
+          "frequency": 1
+        },
+        {
+          "value": "Character#Q100254980",
+          "frequency": 1
+        },
+        {
+          "value": "Character#Q100254981",
+          "frequency": 1
+        },
+        {
+          "value": "Character#Q100254982",
+          "frequency": 1
+        },
+        {
+          "value": "Character#Q100254983",
+          "frequency": 1
+        }
+      ],
+      "gender": [
+        {
+          "value": "male",
+          "frequency": 14853
+        },
+        {
+          "value": "female",
+          "frequency": 7323
+        },
+        {
+          "value": "male organism",
+          "frequency": 377
+        },
+        {
+          "value": "female organism",
+          "frequency": 144
+        },
+        {
+          "value": "agender",
+          "frequency": 23
+        },
+        {
+          "value": "gender unknown",
+          "frequency": 23
+        },
+        {
+          "value": "trans woman",
+          "frequency": 14
+        },
+        {
+          "value": "gender determined by the player",
+          "frequency": 6
+        },
+        {
+          "value": "non-binary",
+          "frequency": 6
+        },
+        {
+          "value": "gender not disclosed in work",
+          "frequency": 5
+        },
+        {
+          "value": "intersex",
+          "frequency": 5
+        },
+        {
+          "value": "genderfluid",
+          "frequency": 4
+        },
+        {
+          "value": "hermaphroditism",
+          "frequency": 4
+        },
+        {
+          "value": "undisclosed gender",
+          "frequency": 2
+        },
+        {
+          "value": "androgyne",
+          "frequency": 1
+        },
+        {
+          "value": "genderqueer",
+          "frequency": 1
+        },
+        {
+          "value": "hermaphrodite",
+          "frequency": 1
+        },
+        {
+          "value": "neutral sex",
+          "frequency": 1
+        },
+        {
+          "value": "trans man",
+          "frequency": 1
+        },
+        {
+          "value": "transgender",
+          "frequency": 1
+        }
+      ],
+      "name": [
+        {
+          "value": "Raphael",
+          "frequency": 24
+        },
+        {
+          "value": "Donatello",
+          "frequency": 22
+        },
+        {
+          "value": "Leonardo",
+          "frequency": 22
+        },
+        {
+          "value": "Splinter",
+          "frequency": 21
+        },
+        {
+          "value": "April O'Neil",
+          "frequency": 20
+        },
+        {
+          "value": "Michelangelo",
+          "frequency": 18
+        },
+        {
+          "value": "Shredder",
+          "frequency": 18
+        },
+        {
+          "value": "Baxter Stockman",
+          "frequency": 16
+        },
+        {
+          "value": "Casey Jones",
+          "frequency": 12
+        },
+        {
+          "value": "Leatherhead",
+          "frequency": 11
+        },
+        {
+          "value": "Krang",
+          "frequency": 10
+        },
+        {
+          "value": "Bebop",
+          "frequency": 9
+        },
+        {
+          "value": "Karai",
+          "frequency": 9
+        },
+        {
+          "value": "Batman",
+          "frequency": 8
+        },
+        {
+          "value": "Rat King",
+          "frequency": 8
+        },
+        {
+          "value": "Rocksteady",
+          "frequency": 8
+        },
+        {
+          "value": "Spike",
+          "frequency": 8
+        },
+        {
+          "value": "Superman",
+          "frequency": 8
+        },
+        {
+          "value": "Frank",
+          "frequency": 7
+        },
+        {
+          "value": "Slash",
+          "frequency": 7
+        },
+        {
+          "value": "Irma",
+          "frequency": 6
+        },
+        {
+          "value": "Lilith",
+          "frequency": 6
+        },
+        {
+          "value": "Loki",
+          "frequency": 6
+        },
+        {
+          "value": "Nero",
+          "frequency": 6
+        },
+        {
+          "value": "Pete",
+          "frequency": 6
+        },
+        {
+          "value": "Wingnut",
+          "frequency": 6
+        },
+        {
+          "value": "Zeus",
+          "frequency": 6
+        },
+        {
+          "value": "Alpha",
+          "frequency": 5
+        },
+        {
+          "value": "Angel",
+          "frequency": 5
+        },
+        {
+          "value": "Ares",
+          "frequency": 5
+        },
+        {
+          "value": "Bane",
+          "frequency": 5
+        },
+        {
+          "value": "Black Knight",
+          "frequency": 5
+        },
+        {
+          "value": "Death",
+          "frequency": 5
+        },
+        {
+          "value": "Elise",
+          "frequency": 5
+        },
+        {
+          "value": "Flint",
+          "frequency": 5
+        },
+        {
+          "value": "Foxy",
+          "frequency": 5
+        },
+        {
+          "value": "Hun",
+          "frequency": 5
+        },
+        {
+          "value": "Jack",
+          "frequency": 5
+        },
+        {
+          "value": "Jerry",
+          "frequency": 5
+        },
+        {
+          "value": "Joker",
+          "frequency": 5
+        },
+        {
+          "value": "Lily",
+          "frequency": 5
+        },
+        {
+          "value": "Luna",
+          "frequency": 5
+        },
+        {
+          "value": "Omega",
+          "frequency": 5
+        },
+        {
+          "value": "Pinocchio",
+          "frequency": 5
+        },
+        {
+          "value": "Rebecca",
+          "frequency": 5
+        },
+        {
+          "value": "Seth",
+          "frequency": 5
+        },
+        {
+          "value": "Supergirl",
+          "frequency": 5
+        },
+        {
+          "value": "Thor",
+          "frequency": 5
+        },
+        {
+          "value": "Zero",
+          "frequency": 5
+        },
+        {
+          "value": "Adam",
+          "frequency": 4
+        }
+      ]
+    },
+    "FictionalUniverse": {
+      "copyright_holder": [
+        {
+          "value": "20th Century Studios",
+          "frequency": 2
+        },
+        {
+          "value": "Sony Group",
+          "frequency": 2
+        },
+        {
+          "value": "DreamWorks Animation",
+          "frequency": 1
+        },
+        {
+          "value": "Level-5",
+          "frequency": 1
+        },
+        {
+          "value": "The Walt Disney Company",
+          "frequency": 1
+        },
+        {
+          "value": "Wizards of the Coast",
+          "frequency": 1
+        }
+      ],
+      "creator": [
+        {
+          "value": "Astrid Lindgren",
+          "frequency": 9
+        },
+        {
+          "value": "William Hanna",
+          "frequency": 6
+        },
+        {
+          "value": "Alf Prøysen",
+          "frequency": 5
+        },
+        {
+          "value": "J.K. Arsyn",
+          "frequency": 4
+        },
+        {
+          "value": "Dan Schneider",
+          "frequency": 3
+        },
+        {
+          "value": "Joss Whedon",
+          "frequency": 3
+        },
+        {
+          "value": "Sören Olsson",
+          "frequency": 3
+        },
+        {
+          "value": "Alastair Reynolds",
+          "frequency": 2
+        },
+        {
+          "value": "Butch Hartman",
+          "frequency": 2
+        },
+        {
+          "value": "C. S. Lewis",
+          "frequency": 2
+        },
+        {
+          "value": "Capcom",
+          "frequency": 2
+        },
+        {
+          "value": "Frank Herbert",
+          "frequency": 2
+        },
+        {
+          "value": "Gary Gygax",
+          "frequency": 2
+        },
+        {
+          "value": "George Lucas",
+          "frequency": 2
+        },
+        {
+          "value": "Jack Vance",
+          "frequency": 2
+        },
+        {
+          "value": "John Byrne",
+          "frequency": 2
+        },
+        {
+          "value": "Lin Carter",
+          "frequency": 2
+        },
+        {
+          "value": "Margaret Weis",
+          "frequency": 2
+        },
+        {
+          "value": "Mark Steven Johnson",
+          "frequency": 2
+        },
+        {
+          "value": "Michael Ende",
+          "frequency": 2
+        },
+        {
+          "value": "Peter F. Hamilton",
+          "frequency": 2
+        },
+        {
+          "value": "Stan Lee",
+          "frequency": 2
+        },
+        {
+          "value": "Steve Jackson",
+          "frequency": 2
+        },
+        {
+          "value": "Toby Fox",
+          "frequency": 2
+        },
+        {
+          "value": "A. A. Milne",
+          "frequency": 1
+        },
+        {
+          "value": "Adonalsium",
+          "frequency": 1
+        },
+        {
+          "value": "Agatha Christie",
+          "frequency": 1
+        },
+        {
+          "value": "Ahmad Patria Abdullah",
+          "frequency": 1
+        },
+        {
+          "value": "Akihiro Hino",
+          "frequency": 1
+        },
+        {
+          "value": "Akihito Tsukushi",
+          "frequency": 1
+        },
+        {
+          "value": "Akira Toriyama",
+          "frequency": 1
+        },
+        {
+          "value": "Alan Davis",
+          "frequency": 1
+        },
+        {
+          "value": "Alan Moore",
+          "frequency": 1
+        },
+        {
+          "value": "Alejandro Jodorowsky",
+          "frequency": 1
+        },
+        {
+          "value": "Alex Haley",
+          "frequency": 1
+        },
+        {
+          "value": "Anders Sparring",
+          "frequency": 1
+        },
+        {
+          "value": "Andrew Hussie",
+          "frequency": 1
+        },
+        {
+          "value": "Andrzej Sapkowski",
+          "frequency": 1
+        },
+        {
+          "value": "Anic",
+          "frequency": 1
+        },
+        {
+          "value": "Ann Leckie",
+          "frequency": 1
+        },
+        {
+          "value": "Annika Thor",
+          "frequency": 1
+        },
+        {
+          "value": "Aquaplus",
+          "frequency": 1
+        },
+        {
+          "value": "Arkady and Boris Strugatsky",
+          "frequency": 1
+        },
+        {
+          "value": "Arlene Klasky",
+          "frequency": 1
+        },
+        {
+          "value": "Arne Norlin",
+          "frequency": 1
+        },
+        {
+          "value": "Arthur Conan Doyle",
+          "frequency": 1
+        },
+        {
+          "value": "Artland",
+          "frequency": 1
+        },
+        {
+          "value": "Avi Arad",
+          "frequency": 1
+        },
+        {
+          "value": "Barbro Lindgren",
+          "frequency": 1
+        },
+        {
+          "value": "Becky Albertalli",
+          "frequency": 1
+        }
+      ],
+      "description": [
+        {
+          "value": "fictional universe",
+          "frequency": 292
+        },
+        {
+          "value": "fictional universe in the Marvel multiverse",
+          "frequency": 67
+        },
+        {
+          "value": "universal stream in the Transformers multiverse",
+          "frequency": 37
+        },
+        {
+          "value": "fictional universe in Marvel Comics",
+          "frequency": 17
+        },
+        {
+          "value": "fictional planet within the Arrowverse multiverse",
+          "frequency": 9
+        },
+        {
+          "value": "narrative universe of the eponymous video game series",
+          "frequency": 9
+        },
+        {
+          "value": "fictional universe of the video game series",
+          "frequency": 5
+        },
+        {
+          "value": "shared fictional universe",
+          "frequency": 5
+        },
+        {
+          "value": "fictional universe of the eponymous film series",
+          "frequency": 3
+        },
+        {
+          "value": "fictional world",
+          "frequency": 3
+        },
+        {
+          "value": "media franchise",
+          "frequency": 3
+        },
+        {
+          "value": "narrative universe of the animated television series",
+          "frequency": 3
+        },
+        {
+          "value": "narrative universe of the eponymous media franchise",
+          "frequency": 3
+        },
+        {
+          "value": "Japanese media franchise",
+          "frequency": 2
+        },
+        {
+          "value": "fictional Earth-like planet appearing in the DC Comics universe",
+          "frequency": 2
+        },
+        {
+          "value": "fictional galactic region of the Milky Way Galaxy in Star Trek",
+          "frequency": 2
+        },
+        {
+          "value": "fictional planet within the Arrowverse multiverse, pre-crisis continuity",
+          "frequency": 2
+        },
+        {
+          "value": "fictional universe in the Marvel and Transformers multiverse",
+          "frequency": 2
+        },
+        {
+          "value": "narrative universe of the eponymous video game",
+          "frequency": 2
+        },
+        {
+          "value": "narrative universe of the manga series",
+          "frequency": 2
+        },
+        {
+          "value": "narrative universe of the video game series",
+          "frequency": 2
+        },
+        {
+          "value": "1966 media tokusatsu series produced by Tsuburaya Productions",
+          "frequency": 1
+        },
+        {
+          "value": "2011-2013 book trilogy by Veronica Roth",
+          "frequency": 1
+        },
+        {
+          "value": "A Cinematic Universe Based on Hindu mythology",
+          "frequency": 1
+        },
+        {
+          "value": "Alternative present where anything is possible",
+          "frequency": 1
+        },
+        {
+          "value": "American horror film franchise",
+          "frequency": 1
+        },
+        {
+          "value": "American media franchise, children's fantasy adventure by Rick Riordan",
+          "frequency": 1
+        },
+        {
+          "value": "American superhero film franchise based on DC Comics",
+          "frequency": 1
+        },
+        {
+          "value": "An affiliation in Demon Slayer: Kimetsu no Yaiba",
+          "frequency": 1
+        },
+        {
+          "value": "Animated superhero film series based on New 52",
+          "frequency": 1
+        },
+        {
+          "value": "Book series by Elizabeth Moon",
+          "frequency": 1
+        },
+        {
+          "value": "Bromba universe",
+          "frequency": 1
+        },
+        {
+          "value": "Comic book series",
+          "frequency": 1
+        },
+        {
+          "value": "D&D campaign setting",
+          "frequency": 1
+        },
+        {
+          "value": "Donald Duck universe as described by the American comic book writer Carl Barks",
+          "frequency": 1
+        },
+        {
+          "value": "Donald Duck universe as described by the American comic book writer Don Rosa",
+          "frequency": 1
+        },
+        {
+          "value": "Dungeons & Dragons campaign setting set in a postapocalyptic desert world",
+          "frequency": 1
+        },
+        {
+          "value": "Eyesight Universe is a fantasy universe and Stories and Characters Publish by Eyesight Comic and Dark Pixels Entertainment",
+          "frequency": 1
+        },
+        {
+          "value": "Faked GIS-Datasets, simulating an island in the Atlantic for educational purposes in using GIS in archaeology.",
+          "frequency": 1
+        },
+        {
+          "value": "Fictional alternate universe from Aura Battler Dunbine",
+          "frequency": 1
+        },
+        {
+          "value": "Fictional ranch created by B. M. Bower",
+          "frequency": 1
+        },
+        {
+          "value": "Fictional universe based on the Lego toys",
+          "frequency": 1
+        },
+        {
+          "value": "Fictional universe created by C. J. Cherryh",
+          "frequency": 1
+        },
+        {
+          "value": "Fictional universe created by Katja Brandis",
+          "frequency": 1
+        },
+        {
+          "value": "Fictional universe for children aged 2 to 6 years old",
+          "frequency": 1
+        },
+        {
+          "value": "Fictional universe in Milestone Media comics",
+          "frequency": 1
+        },
+        {
+          "value": "Fictional universe of Zipper Interactives 2012 tactical third-person shooter",
+          "frequency": 1
+        },
+        {
+          "value": "Fictional universe of the roguelike video game series",
+          "frequency": 1
+        },
+        {
+          "value": "Fictional world created by Joe Dever, used in the gamebook series Lone Wolf and grey Star the Wizard, and for the Lone Wolf roleplaying games.",
+          "frequency": 1
+        },
+        {
+          "value": "German comic book magazine",
+          "frequency": 1
+        }
+      ],
+      "eid": [
+        {
+          "value": "FictionalUniverse#Q100332339",
+          "frequency": 1
+        },
+        {
+          "value": "FictionalUniverse#Q100595645",
+          "frequency": 1
+        },
+        {
+          "value": "FictionalUniverse#Q100596091",
+          "frequency": 1
+        },
+        {
+          "value": "FictionalUniverse#Q100658686",
+          "frequency": 1
+        },
+        {
+          "value": "FictionalUniverse#Q100741817",
+          "frequency": 1
+        },
+        {
+          "value": "FictionalUniverse#Q100869333",
+          "frequency": 1
+        },
+        {
+          "value": "FictionalUniverse#Q100973181",
+          "frequency": 1
+        },
+        {
+          "value": "FictionalUniverse#Q101072371",
+          "frequency": 1
+        },
+        {
+          "value": "FictionalUniverse#Q101072612",
+          "frequency": 1
+        },
+        {
+          "value": "FictionalUniverse#Q101072654",
+          "frequency": 1
+        },
+        {
+          "value": "FictionalUniverse#Q101072691",
+          "frequency": 1
+        },
+        {
+          "value": "FictionalUniverse#Q101072729",
+          "frequency": 1
+        },
+        {
+          "value": "FictionalUniverse#Q101099235",
+          "frequency": 1
+        },
+        {
+          "value": "FictionalUniverse#Q101099318",
+          "frequency": 1
+        },
+        {
+          "value": "FictionalUniverse#Q101107768",
+          "frequency": 1
+        },
+        {
+          "value": "FictionalUniverse#Q101113156",
+          "frequency": 1
+        },
+        {
+          "value": "FictionalUniverse#Q101113887",
+          "frequency": 1
+        },
+        {
+          "value": "FictionalUniverse#Q101195447",
+          "frequency": 1
+        },
+        {
+          "value": "FictionalUniverse#Q101195558",
+          "frequency": 1
+        },
+        {
+          "value": "FictionalUniverse#Q101196164",
+          "frequency": 1
+        },
+        {
+          "value": "FictionalUniverse#Q101197807",
+          "frequency": 1
+        },
+        {
+          "value": "FictionalUniverse#Q101199114",
+          "frequency": 1
+        },
+        {
+          "value": "FictionalUniverse#Q101203338",
+          "frequency": 1
+        },
+        {
+          "value": "FictionalUniverse#Q101204931",
+          "frequency": 1
+        },
+        {
+          "value": "FictionalUniverse#Q101205842",
+          "frequency": 1
+        },
+        {
+          "value": "FictionalUniverse#Q101206224",
+          "frequency": 1
+        },
+        {
+          "value": "FictionalUniverse#Q101208105",
+          "frequency": 1
+        },
+        {
+          "value": "FictionalUniverse#Q101209972",
+          "frequency": 1
+        },
+        {
+          "value": "FictionalUniverse#Q101210011",
+          "frequency": 1
+        },
+        {
+          "value": "FictionalUniverse#Q101210012",
+          "frequency": 1
+        },
+        {
+          "value": "FictionalUniverse#Q101210039",
+          "frequency": 1
+        },
+        {
+          "value": "FictionalUniverse#Q101210093",
+          "frequency": 1
+        },
+        {
+          "value": "FictionalUniverse#Q101210096",
+          "frequency": 1
+        },
+        {
+          "value": "FictionalUniverse#Q101210104",
+          "frequency": 1
+        },
+        {
+          "value": "FictionalUniverse#Q101210183",
+          "frequency": 1
+        },
+        {
+          "value": "FictionalUniverse#Q101210196",
+          "frequency": 1
+        },
+        {
+          "value": "FictionalUniverse#Q101210199",
+          "frequency": 1
+        },
+        {
+          "value": "FictionalUniverse#Q101210205",
+          "frequency": 1
+        },
+        {
+          "value": "FictionalUniverse#Q101223770",
+          "frequency": 1
+        },
+        {
+          "value": "FictionalUniverse#Q101224777",
+          "frequency": 1
+        },
+        {
+          "value": "FictionalUniverse#Q101246917",
+          "frequency": 1
+        },
+        {
+          "value": "FictionalUniverse#Q101419397",
+          "frequency": 1
+        },
+        {
+          "value": "FictionalUniverse#Q101480110",
+          "frequency": 1
+        },
+        {
+          "value": "FictionalUniverse#Q101584521",
+          "frequency": 1
+        },
+        {
+          "value": "FictionalUniverse#Q102202644",
+          "frequency": 1
+        },
+        {
+          "value": "FictionalUniverse#Q102345590",
+          "frequency": 1
+        },
+        {
+          "value": "FictionalUniverse#Q102400517",
+          "frequency": 1
+        },
+        {
+          "value": "FictionalUniverse#Q102440297",
+          "frequency": 1
+        },
+        {
+          "value": "FictionalUniverse#Q102681870",
+          "frequency": 1
+        },
+        {
+          "value": "FictionalUniverse#Q103064587",
+          "frequency": 1
+        }
+      ],
+      "name": [
+        {
+          "value": "Multiverse",
+          "frequency": 4
+        },
+        {
+          "value": "Earth-18",
+          "frequency": 2
+        },
+        {
+          "value": "Earth-2",
+          "frequency": 2
+        },
+        {
+          "value": "Earth-9",
+          "frequency": 2
+        },
+        {
+          "value": "The Incredibles universe",
+          "frequency": 2
+        },
+        {
+          "value": "'Allo 'Allo! universe",
+          "frequency": 1
+        },
+        {
+          "value": ".hack universe",
+          "frequency": 1
+        },
+        {
+          "value": "16bit Sensation universe",
+          "frequency": 1
+        },
+        {
+          "value": "194X universe",
+          "frequency": 1
+        },
+        {
+          "value": "2012 universe",
+          "frequency": 1
+        },
+        {
+          "value": "20th Century Fox animated universe",
+          "frequency": 1
+        },
+        {
+          "value": "86 universe",
+          "frequency": 1
+        },
+        {
+          "value": "A Faraway Island universe",
+          "frequency": 1
+        },
+        {
+          "value": "A Playthrough of a Certain Dude's VRMMO Life universe",
+          "frequency": 1
+        },
+        {
+          "value": "A Sign of Affection universe",
+          "frequency": 1
+        },
+        {
+          "value": "ALF universe",
+          "frequency": 1
+        },
+        {
+          "value": "ALONE universe",
+          "frequency": 1
+        },
+        {
+          "value": "Abandoned universe",
+          "frequency": 1
+        },
+        {
+          "value": "Action Man universe",
+          "frequency": 1
+        },
+        {
+          "value": "Actraiser universe",
+          "frequency": 1
+        },
+        {
+          "value": "Ad Stella",
+          "frequency": 1
+        },
+        {
+          "value": "Adventure Time universe",
+          "frequency": 1
+        },
+        {
+          "value": "After Colony",
+          "frequency": 1
+        },
+        {
+          "value": "After War",
+          "frequency": 1
+        },
+        {
+          "value": "Agatha Christie's fictional universe",
+          "frequency": 1
+        },
+        {
+          "value": "Age of Wonders universe",
+          "frequency": 1
+        },
+        {
+          "value": "Agents of Mayhem universe",
+          "frequency": 1
+        },
+        {
+          "value": "Aggretsuko universe",
+          "frequency": 1
+        },
+        {
+          "value": "Akame ga Kill! universe",
+          "frequency": 1
+        },
+        {
+          "value": "Akebi's Sailor Uniform universe",
+          "frequency": 1
+        },
+        {
+          "value": "Aladdin universe",
+          "frequency": 1
+        },
+        {
+          "value": "Alan Wake universe",
+          "frequency": 1
+        },
+        {
+          "value": "Alber't & Herbert's universe",
+          "frequency": 1
+        },
+        {
+          "value": "Alex Kidd universe",
+          "frequency": 1
+        },
+        {
+          "value": "Alfie Atkins universe",
+          "frequency": 1
+        },
+        {
+          "value": "Alice in Wonderland fictional world",
+          "frequency": 1
+        },
+        {
+          "value": "Alien universe",
+          "frequency": 1
+        },
+        {
+          "value": "Alien vs Predator universe",
+          "frequency": 1
+        },
+        {
+          "value": "Alliance-Union universe",
+          "frequency": 1
+        },
+        {
+          "value": "Alpha Quadrant",
+          "frequency": 1
+        },
+        {
+          "value": "Alter Ego universe",
+          "frequency": 1
+        },
+        {
+          "value": "Amalgam Universe",
+          "frequency": 1
+        },
+        {
+          "value": "Amber",
+          "frequency": 1
+        },
+        {
+          "value": "Amelia Bedelia book series",
+          "frequency": 1
+        },
+        {
+          "value": "Among Us universe",
+          "frequency": 1
+        },
+        {
+          "value": "Andersson's Kalle universe",
+          "frequency": 1
+        },
+        {
+          "value": "Andromeda universe",
+          "frequency": 1
+        },
+        {
+          "value": "Angel Devoid: Face of the Enemy universe",
+          "frequency": 1
+        },
+        {
+          "value": "Angry Birds universe",
+          "frequency": 1
+        },
+        {
+          "value": "Animal Crossing universe",
+          "frequency": 1
+        }
+      ]
+    },
+    "Location": {
+      "description": [
+        {
+          "value": "location in Romance of the Three Kingdoms",
+          "frequency": 63
+        },
+        {
+          "value": "fictional location in Water Margin",
+          "frequency": 33
+        },
+        {
+          "value": "fictional planet in the Star Wars universe",
+          "frequency": 11
+        },
+        {
+          "value": "fictional country",
+          "frequency": 10
+        },
+        {
+          "value": "fictional location",
+          "frequency": 10
+        },
+        {
+          "value": "fictional location in Romance of the Three Kingdoms",
+          "frequency": 10
+        },
+        {
+          "value": "fictional planet",
+          "frequency": 10
+        },
+        {
+          "value": "fictional house in Dream of the Red Chamber",
+          "frequency": 8
+        },
+        {
+          "value": "fictional village in Water Margin",
+          "frequency": 7
+        },
+        {
+          "value": "Middle-earth",
+          "frequency": 5
+        },
+        {
+          "value": "fictional building in Jin Ping Mei",
+          "frequency": 5
+        },
+        {
+          "value": "fictional city in Middle-earth",
+          "frequency": 5
+        },
+        {
+          "value": "fictional country in Middle-earth",
+          "frequency": 5
+        },
+        {
+          "value": "fictional house in Jin Ping Mei",
+          "frequency": 5
+        },
+        {
+          "value": "fictional planet from the Serenityverse",
+          "frequency": 5
+        },
+        {
+          "value": "fictional region in A Song of Ice and Fire",
+          "frequency": 5
+        },
+        {
+          "value": "fictional temple in Water Margin",
+          "frequency": 5
+        },
+        {
+          "value": "mountain in Romance of the Three Kingdoms",
+          "frequency": 5
+        },
+        {
+          "value": "Star Wars planet",
+          "frequency": 4
+        },
+        {
+          "value": "fictional county in Water Margin",
+          "frequency": 4
+        },
+        {
+          "value": "fictional gate in Water Margin",
+          "frequency": 4
+        },
+        {
+          "value": "fictional location in A Song of Ice and Fire",
+          "frequency": 4
+        },
+        {
+          "value": "fictional planet in Star Wars",
+          "frequency": 4
+        },
+        {
+          "value": "fictional planet in the DC Universe",
+          "frequency": 4
+        },
+        {
+          "value": "planet in the Star Wars universe",
+          "frequency": 4
+        },
+        {
+          "value": "fictional building in the Harry Potter universe",
+          "frequency": 3
+        },
+        {
+          "value": "fictional castle in A Song of Ice and Fire",
+          "frequency": 3
+        },
+        {
+          "value": "fictional city",
+          "frequency": 3
+        },
+        {
+          "value": "fictional city from Dungeons & Dragons",
+          "frequency": 3
+        },
+        {
+          "value": "fictional continent in A Song of Ice and Fire",
+          "frequency": 3
+        },
+        {
+          "value": "fictional location in Jin Ping Mei",
+          "frequency": 3
+        },
+        {
+          "value": "fictional mountain in Water Margin",
+          "frequency": 3
+        },
+        {
+          "value": "fictional region in Middle-earth",
+          "frequency": 3
+        },
+        {
+          "value": "location in adventure time",
+          "frequency": 3
+        },
+        {
+          "value": "town in the Pokémon universe",
+          "frequency": 3
+        },
+        {
+          "value": "Dream of the Red Chamber location",
+          "frequency": 2
+        },
+        {
+          "value": "Dream of the Red Chamber location, mansion in the capital city",
+          "frequency": 2
+        },
+        {
+          "value": "Jin Ping Mei location",
+          "frequency": 2
+        },
+        {
+          "value": "fictional Planet from the Foundation Universe by Isaac Asimov",
+          "frequency": 2
+        },
+        {
+          "value": "fictional building in Water Margin",
+          "frequency": 2
+        },
+        {
+          "value": "fictional capital city",
+          "frequency": 2
+        },
+        {
+          "value": "fictional city in Romance of the Three Kingdoms",
+          "frequency": 2
+        },
+        {
+          "value": "fictional city in the 2004 video game Grand Theft Auto: San Andreas",
+          "frequency": 2
+        },
+        {
+          "value": "fictional house in Water Margin",
+          "frequency": 2
+        },
+        {
+          "value": "fictional location in the Star Wars universe",
+          "frequency": 2
+        },
+        {
+          "value": "fictional location in the television series Supergirl",
+          "frequency": 2
+        },
+        {
+          "value": "fictional mountain",
+          "frequency": 2
+        },
+        {
+          "value": "fictional mountain in Romance of the Three Kingdoms",
+          "frequency": 2
+        },
+        {
+          "value": "fictional planet from the Dune series",
+          "frequency": 2
+        },
+        {
+          "value": "fictional planet from the Foundation Universe by Isaac Asimov",
+          "frequency": 2
+        }
+      ],
+      "eid": [
+        {
+          "value": "Location#Q100256427",
+          "frequency": 1
+        },
+        {
+          "value": "Location#Q102302980",
+          "frequency": 1
+        },
+        {
+          "value": "Location#Q10380769",
+          "frequency": 1
+        },
+        {
+          "value": "Location#Q10396871",
+          "frequency": 1
+        },
+        {
+          "value": "Location#Q104836880",
+          "frequency": 1
+        },
+        {
+          "value": "Location#Q104836893",
+          "frequency": 1
+        },
+        {
+          "value": "Location#Q105432491",
+          "frequency": 1
+        },
+        {
+          "value": "Location#Q1062542",
+          "frequency": 1
+        },
+        {
+          "value": "Location#Q1062595",
+          "frequency": 1
+        },
+        {
+          "value": "Location#Q1063739",
+          "frequency": 1
+        },
+        {
+          "value": "Location#Q106375779",
+          "frequency": 1
+        },
+        {
+          "value": "Location#Q106413608",
+          "frequency": 1
+        },
+        {
+          "value": "Location#Q106455443",
+          "frequency": 1
+        },
+        {
+          "value": "Location#Q106465990",
+          "frequency": 1
+        },
+        {
+          "value": "Location#Q106540698",
+          "frequency": 1
+        },
+        {
+          "value": "Location#Q106540746",
+          "frequency": 1
+        },
+        {
+          "value": "Location#Q106580976",
+          "frequency": 1
+        },
+        {
+          "value": "Location#Q10671266",
+          "frequency": 1
+        },
+        {
+          "value": "Location#Q106762607",
+          "frequency": 1
+        },
+        {
+          "value": "Location#Q107217674",
+          "frequency": 1
+        },
+        {
+          "value": "Location#Q107217791",
+          "frequency": 1
+        },
+        {
+          "value": "Location#Q107389572",
+          "frequency": 1
+        },
+        {
+          "value": "Location#Q107665069",
+          "frequency": 1
+        },
+        {
+          "value": "Location#Q107722146",
+          "frequency": 1
+        },
+        {
+          "value": "Location#Q107975452",
+          "frequency": 1
+        },
+        {
+          "value": "Location#Q107978523",
+          "frequency": 1
+        },
+        {
+          "value": "Location#Q107985018",
+          "frequency": 1
+        },
+        {
+          "value": "Location#Q107985064",
+          "frequency": 1
+        },
+        {
+          "value": "Location#Q1079899",
+          "frequency": 1
+        },
+        {
+          "value": "Location#Q108028580",
+          "frequency": 1
+        },
+        {
+          "value": "Location#Q108046819",
+          "frequency": 1
+        },
+        {
+          "value": "Location#Q108057835",
+          "frequency": 1
+        },
+        {
+          "value": "Location#Q108086576",
+          "frequency": 1
+        },
+        {
+          "value": "Location#Q108101175",
+          "frequency": 1
+        },
+        {
+          "value": "Location#Q108112051",
+          "frequency": 1
+        },
+        {
+          "value": "Location#Q108112378",
+          "frequency": 1
+        },
+        {
+          "value": "Location#Q108199636",
+          "frequency": 1
+        },
+        {
+          "value": "Location#Q108200489",
+          "frequency": 1
+        },
+        {
+          "value": "Location#Q108367113",
+          "frequency": 1
+        },
+        {
+          "value": "Location#Q108381326",
+          "frequency": 1
+        },
+        {
+          "value": "Location#Q108397412",
+          "frequency": 1
+        },
+        {
+          "value": "Location#Q108412362",
+          "frequency": 1
+        },
+        {
+          "value": "Location#Q108418365",
+          "frequency": 1
+        },
+        {
+          "value": "Location#Q108418851",
+          "frequency": 1
+        },
+        {
+          "value": "Location#Q108419076",
+          "frequency": 1
+        },
+        {
+          "value": "Location#Q108419173",
+          "frequency": 1
+        },
+        {
+          "value": "Location#Q108593072",
+          "frequency": 1
+        },
+        {
+          "value": "Location#Q10861953",
+          "frequency": 1
+        },
+        {
+          "value": "Location#Q108731175",
+          "frequency": 1
+        },
+        {
+          "value": "Location#Q1088708",
+          "frequency": 1
+        }
+      ],
+      "name": [
+        {
+          "value": "Atlantis",
+          "frequency": 3
+        },
+        {
+          "value": "Capital City",
+          "frequency": 2
+        },
+        {
+          "value": "Huzhou",
+          "frequency": 2
+        },
+        {
+          "value": "Jizhou",
+          "frequency": 2
+        },
+        {
+          "value": "Liberty City",
+          "frequency": 2
+        },
+        {
+          "value": "Los Santos",
+          "frequency": 2
+        },
+        {
+          "value": "Qinghe County",
+          "frequency": 2
+        },
+        {
+          "value": "Titan",
+          "frequency": 2
+        },
+        {
+          "value": "Yangzhou",
+          "frequency": 2
+        },
+        {
+          "value": "Yizhou",
+          "frequency": 2
+        },
+        {
+          "value": "13 Dead End Lane",
+          "frequency": 1
+        },
+        {
+          "value": "Ahch-To",
+          "frequency": 1
+        },
+        {
+          "value": "Ajan Kloss",
+          "frequency": 1
+        },
+        {
+          "value": "Aldburg",
+          "frequency": 1
+        },
+        {
+          "value": "Amm Plaza Hotel",
+          "frequency": 1
+        },
+        {
+          "value": "Amon Hen",
+          "frequency": 1
+        },
+        {
+          "value": "Anu Airbase",
+          "frequency": 1
+        },
+        {
+          "value": "Apokolips",
+          "frequency": 1
+        },
+        {
+          "value": "Aquilonia",
+          "frequency": 1
+        },
+        {
+          "value": "Arenjun",
+          "frequency": 1
+        },
+        {
+          "value": "Argo City",
+          "frequency": 1
+        },
+        {
+          "value": "Arrakis",
+          "frequency": 1
+        },
+        {
+          "value": "Asgard",
+          "frequency": 1
+        },
+        {
+          "value": "Astronomy tower",
+          "frequency": 1
+        },
+        {
+          "value": "Athkatla",
+          "frequency": 1
+        },
+        {
+          "value": "Azkaban",
+          "frequency": 1
+        },
+        {
+          "value": "Badlands",
+          "frequency": 1
+        },
+        {
+          "value": "Baima",
+          "frequency": 1
+        },
+        {
+          "value": "Baimenlou",
+          "frequency": 1
+        },
+        {
+          "value": "Bajor",
+          "frequency": 1
+        },
+        {
+          "value": "Baldur's Gate",
+          "frequency": 1
+        },
+        {
+          "value": "Baozhu Temple",
+          "frequency": 1
+        },
+        {
+          "value": "Barad-dûr",
+          "frequency": 1
+        },
+        {
+          "value": "Beiguan Gate",
+          "frequency": 1
+        },
+        {
+          "value": "Beihai",
+          "frequency": 1
+        },
+        {
+          "value": "Betazed",
+          "frequency": 1
+        },
+        {
+          "value": "Beyond the Wall",
+          "frequency": 1
+        },
+        {
+          "value": "Bianliang",
+          "frequency": 1
+        },
+        {
+          "value": "Bikini Bottom",
+          "frequency": 1
+        },
+        {
+          "value": "Binaries",
+          "frequency": 1
+        },
+        {
+          "value": "Blue Valley",
+          "frequency": 1
+        },
+        {
+          "value": "Braavos",
+          "frequency": 1
+        },
+        {
+          "value": "Brethil",
+          "frequency": 1
+        },
+        {
+          "value": "Brighton",
+          "frequency": 1
+        },
+        {
+          "value": "Brythunia",
+          "frequency": 1
+        },
+        {
+          "value": "Bunnyburrow",
+          "frequency": 1
+        },
+        {
+          "value": "Cair Paravel",
+          "frequency": 1
+        },
+        {
+          "value": "Caishi Gate",
+          "frequency": 1
+        },
+        {
+          "value": "Caladan",
+          "frequency": 1
+        },
+        {
+          "value": "Candlekeep",
+          "frequency": 1
+        }
+      ]
+    },
+    "Organization": {
+      "description": [
+        {
+          "value": "fictional organization from Dungeons & Dragons",
+          "frequency": 31
+        },
+        {
+          "value": "fictional organization",
+          "frequency": 25
+        },
+        {
+          "value": "fictional temple in Jin Ping Mei",
+          "frequency": 22
+        },
+        {
+          "value": "fictional radio station from the 2013 video game Grand Theft Auto V",
+          "frequency": 20
+        },
+        {
+          "value": "fictional radio station from the Grand Theft Auto video game series",
+          "frequency": 20
+        },
+        {
+          "value": "group of fictional characters",
+          "frequency": 14
+        },
+        {
+          "value": "fictional spacecraft manufacturer in the Star Citizen universe",
+          "frequency": 13
+        },
+        {
+          "value": "fictional temple in Water Margin",
+          "frequency": 13
+        },
+        {
+          "value": "fictional droid manufacturer in the Star Wars universe",
+          "frequency": 12
+        },
+        {
+          "value": "fictional pizzeria in the Teenage Mutant Ninja Turtles franchise",
+          "frequency": 12
+        },
+        {
+          "value": "fictional radio station from the 2004 video game Grand Theft Auto: San Andreas",
+          "frequency": 12
+        },
+        {
+          "value": "fictional radio station in Grand Theft Auto: London",
+          "frequency": 12
+        },
+        {
+          "value": "fictional radio station from the 1999 video game Grand Theft Auto 2",
+          "frequency": 11
+        },
+        {
+          "value": "fictional radio station from the 2008 video game Grand Theft Auto IV",
+          "frequency": 11
+        },
+        {
+          "value": "fictional radio station from the 2009 video game Grand Theft Auto: Chinatown Wars",
+          "frequency": 11
+        },
+        {
+          "value": "fictional company in the Teenage Mutant Ninja Turtles franchise",
+          "frequency": 10
+        },
+        {
+          "value": "fictional organization in Dream of the Red Chamber",
+          "frequency": 10
+        },
+        {
+          "value": "Pokémon crime syndicate",
+          "frequency": 9
+        },
+        {
+          "value": "fictional band",
+          "frequency": 9
+        },
+        {
+          "value": "fictional gang in Cyberpunk 2077 fictional universe",
+          "frequency": 9
+        },
+        {
+          "value": "Dream of the Red Chamber location",
+          "frequency": 8
+        },
+        {
+          "value": "fictional company",
+          "frequency": 8
+        },
+        {
+          "value": "fictional comic book group",
+          "frequency": 7
+        },
+        {
+          "value": "fictional temple in Dream of the Red Chamber",
+          "frequency": 7
+        },
+        {
+          "value": "magic school in the Harry Potter universe",
+          "frequency": 7
+        },
+        {
+          "value": "fictional comic book organization",
+          "frequency": 6
+        },
+        {
+          "value": "fictional gang in the Teenage Mutant Ninja Turtles franchise",
+          "frequency": 6
+        },
+        {
+          "value": "fictional magazine from the 2004 video game The Sims 2",
+          "frequency": 6
+        },
+        {
+          "value": "fictional radio station from the 1997 video game Grand Theft Auto",
+          "frequency": 6
+        },
+        {
+          "value": "fictional radio station from the 2001 video game Grand Theft Auto III",
+          "frequency": 6
+        },
+        {
+          "value": "fictional restaurant in Water Margin",
+          "frequency": 6
+        },
+        {
+          "value": "fictional shop in Jin Ping Mei",
+          "frequency": 6
+        },
+        {
+          "value": "fictional magazine from the 2001 expansion pack The Sims: Hot Date",
+          "frequency": 5
+        },
+        {
+          "value": "fictional organization from J.R.R. Tolkien's legendarium",
+          "frequency": 5
+        },
+        {
+          "value": "fictional radio station from the 2006 video game Saints Row",
+          "frequency": 5
+        },
+        {
+          "value": "fictional radio station from the 2012 video game Sleeping Dogs",
+          "frequency": 5
+        },
+        {
+          "value": "fictional school in the Universe of Bert",
+          "frequency": 5
+        },
+        {
+          "value": "fictional television channel in the Avengers",
+          "frequency": 5
+        },
+        {
+          "value": "fictional television news channel in Iron Man",
+          "frequency": 5
+        },
+        {
+          "value": "fictional television station in Iron Man 3",
+          "frequency": 5
+        },
+        {
+          "value": "Stargate",
+          "frequency": 4
+        },
+        {
+          "value": "faction in StarCraft",
+          "frequency": 4
+        },
+        {
+          "value": "fictional company in the Teenage Mutant Ninja Turtles Adventures comics",
+          "frequency": 4
+        },
+        {
+          "value": "fictional dodgeball team from the 2004 film DodgeBall: A True Underdog Story",
+          "frequency": 4
+        },
+        {
+          "value": "fictional gang in the 2003 video game Mahunt",
+          "frequency": 4
+        },
+        {
+          "value": "fictional group of characters in Marvel Comics",
+          "frequency": 4
+        },
+        {
+          "value": "fictional location",
+          "frequency": 4
+        },
+        {
+          "value": "fictional radio station from the 2008 video game Saints Row 2",
+          "frequency": 4
+        },
+        {
+          "value": "fictional radio station from the 2013 video game Grand Theft Auto Online",
+          "frequency": 4
+        },
+        {
+          "value": "fictional restaurant in Jin Ping Mei",
+          "frequency": 4
+        }
+      ],
+      "eid": [
+        {
+          "value": "Organization#Q1001261",
+          "frequency": 1
+        },
+        {
+          "value": "Organization#Q100161038",
+          "frequency": 1
+        },
+        {
+          "value": "Organization#Q100166528",
+          "frequency": 1
+        },
+        {
+          "value": "Organization#Q100166529",
+          "frequency": 1
+        },
+        {
+          "value": "Organization#Q100232948",
+          "frequency": 1
+        },
+        {
+          "value": "Organization#Q100256442",
+          "frequency": 1
+        },
+        {
+          "value": "Organization#Q100257623",
+          "frequency": 1
+        },
+        {
+          "value": "Organization#Q100260235",
+          "frequency": 1
+        },
+        {
+          "value": "Organization#Q100260636",
+          "frequency": 1
+        },
+        {
+          "value": "Organization#Q100263360",
+          "frequency": 1
+        },
+        {
+          "value": "Organization#Q100268860",
+          "frequency": 1
+        },
+        {
+          "value": "Organization#Q100268899",
+          "frequency": 1
+        },
+        {
+          "value": "Organization#Q100268922",
+          "frequency": 1
+        },
+        {
+          "value": "Organization#Q100269489",
+          "frequency": 1
+        },
+        {
+          "value": "Organization#Q100269498",
+          "frequency": 1
+        },
+        {
+          "value": "Organization#Q100272255",
+          "frequency": 1
+        },
+        {
+          "value": "Organization#Q100272266",
+          "frequency": 1
+        },
+        {
+          "value": "Organization#Q100272267",
+          "frequency": 1
+        },
+        {
+          "value": "Organization#Q100272475",
+          "frequency": 1
+        },
+        {
+          "value": "Organization#Q100272873",
+          "frequency": 1
+        },
+        {
+          "value": "Organization#Q100272874",
+          "frequency": 1
+        },
+        {
+          "value": "Organization#Q100276866",
+          "frequency": 1
+        },
+        {
+          "value": "Organization#Q100296977",
+          "frequency": 1
+        },
+        {
+          "value": "Organization#Q100298039",
+          "frequency": 1
+        },
+        {
+          "value": "Organization#Q100298187",
+          "frequency": 1
+        },
+        {
+          "value": "Organization#Q100298433",
+          "frequency": 1
+        },
+        {
+          "value": "Organization#Q100298435",
+          "frequency": 1
+        },
+        {
+          "value": "Organization#Q100298484",
+          "frequency": 1
+        },
+        {
+          "value": "Organization#Q100298485",
+          "frequency": 1
+        },
+        {
+          "value": "Organization#Q100299058",
+          "frequency": 1
+        },
+        {
+          "value": "Organization#Q100299220",
+          "frequency": 1
+        },
+        {
+          "value": "Organization#Q100301785",
+          "frequency": 1
+        },
+        {
+          "value": "Organization#Q100309649",
+          "frequency": 1
+        },
+        {
+          "value": "Organization#Q100310038",
+          "frequency": 1
+        },
+        {
+          "value": "Organization#Q100313280",
+          "frequency": 1
+        },
+        {
+          "value": "Organization#Q100319804",
+          "frequency": 1
+        },
+        {
+          "value": "Organization#Q100319828",
+          "frequency": 1
+        },
+        {
+          "value": "Organization#Q100319829",
+          "frequency": 1
+        },
+        {
+          "value": "Organization#Q100319830",
+          "frequency": 1
+        },
+        {
+          "value": "Organization#Q100323624",
+          "frequency": 1
+        },
+        {
+          "value": "Organization#Q100323795",
+          "frequency": 1
+        },
+        {
+          "value": "Organization#Q100323802",
+          "frequency": 1
+        },
+        {
+          "value": "Organization#Q100323818",
+          "frequency": 1
+        },
+        {
+          "value": "Organization#Q100324323",
+          "frequency": 1
+        },
+        {
+          "value": "Organization#Q100328566",
+          "frequency": 1
+        },
+        {
+          "value": "Organization#Q100333349",
+          "frequency": 1
+        },
+        {
+          "value": "Organization#Q100334126",
+          "frequency": 1
+        },
+        {
+          "value": "Organization#Q100335360",
+          "frequency": 1
+        },
+        {
+          "value": "Organization#Q100336427",
+          "frequency": 1
+        },
+        {
+          "value": "Organization#Q100339855",
+          "frequency": 1
+        }
+      ],
+      "name": [
+        {
+          "value": "Foot Clan",
+          "frequency": 14
+        },
+        {
+          "value": "Channel 6",
+          "frequency": 9
+        },
+        {
+          "value": "Purple Dragons",
+          "frequency": 5
+        },
+        {
+          "value": "Channel 3",
+          "frequency": 3
+        },
+        {
+          "value": "Leviathan",
+          "frequency": 3
+        },
+        {
+          "value": "212th Attack Battalion",
+          "frequency": 2
+        },
+        {
+          "value": "Bao'en Temple",
+          "frequency": 2
+        },
+        {
+          "value": "Bebop's and Rocksteady's gang",
+          "frequency": 2
+        },
+        {
+          "value": "Clowntime Food and Games",
+          "frequency": 2
+        },
+        {
+          "value": "Crooked Ninja Turtle Gang",
+          "frequency": 2
+        },
+        {
+          "value": "Daily Bugle",
+          "frequency": 2
+        },
+        {
+          "value": "Dizang An",
+          "frequency": 2
+        },
+        {
+          "value": "Fish Speakers",
+          "frequency": 2
+        },
+        {
+          "value": "Forsaken",
+          "frequency": 2
+        },
+        {
+          "value": "Galactic Empire",
+          "frequency": 2
+        },
+        {
+          "value": "Imperial Guard",
+          "frequency": 2
+        },
+        {
+          "value": "Kruger Intergalactic",
+          "frequency": 2
+        },
+        {
+          "value": "Kuaihuolin Restaurant",
+          "frequency": 2
+        },
+        {
+          "value": "Manhattan Security Services",
+          "frequency": 2
+        },
+        {
+          "value": "Ninja Pizza",
+          "frequency": 2
+        },
+        {
+          "value": "Ninja Shoe Repair",
+          "frequency": 2
+        },
+        {
+          "value": "Origin Jumpworks GmbH",
+          "frequency": 2
+        },
+        {
+          "value": "Radio Los Santos",
+          "frequency": 2
+        },
+        {
+          "value": "Team Rocket",
+          "frequency": 2
+        },
+        {
+          "value": "Watcher",
+          "frequency": 2
+        },
+        {
+          "value": "Yuhuang Temple",
+          "frequency": 2
+        },
+        {
+          "value": "Zixu Guan",
+          "frequency": 2
+        },
+        {
+          "value": "100",
+          "frequency": 1
+        },
+        {
+          "value": "101.69 Sizzurp FM",
+          "frequency": 1
+        },
+        {
+          "value": "105.0 The World",
+          "frequency": 1
+        },
+        {
+          "value": "106.66 The Blood",
+          "frequency": 1
+        },
+        {
+          "value": "108.0 WMD KBOOM FM",
+          "frequency": 1
+        },
+        {
+          "value": "1337 Connect",
+          "frequency": 1
+        },
+        {
+          "value": "18K Triad",
+          "frequency": 1
+        },
+        {
+          "value": "1st National Bank",
+          "frequency": 1
+        },
+        {
+          "value": "2",
+          "frequency": 1
+        },
+        {
+          "value": "3rd Street Saints",
+          "frequency": 1
+        },
+        {
+          "value": "5 Albany",
+          "frequency": 1
+        },
+        {
+          "value": "501st Legion",
+          "frequency": 1
+        },
+        {
+          "value": "5th National Bank",
+          "frequency": 1
+        },
+        {
+          "value": "6 New York",
+          "frequency": 1
+        },
+        {
+          "value": "6th Street",
+          "frequency": 1
+        },
+        {
+          "value": "89.0 Generation X",
+          "frequency": 1
+        },
+        {
+          "value": "89.0 Ultor FM",
+          "frequency": 1
+        },
+        {
+          "value": "99.0 The Underground",
+          "frequency": 1
+        },
+        {
+          "value": "A-Next",
+          "frequency": 1
+        },
+        {
+          "value": "A-Rise",
+          "frequency": 1
+        },
+        {
+          "value": "A.B.C. Chinese Restaurant",
+          "frequency": 1
+        },
+        {
+          "value": "A.R.G.U.S.",
+          "frequency": 1
+        },
+        {
+          "value": "ARGO Astronautics",
+          "frequency": 1
+        }
+      ]
+    }
+  },
+  "query_recipe_profile": {
+    "label_recipe_count": 12,
+    "relationship_recipe_count": 33,
+    "path_recipe_count": 42
+  },
+  "build_options": {
+    "requested_sample_limit": 0,
+    "effective_sample_limit": 10000,
+    "max_hops": 3,
+    "requested_value_limit": 0,
+    "effective_value_limit": 50,
+    "path_limit": 10000,
+    "include_value_profile": true
+  },
   "question_summary": {
     "top_tokens": [
       [

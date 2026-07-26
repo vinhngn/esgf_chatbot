@@ -264,6 +264,13 @@ def rag_endpoint():
                 "verified_triples": result.get("verified_triples", []),
                 "instance_triples": result.get("instance_triples", []),
                 "trace_id": result.get("trace_id", ""),
+                "question_tag": result.get("question_tag", ""),
+                "answer_source": result.get("answer_source", ""),
+                "route_confidence": result.get("route_confidence", 0),
+                "referenced_turn_ids": result.get(
+                    "referenced_turn_ids",
+                    [],
+                ),
                 "error": None,
             }
         )
@@ -350,13 +357,11 @@ def runtime_info():
                 "provider_retries": settings.LLM_PROVIDER_MAX_RETRIES,
             },
             "prompt": {
-                "strategy": "profile-grounded-system-human-v2",
+                "strategy": "schema-profile-evidence-v3",
                 "profile_available": profile_exists(
                     settings.profile_database_name,
                 ),
-                "legacy_domain_context": not profile_exists(
-                    settings.profile_database_name,
-                ),
+                "legacy_domain_context": False,
             },
         }
     )

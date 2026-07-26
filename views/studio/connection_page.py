@@ -115,11 +115,11 @@ def _connection_form(
             jump_port = 22
             remote_port = local_port = 7687
         save_col, start_col = st.columns([1, 2])
-        save = save_col.form_submit_button("Save", use_container_width=True)
+        save = save_col.form_submit_button("Save", width="stretch")
         start = start_col.form_submit_button(
             "Save and start T2C API",
             type="primary",
-            use_container_width=True,
+            width="stretch",
         )
 
     action = "start" if start else "save" if save else ""
@@ -173,6 +173,9 @@ def render(state: StudioState) -> None:
                                 connection=updated,
                                 secrets=state.secrets,
                                 session=state.runtime.session,
+                                dataset_directory=(
+                                    state.benchmarks.framework_root / "inputs"
+                                ),
                             )
                         state.runtime.start_api(
                             updated,
@@ -189,11 +192,11 @@ def render(state: StudioState) -> None:
 
     disconnect_col, delete_col = st.columns(2)
     with disconnect_col:
-        if st.button("Disconnect", use_container_width=True):
+        if st.button("Disconnect", width="stretch"):
             state.runtime.stop_all()
             st.rerun()
     with delete_col:
-        if st.button("Delete", use_container_width=True, disabled=connection.built_in):
+        if st.button("Delete", width="stretch", disabled=connection.built_in):
             if state.runtime.connection and state.runtime.connection.id == connection.id:
                 state.runtime.stop_all()
             state.secrets.delete(connection.id, "database_password")

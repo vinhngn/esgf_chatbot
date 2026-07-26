@@ -1,16 +1,977 @@
 {
-  "source": "D:\\Agent\\t2c_eval_framework\\inputs\\movies.csv",
+  "profile_version": "2.0",
   "database": "movies",
+  "physical_database": "movies",
+  "source": "D:\\Agent\\t2c_eval_framework\\inputs\\movies.csv",
+  "source_type": "hybrid",
+  "provenance": {
+    "source": "D:\\Agent\\t2c_eval_framework\\inputs\\movies.csv",
+    "source_type": "hybrid",
+    "generator": "neo4j-t2c",
+    "generator_version": "0.1.0",
+    "sources": [
+      {
+        "source": "D:\\Agent\\t2c_eval_framework\\inputs\\movies.csv",
+        "source_type": "benchmark_csv"
+      },
+      {
+        "source": "neo4j+s://demo.neo4jlabs.com",
+        "source_type": "neo4j_live"
+      }
+    ]
+  },
+  "schema_fingerprint": "sha256:9cfffc0394d0a570fba1bcda1604698d3acf45bfb61fc8a0a315f87898355c05",
   "row_count": 185,
+  "schema_profile": {
+    "labels": [
+      {
+        "label": "Movie",
+        "count": 38,
+        "properties": [
+          {
+            "name": "released",
+            "types": [
+              "Long"
+            ],
+            "role": "attribute",
+            "non_null": null
+          },
+          {
+            "name": "tagline",
+            "types": [
+              "String"
+            ],
+            "role": "text",
+            "non_null": null
+          },
+          {
+            "name": "title",
+            "types": [
+              "String"
+            ],
+            "role": "text",
+            "non_null": null
+          },
+          {
+            "name": "votes",
+            "types": [
+              "Long"
+            ],
+            "role": "attribute",
+            "non_null": null
+          }
+        ]
+      },
+      {
+        "label": "Person",
+        "count": 133,
+        "properties": [
+          {
+            "name": "born",
+            "types": [
+              "Long"
+            ],
+            "role": "attribute",
+            "non_null": null
+          },
+          {
+            "name": "name",
+            "types": [
+              "String"
+            ],
+            "role": "text",
+            "non_null": null
+          }
+        ]
+      }
+    ],
+    "relationships": [
+      {
+        "type": "ACTED_IN",
+        "patterns": [
+          {
+            "from": "Person",
+            "to": "Movie",
+            "count": null
+          }
+        ],
+        "properties": [
+          {
+            "name": "roles",
+            "types": [
+              "StringArray"
+            ],
+            "role": "attribute",
+            "non_null": null
+          }
+        ]
+      },
+      {
+        "type": "DIRECTED",
+        "patterns": [
+          {
+            "from": "Person",
+            "to": "Movie",
+            "count": null
+          }
+        ],
+        "properties": []
+      },
+      {
+        "type": "FOLLOWS",
+        "patterns": [
+          {
+            "from": "Person",
+            "to": "Person",
+            "count": null
+          }
+        ],
+        "properties": []
+      },
+      {
+        "type": "PRODUCED",
+        "patterns": [
+          {
+            "from": "Person",
+            "to": "Movie",
+            "count": null
+          }
+        ],
+        "properties": []
+      },
+      {
+        "type": "REVIEWED",
+        "patterns": [
+          {
+            "from": "Person",
+            "to": "Movie",
+            "count": null
+          }
+        ],
+        "properties": [
+          {
+            "name": "rating",
+            "types": [
+              "Long"
+            ],
+            "role": "attribute",
+            "non_null": null
+          },
+          {
+            "name": "summary",
+            "types": [
+              "String"
+            ],
+            "role": "text",
+            "non_null": null
+          }
+        ]
+      },
+      {
+        "type": "WROTE",
+        "patterns": [
+          {
+            "from": "Person",
+            "to": "Movie",
+            "count": null
+          }
+        ],
+        "properties": []
+      }
+    ],
+    "paths": [
+      {
+        "hops": 1,
+        "signature": "(Movie)<-[:ACTED_IN]-(Person)",
+        "edges": [
+          {
+            "from": "Movie",
+            "type": "ACTED_IN",
+            "to": "Person",
+            "direction": "incoming"
+          }
+        ]
+      },
+      {
+        "hops": 1,
+        "signature": "(Movie)<-[:DIRECTED]-(Person)",
+        "edges": [
+          {
+            "from": "Movie",
+            "type": "DIRECTED",
+            "to": "Person",
+            "direction": "incoming"
+          }
+        ]
+      },
+      {
+        "hops": 1,
+        "signature": "(Movie)<-[:PRODUCED]-(Person)",
+        "edges": [
+          {
+            "from": "Movie",
+            "type": "PRODUCED",
+            "to": "Person",
+            "direction": "incoming"
+          }
+        ]
+      },
+      {
+        "hops": 1,
+        "signature": "(Movie)<-[:REVIEWED]-(Person)",
+        "edges": [
+          {
+            "from": "Movie",
+            "type": "REVIEWED",
+            "to": "Person",
+            "direction": "incoming"
+          }
+        ]
+      },
+      {
+        "hops": 1,
+        "signature": "(Movie)<-[:WROTE]-(Person)",
+        "edges": [
+          {
+            "from": "Movie",
+            "type": "WROTE",
+            "to": "Person",
+            "direction": "incoming"
+          }
+        ]
+      },
+      {
+        "hops": 1,
+        "signature": "(Person)-[:ACTED_IN]->(Movie)",
+        "edges": [
+          {
+            "from": "Person",
+            "type": "ACTED_IN",
+            "to": "Movie",
+            "direction": "outgoing"
+          }
+        ]
+      },
+      {
+        "hops": 1,
+        "signature": "(Person)-[:DIRECTED]->(Movie)",
+        "edges": [
+          {
+            "from": "Person",
+            "type": "DIRECTED",
+            "to": "Movie",
+            "direction": "outgoing"
+          }
+        ]
+      },
+      {
+        "hops": 1,
+        "signature": "(Person)-[:FOLLOWS]->(Person)",
+        "edges": [
+          {
+            "from": "Person",
+            "type": "FOLLOWS",
+            "to": "Person",
+            "direction": "outgoing"
+          }
+        ]
+      },
+      {
+        "hops": 1,
+        "signature": "(Person)-[:PRODUCED]->(Movie)",
+        "edges": [
+          {
+            "from": "Person",
+            "type": "PRODUCED",
+            "to": "Movie",
+            "direction": "outgoing"
+          }
+        ]
+      },
+      {
+        "hops": 1,
+        "signature": "(Person)-[:REVIEWED]->(Movie)",
+        "edges": [
+          {
+            "from": "Person",
+            "type": "REVIEWED",
+            "to": "Movie",
+            "direction": "outgoing"
+          }
+        ]
+      },
+      {
+        "hops": 1,
+        "signature": "(Person)-[:WROTE]->(Movie)",
+        "edges": [
+          {
+            "from": "Person",
+            "type": "WROTE",
+            "to": "Movie",
+            "direction": "outgoing"
+          }
+        ]
+      }
+    ],
+    "path_discovery": {
+      "status": "complete",
+      "count": 11,
+      "limit": 10000,
+      "max_hops": 8
+    },
+    "vector_indexes": [],
+    "vector_index_discovery": {
+      "status": "available",
+      "count": 0,
+      "error_type": null,
+      "message": ""
+    },
+    "summary": {
+      "label_count": 2,
+      "relationship_type_count": 6,
+      "schema_path_count": 11,
+      "vector_index_count": 0,
+      "vector_index_discovery": {
+        "status": "available",
+        "count": 0,
+        "error_type": null,
+        "message": ""
+      },
+      "path_discovery": {
+        "status": "complete",
+        "count": 11,
+        "limit": 10000,
+        "max_hops": 8
+      },
+      "top_labels": [
+        {
+          "label": "Person",
+          "count": 133
+        },
+        {
+          "label": "Movie",
+          "count": 38
+        }
+      ],
+      "top_relationship_patterns": [
+        {
+          "type": "ACTED_IN",
+          "from": "Person",
+          "to": "Movie",
+          "count": null
+        },
+        {
+          "type": "DIRECTED",
+          "from": "Person",
+          "to": "Movie",
+          "count": null
+        },
+        {
+          "type": "FOLLOWS",
+          "from": "Person",
+          "to": "Person",
+          "count": null
+        },
+        {
+          "type": "PRODUCED",
+          "from": "Person",
+          "to": "Movie",
+          "count": null
+        },
+        {
+          "type": "REVIEWED",
+          "from": "Person",
+          "to": "Movie",
+          "count": null
+        },
+        {
+          "type": "WROTE",
+          "from": "Person",
+          "to": "Movie",
+          "count": null
+        }
+      ]
+    }
+  },
+  "value_profile": {
+    "Movie": {
+      "tagline": [
+        {
+          "value": "400 million people were waiting for the truth.",
+          "frequency": 1
+        },
+        {
+          "value": "A comedy from the heart that goes for the throat.",
+          "frequency": 1
+        },
+        {
+          "value": "A stiff drink. A little mascara. A lot of nerve. Who said they couldn't bring down the Soviet empire.",
+          "frequency": 1
+        },
+        {
+          "value": "A story of love, lava and burning desire.",
+          "frequency": 1
+        },
+        {
+          "value": "After life there is more. The end is just the beginning.",
+          "frequency": 1
+        },
+        {
+          "value": "At odds in life... in love on-line.",
+          "frequency": 1
+        },
+        {
+          "value": "At the edge of the world, his journey begins.",
+          "frequency": 1
+        },
+        {
+          "value": "Based on the extraordinary true story of one man's fight for freedom",
+          "frequency": 1
+        },
+        {
+          "value": "Break The Codes",
+          "frequency": 1
+        },
+        {
+          "value": "Can two friends sleep together and still love each other in the morning?",
+          "frequency": 1
+        },
+        {
+          "value": "Come as you are",
+          "frequency": 1
+        },
+        {
+          "value": "Don't Breathe. Don't Look Back.",
+          "frequency": 1
+        },
+        {
+          "value": "Everything is connected",
+          "frequency": 1
+        },
+        {
+          "value": "Everything that has a beginning has an end",
+          "frequency": 1
+        },
+        {
+          "value": "Evil has its winning ways",
+          "frequency": 1
+        },
+        {
+          "value": "First loves last. Forever.",
+          "frequency": 1
+        },
+        {
+          "value": "For some, it's the last real taste of innocence, and the first real taste of life. But for everyone, it's the time that memories are made of.",
+          "frequency": 1
+        },
+        {
+          "value": "Free your mind",
+          "frequency": 1
+        },
+        {
+          "value": "Freedom! Forever!",
+          "frequency": 1
+        },
+        {
+          "value": "He didn't want law. He wanted justice.",
+          "frequency": 1
+        },
+        {
+          "value": "Houston, we have a problem.",
+          "frequency": 1
+        },
+        {
+          "value": "I feel the need, the need for speed.",
+          "frequency": 1
+        },
+        {
+          "value": "If he's crazy, what does that make you?",
+          "frequency": 1
+        },
+        {
+          "value": "In every life there comes a time when that thing you dream becomes that thing you do",
+          "frequency": 1
+        },
+        {
+          "value": "In the heart of the nation's capital, in a courthouse of the U.S. government, one man will stop at nothing to keep his honor, and one will stop at nothing to find the truth.",
+          "frequency": 1
+        },
+        {
+          "value": "It's a hell of a thing, killing a man",
+          "frequency": 1
+        },
+        {
+          "value": "Once in a lifetime you get a chance to do something different.",
+          "frequency": 1
+        },
+        {
+          "value": "One robot's 200 year journey to become an ordinary man.",
+          "frequency": 1
+        },
+        {
+          "value": "Pain heals, Chicks dig scars... Glory lasts forever",
+          "frequency": 1
+        },
+        {
+          "value": "Prepare to enter a secret world of assassins",
+          "frequency": 1
+        },
+        {
+          "value": "Speed has no limits",
+          "frequency": 1
+        },
+        {
+          "value": "The hottest data on earth. In the coolest head in town",
+          "frequency": 1
+        },
+        {
+          "value": "The rest of his life begins now.",
+          "frequency": 1
+        },
+        {
+          "value": "This Holiday Season… Believe",
+          "frequency": 1
+        },
+        {
+          "value": "Walk a mile you'll never forget.",
+          "frequency": 1
+        },
+        {
+          "value": "Welcome to the Real World",
+          "frequency": 1
+        },
+        {
+          "value": "What if someone you never met, someone you never saw, someone you never knew was the only someone for you?",
+          "frequency": 1
+        }
+      ],
+      "title": [
+        {
+          "value": "A Few Good Men",
+          "frequency": 1
+        },
+        {
+          "value": "A League of Their Own",
+          "frequency": 1
+        },
+        {
+          "value": "Apollo 13",
+          "frequency": 1
+        },
+        {
+          "value": "As Good as It Gets",
+          "frequency": 1
+        },
+        {
+          "value": "Bicentennial Man",
+          "frequency": 1
+        },
+        {
+          "value": "Cast Away",
+          "frequency": 1
+        },
+        {
+          "value": "Charlie Wilson's War",
+          "frequency": 1
+        },
+        {
+          "value": "Cloud Atlas",
+          "frequency": 1
+        },
+        {
+          "value": "Frost/Nixon",
+          "frequency": 1
+        },
+        {
+          "value": "Hoffa",
+          "frequency": 1
+        },
+        {
+          "value": "Jerry Maguire",
+          "frequency": 1
+        },
+        {
+          "value": "Joe Versus the Volcano",
+          "frequency": 1
+        },
+        {
+          "value": "Johnny Mnemonic",
+          "frequency": 1
+        },
+        {
+          "value": "Ninja Assassin",
+          "frequency": 1
+        },
+        {
+          "value": "One Flew Over the Cuckoo's Nest",
+          "frequency": 1
+        },
+        {
+          "value": "RescueDawn",
+          "frequency": 1
+        },
+        {
+          "value": "Sleepless in Seattle",
+          "frequency": 1
+        },
+        {
+          "value": "Snow Falling on Cedars",
+          "frequency": 1
+        },
+        {
+          "value": "Something's Gotta Give",
+          "frequency": 1
+        },
+        {
+          "value": "Speed Racer",
+          "frequency": 1
+        },
+        {
+          "value": "Stand By Me",
+          "frequency": 1
+        },
+        {
+          "value": "That Thing You Do",
+          "frequency": 1
+        },
+        {
+          "value": "The Birdcage",
+          "frequency": 1
+        },
+        {
+          "value": "The Da Vinci Code",
+          "frequency": 1
+        },
+        {
+          "value": "The Devil's Advocate",
+          "frequency": 1
+        },
+        {
+          "value": "The Green Mile",
+          "frequency": 1
+        },
+        {
+          "value": "The Matrix",
+          "frequency": 1
+        },
+        {
+          "value": "The Matrix Reloaded",
+          "frequency": 1
+        },
+        {
+          "value": "The Matrix Revolutions",
+          "frequency": 1
+        },
+        {
+          "value": "The Polar Express",
+          "frequency": 1
+        },
+        {
+          "value": "The Replacements",
+          "frequency": 1
+        },
+        {
+          "value": "Top Gun",
+          "frequency": 1
+        },
+        {
+          "value": "Twister",
+          "frequency": 1
+        },
+        {
+          "value": "Unforgiven",
+          "frequency": 1
+        },
+        {
+          "value": "V for Vendetta",
+          "frequency": 1
+        },
+        {
+          "value": "What Dreams May Come",
+          "frequency": 1
+        },
+        {
+          "value": "When Harry Met Sally",
+          "frequency": 1
+        },
+        {
+          "value": "You've Got Mail",
+          "frequency": 1
+        }
+      ]
+    },
+    "Person": {
+      "name": [
+        {
+          "value": "Aaron Sorkin",
+          "frequency": 1
+        },
+        {
+          "value": "Al Pacino",
+          "frequency": 1
+        },
+        {
+          "value": "Angela Scope",
+          "frequency": 1
+        },
+        {
+          "value": "Annabella Sciorra",
+          "frequency": 1
+        },
+        {
+          "value": "Anthony Edwards",
+          "frequency": 1
+        },
+        {
+          "value": "Audrey Tautou",
+          "frequency": 1
+        },
+        {
+          "value": "Ben Miles",
+          "frequency": 1
+        },
+        {
+          "value": "Bill Paxton",
+          "frequency": 1
+        },
+        {
+          "value": "Bill Pullman",
+          "frequency": 1
+        },
+        {
+          "value": "Billy Crystal",
+          "frequency": 1
+        },
+        {
+          "value": "Bonnie Hunt",
+          "frequency": 1
+        },
+        {
+          "value": "Brooke Langton",
+          "frequency": 1
+        },
+        {
+          "value": "Bruno Kirby",
+          "frequency": 1
+        },
+        {
+          "value": "Cameron Crowe",
+          "frequency": 1
+        },
+        {
+          "value": "Carrie Fisher",
+          "frequency": 1
+        },
+        {
+          "value": "Carrie-Anne Moss",
+          "frequency": 1
+        },
+        {
+          "value": "Charlize Theron",
+          "frequency": 1
+        },
+        {
+          "value": "Chris Columbus",
+          "frequency": 1
+        },
+        {
+          "value": "Christian Bale",
+          "frequency": 1
+        },
+        {
+          "value": "Christina Ricci",
+          "frequency": 1
+        },
+        {
+          "value": "Christopher Guest",
+          "frequency": 1
+        },
+        {
+          "value": "Clint Eastwood",
+          "frequency": 1
+        },
+        {
+          "value": "Corey Feldman",
+          "frequency": 1
+        },
+        {
+          "value": "Cuba Gooding Jr.",
+          "frequency": 1
+        },
+        {
+          "value": "Danny DeVito",
+          "frequency": 1
+        },
+        {
+          "value": "Dave Chappelle",
+          "frequency": 1
+        },
+        {
+          "value": "David Mitchell",
+          "frequency": 1
+        },
+        {
+          "value": "David Morse",
+          "frequency": 1
+        },
+        {
+          "value": "Demi Moore",
+          "frequency": 1
+        },
+        {
+          "value": "Diane Keaton",
+          "frequency": 1
+        },
+        {
+          "value": "Dina Meyer",
+          "frequency": 1
+        },
+        {
+          "value": "Ed Harris",
+          "frequency": 1
+        },
+        {
+          "value": "Emil Eifrem",
+          "frequency": 1
+        },
+        {
+          "value": "Emile Hirsch",
+          "frequency": 1
+        },
+        {
+          "value": "Ethan Hawke",
+          "frequency": 1
+        },
+        {
+          "value": "Frank Darabont",
+          "frequency": 1
+        },
+        {
+          "value": "Frank Langella",
+          "frequency": 1
+        },
+        {
+          "value": "Gary Sinise",
+          "frequency": 1
+        },
+        {
+          "value": "Geena Davis",
+          "frequency": 1
+        },
+        {
+          "value": "Gene Hackman",
+          "frequency": 1
+        },
+        {
+          "value": "Greg Kinnear",
+          "frequency": 1
+        },
+        {
+          "value": "Halle Berry",
+          "frequency": 1
+        },
+        {
+          "value": "Helen Hunt",
+          "frequency": 1
+        },
+        {
+          "value": "Howard Deutch",
+          "frequency": 1
+        },
+        {
+          "value": "Hugo Weaving",
+          "frequency": 1
+        },
+        {
+          "value": "Ian McKellen",
+          "frequency": 1
+        },
+        {
+          "value": "Ice-T",
+          "frequency": 1
+        },
+        {
+          "value": "J.T. Walsh",
+          "frequency": 1
+        },
+        {
+          "value": "Jack Nicholson",
+          "frequency": 1
+        },
+        {
+          "value": "James Cromwell",
+          "frequency": 1
+        }
+      ]
+    }
+  },
+  "query_recipe_profile": {
+    "label_recipe_count": 5,
+    "relationship_recipe_count": 18,
+    "path_recipe_count": 0
+  },
+  "build_options": {
+    "requested_sample_limit": 0,
+    "effective_sample_limit": 10000,
+    "max_hops": 8,
+    "requested_value_limit": 0,
+    "effective_value_limit": 50,
+    "path_limit": 10000,
+    "include_value_profile": true
+  },
   "question_summary": {
-    "top_tokens": [
+    "top_terms": [
       [
-        "movie",
-        166
+        "the",
+        244
+      ],
+      [
+        "movies",
+        124
+      ],
+      [
+        "with",
+        76
+      ],
+      [
+        "in",
+        73
+      ],
+      [
+        "who",
+        67
       ],
       [
         "3",
         58
+      ],
+      [
+        "a",
+        57
+      ],
+      [
+        "have",
+        55
+      ],
+      [
+        "are",
+        48
+      ],
+      [
+        "what",
+        47
+      ],
+      [
+        "of",
+        46
+      ],
+      [
+        "list",
+        45
+      ],
+      [
+        "movie",
+        42
       ],
       [
         "top",
@@ -25,19 +986,23 @@
         34
       ],
       [
+        "and",
+        34
+      ],
+      [
+        "which",
+        33
+      ],
+      [
+        "by",
+        30
+      ],
+      [
         "most",
         27
       ],
       [
-        "rating",
-        26
-      ],
-      [
         "acted",
-        25
-      ],
-      [
-        "actor",
         25
       ],
       [
@@ -49,7 +1014,19 @@
         24
       ],
       [
+        "rating",
+        24
+      ],
+      [
+        "actors",
+        24
+      ],
+      [
         "first",
+        22
+      ],
+      [
+        "is",
         22
       ],
       [
@@ -65,6 +1042,10 @@
         21
       ],
       [
+        "has",
+        20
+      ],
+      [
         "born",
         20
       ],
@@ -75,6 +1056,10 @@
       [
         "produced",
         19
+      ],
+      [
+        "all",
+        18
       ],
       [
         "released",
@@ -105,7 +1090,11 @@
         16
       ],
       [
-        "review",
+        "that",
+        15
+      ],
+      [
+        "their",
         14
       ],
       [
@@ -121,142 +1110,20 @@
         12
       ],
       [
+        "for",
+        12
+      ],
+      [
+        "review",
+        11
+      ],
+      [
         "more",
         10
-      ],
-      [
-        "been",
-        9
-      ],
-      [
-        "word",
-        9
-      ],
-      [
-        "name",
-        9
-      ],
-      [
-        "acted_in",
-        8
-      ],
-      [
-        "year",
-        8
-      ],
-      [
-        "release",
-        8
-      ],
-      [
-        "speed",
-        8
-      ],
-      [
-        "2000",
-        8
-      ],
-      [
-        "title",
-        8
-      ],
-      [
-        "written",
-        7
-      ],
-      [
-        "relationship",
-        7
-      ],
-      [
-        "containing",
-        7
-      ],
-      [
-        "1960",
-        7
-      ],
-      [
-        "oldest",
-        7
-      ],
-      [
-        "database",
-        7
-      ],
-      [
-        "before",
-        7
-      ],
-      [
-        "director",
-        7
-      ],
-      [
-        "keanu",
-        6
-      ],
-      [
-        "reeves",
-        6
-      ],
-      [
-        "both",
-        6
       ]
     ],
-    "intent_counts": [
-      [
-        "ranking_desc",
-        68
-      ],
-      [
-        "limit",
-        63
-      ],
-      [
-        "relationship_property",
-        58
-      ],
-      [
-        "filter_literal",
-        44
-      ],
-      [
-        "filter_numeric",
-        43
-      ],
-      [
-        "aggregation_count",
-        27
-      ],
-      [
-        "text_contains",
-        25
-      ],
-      [
-        "date_or_year",
-        24
-      ],
-      [
-        "same_entity_multi_role",
-        16
-      ],
-      [
-        "aggregation_avg",
-        16
-      ],
-      [
-        "ranking_asc",
-        16
-      ],
-      [
-        "aggregation_sum",
-        1
-      ]
-    ],
-    "literal_questions": 44,
-    "numeric_questions": 133
+    "literal_count": 44,
+    "number_count": 133
   },
   "cypher_summary": {
     "labels": [
@@ -672,476 +1539,7 @@
       ]
     ]
   },
-  "intent_to_shape_signatures": {
-    "aggregation_avg": [
-      [
-        "clauses=MATCH,WHERE,WITH,RETURN|motifs=(Person)-[:REVIEWED]->(Movie)|returns=aggregate",
-        2
-      ],
-      [
-        "clauses=MATCH,WITH,RETURN,ORDER_BY,LIMIT|motifs=(Person)-[:REVIEWED]->(Movie)|returns=node_property,variable",
-        2
-      ],
-      [
-        "clauses=MATCH,WHERE,RETURN|motifs=|returns=aggregate",
-        2
-      ],
-      [
-        "clauses=MATCH,WITH,RETURN|motifs=|returns=variable",
-        2
-      ],
-      [
-        "clauses=MATCH,WHERE,WITH,RETURN|motifs=(Person)-[:REVIEWED]->(Movie)|returns=variable",
-        2
-      ],
-      [
-        "clauses=MATCH,WITH,RETURN,ORDER_BY,LIMIT|motifs=(Person)-[:WROTE]->(Movie)|returns=node_property,variable",
-        1
-      ],
-      [
-        "clauses=MATCH,WITH,RETURN,ORDER_BY,LIMIT|motifs=(Person)-[:DIRECTED]->(Movie)|returns=node_property,aggregate",
-        1
-      ],
-      [
-        "clauses=MATCH,WHERE,WITH,RETURN|motifs=(Person)-[:DIRECTED]->(Movie)|returns=aggregate",
-        1
-      ],
-      [
-        "clauses=MATCH,WHERE,WITH,RETURN|motifs=|returns=aggregate",
-        1
-      ],
-      [
-        "clauses=MATCH,WHERE,RETURN|motifs=(Person)-[:REVIEWED]->(Movie)|returns=aggregate",
-        1
-      ]
-    ],
-    "aggregation_count": [
-      [
-        "clauses=MATCH,WHERE,RETURN,ORDER_BY,LIMIT|motifs=|returns=node_property,node_property",
-        2
-      ],
-      [
-        "clauses=MATCH,RETURN,ORDER_BY,LIMIT|motifs=|returns=node_property,node_property",
-        2
-      ],
-      [
-        "clauses=MATCH,WITH,RETURN,ORDER_BY,LIMIT|motifs=(Person)-[:ACTED_IN]->(Movie)|returns=node_property,variable",
-        2
-      ],
-      [
-        "clauses=MATCH,WHERE,RETURN,ORDER_BY,LIMIT|motifs=|returns=node",
-        2
-      ],
-      [
-        "clauses=MATCH,WHERE,RETURN|motifs=|returns=aggregate",
-        2
-      ],
-      [
-        "clauses=MATCH,WHERE,WITH,RETURN,ORDER_BY,LIMIT|motifs=(Person)-[:PRODUCED]->(Movie)|returns=node_property,variable",
-        1
-      ],
-      [
-        "clauses=MATCH,WHERE,WITH,RETURN|motifs=(Person)-[:REVIEWED]->(Movie)|returns=aggregate",
-        1
-      ],
-      [
-        "clauses=MATCH,WHERE,RETURN,ORDER_BY,LIMIT|motifs=|returns=node_property,aggregate",
-        1
-      ],
-      [
-        "clauses=MATCH,OPTIONAL_MATCH,WITH,RETURN,ORDER_BY,LIMIT|motifs=(Person)-[:ACTED_IN]->(Movie);(Person)-[:FOLLOWS]->(Person)|returns=node_property,variable",
-        1
-      ],
-      [
-        "clauses=MATCH,WITH,RETURN,ORDER_BY,LIMIT|motifs=|returns=node_property,node_property,relationship_property",
-        1
-      ]
-    ],
-    "aggregation_sum": [
-      [
-        "clauses=MATCH,RETURN|motifs=(Person)-[:PRODUCED]->(Movie)|returns=aggregate",
-        1
-      ]
-    ],
-    "date_or_year": [
-      [
-        "clauses=MATCH,WHERE,WITH,RETURN,ORDER_BY,LIMIT|motifs=(Person)-[:DIRECTED]->(Movie)|returns=node_property,variable",
-        2
-      ],
-      [
-        "clauses=MATCH,WHERE,RETURN,LIMIT|motifs=(Person)-[:ACTED_IN]->(Movie)|returns=node_property",
-        2
-      ],
-      [
-        "clauses=MATCH,WHERE,RETURN|motifs=|returns=aggregate",
-        2
-      ],
-      [
-        "clauses=MATCH,WITH,RETURN|motifs=|returns=variable",
-        2
-      ],
-      [
-        "clauses=MATCH,WHERE,RETURN,ORDER_BY,LIMIT|motifs=|returns=node_property,node_property",
-        1
-      ],
-      [
-        "clauses=MATCH,WITH,RETURN,ORDER_BY,LIMIT|motifs=|returns=variable,variable",
-        1
-      ],
-      [
-        "clauses=MATCH,WHERE,RETURN,ORDER_BY,LIMIT|motifs=(Person)-[:PRODUCED]->(Movie)|returns=node",
-        1
-      ],
-      [
-        "clauses=MATCH,WHERE,RETURN|motifs=(Person)-[:FOLLOWS]->(Person)|returns=node,node",
-        1
-      ],
-      [
-        "clauses=MATCH,RETURN,ORDER_BY,LIMIT|motifs=|returns=variable,expression",
-        1
-      ],
-      [
-        "clauses=MATCH,WHERE,RETURN,ORDER_BY,LIMIT|motifs=|returns=node",
-        1
-      ]
-    ],
-    "filter_literal": [
-      [
-        "clauses=MATCH,WHERE,RETURN|motifs=|returns=node_property",
-        5
-      ],
-      [
-        "clauses=MATCH,WHERE,RETURN|motifs=|returns=expression",
-        2
-      ],
-      [
-        "clauses=MATCH,WHERE,RETURN,ORDER_BY,LIMIT|motifs=(Person)-[:PRODUCED]->(Movie)|returns=node_property,aggregate",
-        2
-      ],
-      [
-        "clauses=MATCH,WHERE,RETURN,LIMIT|motifs=|returns=node_property",
-        2
-      ],
-      [
-        "clauses=MATCH,WHERE,RETURN,ORDER_BY,LIMIT|motifs=|returns=node_property,node_property",
-        2
-      ],
-      [
-        "clauses=MATCH,RETURN|motifs=|returns=node_property",
-        2
-      ],
-      [
-        "clauses=MATCH,WHERE,RETURN,ORDER_BY,LIMIT|motifs=|returns=node",
-        2
-      ],
-      [
-        "clauses=MATCH,WHERE,RETURN|motifs=(Person)-[:ACTED_IN]->(Movie)|returns=relationship_property",
-        1
-      ],
-      [
-        "clauses=MATCH,WHERE,RETURN|motifs=(Person)-[:REVIEWED]->(Movie)|returns=expression",
-        1
-      ],
-      [
-        "clauses=MATCH,RETURN,LIMIT|motifs=(Person)-[:ACTED_IN]->(Movie)|returns=node_property,relationship_property",
-        1
-      ]
-    ],
-    "filter_numeric": [
-      [
-        "clauses=MATCH,WHERE,RETURN|motifs=|returns=node_property",
-        3
-      ],
-      [
-        "clauses=MATCH,WHERE,WITH,RETURN,ORDER_BY,LIMIT|motifs=(Person)-[:DIRECTED]->(Movie)|returns=node_property,variable",
-        3
-      ],
-      [
-        "clauses=MATCH,WHERE,RETURN|motifs=(Person)-[:DIRECTED]->(Movie)|returns=node_property,node_property",
-        2
-      ],
-      [
-        "clauses=MATCH,WHERE,WITH,RETURN,ORDER_BY,LIMIT|motifs=(Person)-[:REVIEWED]->(Movie)|returns=node_property,variable",
-        2
-      ],
-      [
-        "clauses=MATCH,WHERE,WITH,RETURN|motifs=(Person)-[:REVIEWED]->(Movie)|returns=variable",
-        2
-      ],
-      [
-        "clauses=MATCH,RETURN|motifs=|returns=node",
-        1
-      ],
-      [
-        "clauses=MATCH,WHERE,WITH,RETURN|motifs=(Person)-[:REVIEWED]->(Movie)|returns=aggregate",
-        1
-      ],
-      [
-        "clauses=MATCH,WHERE,RETURN|motifs=|returns=node_property,relationship_property",
-        1
-      ],
-      [
-        "clauses=MATCH,WHERE,RETURN,LIMIT|motifs=(Person)-[:PRODUCED]->(Movie)|returns=node",
-        1
-      ],
-      [
-        "clauses=MATCH,WHERE,RETURN|motifs=|returns=node_property,node_property",
-        1
-      ]
-    ],
-    "limit": [
-      [
-        "clauses=MATCH,RETURN,ORDER_BY,LIMIT|motifs=|returns=node_property,node_property",
-        5
-      ],
-      [
-        "clauses=MATCH,WHERE,RETURN,ORDER_BY,LIMIT|motifs=|returns=node",
-        4
-      ],
-      [
-        "clauses=MATCH,WITH,RETURN,ORDER_BY,LIMIT|motifs=|returns=node_property,variable",
-        4
-      ],
-      [
-        "clauses=MATCH,WHERE,RETURN,ORDER_BY,LIMIT|motifs=|returns=node_property,node_property",
-        3
-      ],
-      [
-        "clauses=MATCH,WITH,RETURN,ORDER_BY,LIMIT|motifs=(Person)-[:ACTED_IN]->(Movie)|returns=node_property,variable",
-        3
-      ],
-      [
-        "clauses=MATCH,RETURN,LIMIT|motifs=(Person)-[:DIRECTED]->(Movie)|returns=node_property",
-        2
-      ],
-      [
-        "clauses=MATCH,WHERE,RETURN,ORDER_BY,LIMIT|motifs=(Person)-[:PRODUCED]->(Movie)|returns=node_property,aggregate",
-        2
-      ],
-      [
-        "clauses=MATCH,RETURN,ORDER_BY,LIMIT|motifs=|returns=node_property,aggregate",
-        2
-      ],
-      [
-        "clauses=MATCH,RETURN,ORDER_BY,LIMIT|motifs=(Person)-[:WROTE]->(Movie)|returns=node_property,node_property",
-        2
-      ],
-      [
-        "clauses=MATCH,WHERE,RETURN,LIMIT|motifs=(Person)-[:ACTED_IN]->(Movie)|returns=node_property",
-        2
-      ]
-    ],
-    "ranking_asc": [
-      [
-        "clauses=MATCH,RETURN,ORDER_BY,LIMIT|motifs=|returns=node_property,node_property",
-        6
-      ],
-      [
-        "clauses=MATCH,RETURN,ORDER_BY,LIMIT|motifs=|returns=node_property,node_property,node_property",
-        1
-      ],
-      [
-        "clauses=MATCH,WHERE,RETURN,ORDER_BY,LIMIT|motifs=(Person)-[:REVIEWED]->(Movie)|returns=node",
-        1
-      ],
-      [
-        "clauses=MATCH,WHERE,RETURN,ORDER_BY,LIMIT|motifs=|returns=node_property,node_property",
-        1
-      ],
-      [
-        "clauses=MATCH,RETURN,ORDER_BY,LIMIT|motifs=(Person)-[:DIRECTED]->(Movie)|returns=node_property,node_property",
-        1
-      ],
-      [
-        "clauses=MATCH,RETURN,ORDER_BY,LIMIT|motifs=(Person)-[:REVIEWED]->(Movie)|returns=node_property,aggregate",
-        1
-      ],
-      [
-        "clauses=MATCH,WHERE,RETURN,ORDER_BY,LIMIT|motifs=|returns=node",
-        1
-      ],
-      [
-        "clauses=MATCH,WITH,RETURN,ORDER_BY,LIMIT|motifs=(Person)-[:REVIEWED]->(Movie)|returns=node_property,node_property,relationship_property",
-        1
-      ],
-      [
-        "clauses=MATCH,WHERE,WITH,RETURN|motifs=(Person)-[:ACTED_IN]->(Movie)|returns=node_property,node_property",
-        1
-      ],
-      [
-        "clauses=MATCH,WHERE,RETURN,ORDER_BY,LIMIT|motifs=|returns=node_property,node_property,node_property",
-        1
-      ]
-    ],
-    "ranking_desc": [
-      [
-        "clauses=MATCH,RETURN,ORDER_BY,LIMIT|motifs=|returns=node_property,node_property",
-        6
-      ],
-      [
-        "clauses=MATCH,WHERE,RETURN,ORDER_BY,LIMIT|motifs=|returns=node",
-        5
-      ],
-      [
-        "clauses=MATCH,WHERE,WITH,RETURN,ORDER_BY,LIMIT|motifs=(Person)-[:DIRECTED]->(Movie)|returns=node_property,variable",
-        4
-      ],
-      [
-        "clauses=MATCH,WITH,RETURN,ORDER_BY,LIMIT|motifs=(Person)-[:REVIEWED]->(Movie)|returns=node_property,variable",
-        4
-      ],
-      [
-        "clauses=MATCH,WITH,RETURN,ORDER_BY,LIMIT|motifs=(Person)-[:ACTED_IN]->(Movie)|returns=node_property,variable",
-        4
-      ],
-      [
-        "clauses=MATCH,WITH,RETURN,ORDER_BY,LIMIT|motifs=|returns=node_property,variable",
-        4
-      ],
-      [
-        "clauses=MATCH,WHERE,RETURN,ORDER_BY,LIMIT|motifs=|returns=node_property,node_property",
-        3
-      ],
-      [
-        "clauses=MATCH,WHERE,RETURN,ORDER_BY,LIMIT|motifs=(Person)-[:PRODUCED]->(Movie)|returns=node_property,aggregate",
-        2
-      ],
-      [
-        "clauses=MATCH,WHERE,RETURN,ORDER_BY,LIMIT|motifs=|returns=node_property,aggregate",
-        2
-      ],
-      [
-        "clauses=MATCH,RETURN,ORDER_BY,LIMIT|motifs=|returns=node_property,aggregate",
-        2
-      ]
-    ],
-    "relationship_property": [
-      [
-        "clauses=MATCH,WHERE,RETURN|motifs=|returns=node_property",
-        5
-      ],
-      [
-        "clauses=MATCH,WITH,RETURN,ORDER_BY,LIMIT|motifs=(Person)-[:REVIEWED]->(Movie)|returns=node_property,variable",
-        3
-      ],
-      [
-        "clauses=MATCH,WITH,RETURN,ORDER_BY,LIMIT|motifs=(Person)-[:ACTED_IN]->(Movie)|returns=node_property,variable",
-        3
-      ],
-      [
-        "clauses=MATCH,WHERE,WITH,RETURN|motifs=(Person)-[:REVIEWED]->(Movie)|returns=aggregate",
-        2
-      ],
-      [
-        "clauses=MATCH,WHERE,RETURN|motifs=|returns=expression",
-        2
-      ],
-      [
-        "clauses=MATCH,RETURN,ORDER_BY,LIMIT|motifs=|returns=node_property,aggregate",
-        2
-      ],
-      [
-        "clauses=MATCH,WHERE,RETURN,LIMIT|motifs=|returns=node_property",
-        2
-      ],
-      [
-        "clauses=MATCH,WHERE,RETURN|motifs=|returns=aggregate",
-        2
-      ],
-      [
-        "clauses=MATCH,WHERE,RETURN|motifs=(Person)-[:REVIEWED]->(Movie)|returns=node_property",
-        2
-      ],
-      [
-        "clauses=MATCH,WHERE,WITH,RETURN|motifs=(Person)-[:REVIEWED]->(Movie)|returns=variable",
-        2
-      ]
-    ],
-    "same_entity_multi_role": [
-      [
-        "clauses=MATCH,RETURN|motifs=(Person)-[:DIRECTED]->(Movie);(Person)-[:WROTE]->(Movie)|returns=node_property",
-        1
-      ],
-      [
-        "clauses=MATCH,WHERE,RETURN|motifs=(Person)-[:FOLLOWS]->(Person);(Person)-[:ACTED_IN]->(Movie)|returns=node",
-        1
-      ],
-      [
-        "clauses=MATCH,RETURN,LIMIT|motifs=(Person)-[:ACTED_IN]->(Movie);(Person)-[:PRODUCED]->(Movie)|returns=expression",
-        1
-      ],
-      [
-        "clauses=MATCH,RETURN,LIMIT|motifs=(Person)-[:DIRECTED]->(Movie)|returns=node_property",
-        1
-      ],
-      [
-        "clauses=MATCH,WHERE,RETURN|motifs=(Person)-[:PRODUCED]->(Movie);(Person)-[:ACTED_IN]->(Movie)|returns=node_property",
-        1
-      ],
-      [
-        "clauses=MATCH,RETURN|motifs=(Person)-[:ACTED_IN]->(Movie)|returns=node_property,node_property,relationship_property,relationship_property,relationship_property",
-        1
-      ],
-      [
-        "clauses=MATCH,WHERE,RETURN|motifs=(Person)-[:DIRECTED]->(Movie);(Person)-[:ACTED_IN]->(Movie)|returns=expression",
-        1
-      ],
-      [
-        "clauses=MATCH,WITH,RETURN|motifs=(Person)-[:DIRECTED]->(Movie);(Person)-[:PRODUCED]->(Movie)|returns=expression",
-        1
-      ],
-      [
-        "clauses=MATCH,WHERE,RETURN|motifs=(Person)-[:PRODUCED]->(Movie)|returns=node_property",
-        1
-      ],
-      [
-        "clauses=MATCH,WHERE,RETURN|motifs=(Person)-[:PRODUCED]->(Movie);(Person)-[:DIRECTED]->(Movie)|returns=node_property,node_property",
-        1
-      ]
-    ],
-    "text_contains": [
-      [
-        "clauses=MATCH,WHERE,RETURN|motifs=|returns=node_property",
-        4
-      ],
-      [
-        "clauses=MATCH,WHERE,RETURN|motifs=|returns=expression",
-        2
-      ],
-      [
-        "clauses=MATCH,WHERE,RETURN,ORDER_BY,LIMIT|motifs=(Person)-[:PRODUCED]->(Movie)|returns=node_property,aggregate",
-        2
-      ],
-      [
-        "clauses=MATCH,WHERE,RETURN,LIMIT|motifs=|returns=node_property",
-        2
-      ],
-      [
-        "clauses=MATCH,WHERE,RETURN,ORDER_BY,LIMIT|motifs=|returns=node_property,node_property",
-        2
-      ],
-      [
-        "clauses=MATCH,WHERE,WITH,RETURN|motifs=(Person)-[:REVIEWED]->(Movie)|returns=aggregate",
-        1
-      ],
-      [
-        "clauses=MATCH,WHERE,RETURN|motifs=(Person)-[:REVIEWED]->(Movie)|returns=expression",
-        1
-      ],
-      [
-        "clauses=MATCH,WITH,RETURN,ORDER_BY,LIMIT|motifs=(Person)-[:REVIEWED]->(Movie)|returns=node_property,variable",
-        1
-      ],
-      [
-        "clauses=MATCH,WHERE,WITH,RETURN,LIMIT|motifs=(Person)-[:ACTED_IN]->(Movie)|returns=node_property",
-        1
-      ],
-      [
-        "clauses=MATCH,WHERE,RETURN,ORDER_BY,LIMIT|motifs=(Person)-[:REVIEWED]->(Movie)|returns=node_property",
-        1
-      ]
-    ]
-  },
+  "intent_to_shape_signatures": {},
   "motif_to_return_contracts": {
     "(?)-[:ACTED_IN]->(Movie)": [
       [
@@ -1385,10 +1783,6 @@
       [
         "(Person)-[:PRODUCED]->(Movie)",
         1
-      ],
-      [
-        "(Person)-[:FOLLOWS]->(Person)",
-        1
       ]
     ],
     "1970": [
@@ -1425,16 +1819,12 @@
       [
         "(Person)-[:REVIEWED]->(Movie)",
         1
-      ],
-      [
-        "(Person)-[:FOLLOWS]->(Person)",
-        1
       ]
     ],
     "1990": [
       [
         "(Person)-[:ACTED_IN]->(Movie)",
-        3
+        2
       ]
     ],
     "2000": [
@@ -1515,6 +1905,32 @@
         1
       ]
     ],
+    "a": [
+      [
+        "(Person)-[:REVIEWED]->(Movie)",
+        13
+      ],
+      [
+        "(Person)-[:ACTED_IN]->(Movie)",
+        13
+      ],
+      [
+        "(Person)-[:PRODUCED]->(Movie)",
+        6
+      ],
+      [
+        "(Person)-[:DIRECTED]->(Movie)",
+        6
+      ],
+      [
+        "(Person)-[:WROTE]->(Movie)",
+        4
+      ],
+      [
+        "(Person)-[:FOLLOWS]->(Person)",
+        1
+      ]
+    ],
     "above": [
       [
         "(Person)-[:REVIEWED]->(Movie)",
@@ -1557,12 +1973,22 @@
     ],
     "actor": [
       [
+        "(Person)-[:DIRECTED]->(Movie)",
+        1
+      ],
+      [
         "(Person)-[:ACTED_IN]->(Movie)",
-        16
+        1
+      ]
+    ],
+    "actors": [
+      [
+        "(Person)-[:ACTED_IN]->(Movie)",
+        15
       ],
       [
         "(Person)-[:DIRECTED]->(Movie)",
-        4
+        3
       ],
       [
         "(Person)-[:FOLLOWS]->(Person)",
@@ -1595,6 +2021,24 @@
         1
       ]
     ],
+    "all": [
+      [
+        "(Person)-[:PRODUCED]->(Movie)",
+        6
+      ],
+      [
+        "(Person)-[:DIRECTED]->(Movie)",
+        5
+      ],
+      [
+        "(Person)-[:ACTED_IN]->(Movie)",
+        4
+      ],
+      [
+        "(Person)-[:WROTE]->(Movie)",
+        1
+      ]
+    ],
     "also": [
       [
         "(Person)-[:ACTED_IN]->(Movie)",
@@ -1607,6 +2051,42 @@
       [
         "(Person)-[:DIRECTED]->(Movie)",
         2
+      ],
+      [
+        "(Person)-[:FOLLOWS]->(Person)",
+        1
+      ]
+    ],
+    "an": [
+      [
+        "(Person)-[:DIRECTED]->(Movie)",
+        1
+      ],
+      [
+        "(Person)-[:ACTED_IN]->(Movie)",
+        1
+      ]
+    ],
+    "and": [
+      [
+        "(Person)-[:DIRECTED]->(Movie)",
+        12
+      ],
+      [
+        "(Person)-[:ACTED_IN]->(Movie)",
+        8
+      ],
+      [
+        "(Person)-[:WROTE]->(Movie)",
+        6
+      ],
+      [
+        "(Person)-[:REVIEWED]->(Movie)",
+        5
+      ],
+      [
+        "(Person)-[:PRODUCED]->(Movie)",
+        5
       ],
       [
         "(Person)-[:FOLLOWS]->(Person)",
@@ -1632,6 +2112,54 @@
       ],
       [
         "(Person)-[:DIRECTED]->(Movie)",
+        1
+      ]
+    ],
+    "are": [
+      [
+        "(Person)-[:ACTED_IN]->(Movie)",
+        13
+      ],
+      [
+        "(Person)-[:PRODUCED]->(Movie)",
+        6
+      ],
+      [
+        "(Person)-[:DIRECTED]->(Movie)",
+        6
+      ],
+      [
+        "(Person)-[:REVIEWED]->(Movie)",
+        5
+      ],
+      [
+        "(Person)-[:WROTE]->(Movie)",
+        3
+      ],
+      [
+        "(Person)-[:FOLLOWS]->(Person)",
+        3
+      ],
+      [
+        "(Movie)-[:DIRECTED]-(Person)",
+        1
+      ]
+    ],
+    "as": [
+      [
+        "(Person)-[:ACTED_IN]->(Movie)",
+        2
+      ],
+      [
+        "(Person)-[:PRODUCED]->(Movie)",
+        2
+      ],
+      [
+        "(Person)-[:DIRECTED]->(Movie)",
+        2
+      ],
+      [
+        "(Person)-[:WROTE]->(Movie)",
         1
       ]
     ],
@@ -1761,6 +2289,32 @@
         1
       ]
     ],
+    "by": [
+      [
+        "(Person)-[:DIRECTED]->(Movie)",
+        14
+      ],
+      [
+        "(Person)-[:ACTED_IN]->(Movie)",
+        6
+      ],
+      [
+        "(Person)-[:PRODUCED]->(Movie)",
+        5
+      ],
+      [
+        "(Person)-[:REVIEWED]->(Movie)",
+        4
+      ],
+      [
+        "(Person)-[:FOLLOWS]->(Person)",
+        2
+      ],
+      [
+        "(Person)-[:WROTE]->(Movie)",
+        1
+      ]
+    ],
     "combined": [
       [
         "(Person)-[:ACTED_IN]->(Movie)",
@@ -1816,11 +2370,17 @@
     "director": [
       [
         "(Person)-[:DIRECTED]->(Movie)",
-        5
+        2
       ],
       [
         "(Person)-[:ACTED_IN]->(Movie)",
         1
+      ]
+    ],
+    "directors": [
+      [
+        "(Person)-[:DIRECTED]->(Movie)",
+        3
       ],
       [
         "(Movie)-[:DIRECTED]-(Person)",
@@ -1895,13 +2455,35 @@
         1
       ]
     ],
-    "follower": [
+    "followers": [
       [
         "(Person)-[:FOLLOWS]->(Person)",
         3
       ],
       [
         "(Person)-[:ACTED_IN]->(Movie)",
+        1
+      ]
+    ],
+    "for": [
+      [
+        "(Person)-[:REVIEWED]->(Movie)",
+        2
+      ],
+      [
+        "(Person)-[:WROTE]->(Movie)",
+        1
+      ],
+      [
+        "(Person)-[:DIRECTED]->(Movie)",
+        1
+      ],
+      [
+        "(Person)-[:ACTED_IN]->(Movie)",
+        1
+      ],
+      [
+        "(Person)-[:FOLLOWS]->(Person)",
         1
       ]
     ],
@@ -1921,6 +2503,58 @@
       [
         "(Person)-[:REVIEWED]->(Movie)",
         4
+      ]
+    ],
+    "has": [
+      [
+        "(Person)-[:ACTED_IN]->(Movie)",
+        7
+      ],
+      [
+        "(Person)-[:PRODUCED]->(Movie)",
+        5
+      ],
+      [
+        "(Person)-[:REVIEWED]->(Movie)",
+        4
+      ],
+      [
+        "(Person)-[:DIRECTED]->(Movie)",
+        4
+      ],
+      [
+        "(Person)-[:WROTE]->(Movie)",
+        1
+      ]
+    ],
+    "have": [
+      [
+        "(Person)-[:DIRECTED]->(Movie)",
+        20
+      ],
+      [
+        "(Person)-[:PRODUCED]->(Movie)",
+        10
+      ],
+      [
+        "(Person)-[:ACTED_IN]->(Movie)",
+        8
+      ],
+      [
+        "(Person)-[:REVIEWED]->(Movie)",
+        7
+      ],
+      [
+        "(Person)-[:WROTE]->(Movie)",
+        6
+      ],
+      [
+        "(Person)-[:FOLLOWS]->(Person)",
+        2
+      ],
+      [
+        "(?)-[:ACTED_IN]->(Movie)",
+        1
       ]
     ],
     "higher": [
@@ -1957,10 +2591,58 @@
         1
       ]
     ],
+    "in": [
+      [
+        "(Person)-[:ACTED_IN]->(Movie)",
+        34
+      ],
+      [
+        "(Person)-[:DIRECTED]->(Movie)",
+        10
+      ],
+      [
+        "(Person)-[:REVIEWED]->(Movie)",
+        5
+      ],
+      [
+        "(Person)-[:PRODUCED]->(Movie)",
+        4
+      ],
+      [
+        "(Person)-[:FOLLOWS]->(Person)",
+        3
+      ],
+      [
+        "(?)-[:ACTED_IN]->(Movie)",
+        1
+      ]
+    ],
     "including": [
       [
         "(Person)-[:PRODUCED]->(Movie)",
         2
+      ]
+    ],
+    "is": [
+      [
+        "(Person)-[:REVIEWED]->(Movie)",
+        7
+      ],
+      [
+        "(Person)-[:DIRECTED]->(Movie)",
+        4
+      ],
+      [
+        "(Person)-[:ACTED_IN]->(Movie)",
+        3
+      ],
+      [
+        "(Person)-[:PRODUCED]->(Movie)",
+        1
+      ],
+      [
+        "(Person)-[:FOLLOWS]->(Person)",
+        1
       ]
     ],
     "joel": [
@@ -2007,6 +2689,24 @@
       [
         "(Person)-[:ACTED_IN]->(Movie)",
         1
+      ]
+    ],
+    "list": [
+      [
+        "(Person)-[:DIRECTED]->(Movie)",
+        10
+      ],
+      [
+        "(Person)-[:ACTED_IN]->(Movie)",
+        9
+      ],
+      [
+        "(Person)-[:PRODUCED]->(Movie)",
+        7
+      ],
+      [
+        "(Person)-[:WROTE]->(Movie)",
+        2
       ]
     ],
     "listed": [
@@ -2095,28 +2795,50 @@
     ],
     "movie": [
       [
-        "(Person)-[:DIRECTED]->(Movie)",
-        35
+        "(Person)-[:ACTED_IN]->(Movie)",
+        15
       ],
       [
-        "(Person)-[:ACTED_IN]->(Movie)",
-        32
+        "(Person)-[:DIRECTED]->(Movie)",
+        9
       ],
       [
         "(Person)-[:REVIEWED]->(Movie)",
-        23
-      ],
-      [
-        "(Person)-[:PRODUCED]->(Movie)",
-        22
+        7
       ],
       [
         "(Person)-[:WROTE]->(Movie)",
-        8
+        5
+      ],
+      [
+        "(Person)-[:PRODUCED]->(Movie)",
+        4
       ],
       [
         "(Person)-[:FOLLOWS]->(Person)",
         1
+      ]
+    ],
+    "movies": [
+      [
+        "(Person)-[:DIRECTED]->(Movie)",
+        26
+      ],
+      [
+        "(Person)-[:PRODUCED]->(Movie)",
+        18
+      ],
+      [
+        "(Person)-[:ACTED_IN]->(Movie)",
+        17
+      ],
+      [
+        "(Person)-[:REVIEWED]->(Movie)",
+        16
+      ],
+      [
+        "(Person)-[:WROTE]->(Movie)",
+        3
       ],
       [
         "(?)-[:ACTED_IN]->(Movie)",
@@ -2213,6 +2935,36 @@
         1
       ]
     ],
+    "of": [
+      [
+        "(Person)-[:ACTED_IN]->(Movie)",
+        11
+      ],
+      [
+        "(Person)-[:PRODUCED]->(Movie)",
+        6
+      ],
+      [
+        "(Person)-[:DIRECTED]->(Movie)",
+        5
+      ],
+      [
+        "(Person)-[:REVIEWED]->(Movie)",
+        5
+      ],
+      [
+        "(Person)-[:FOLLOWS]->(Person)",
+        3
+      ],
+      [
+        "(Person)-[:WROTE]->(Movie)",
+        1
+      ],
+      [
+        "(Movie)-[:DIRECTED]-(Person)",
+        1
+      ]
+    ],
     "oldest": [
       [
         "(Person)-[:REVIEWED]->(Movie)",
@@ -2238,6 +2990,20 @@
       ],
       [
         "(Person)-[:REVIEWED]->(Movie)",
+        1
+      ]
+    ],
+    "or": [
+      [
+        "(?)-[:ACTED_IN]->(Movie)",
+        1
+      ],
+      [
+        "(Person)-[:DIRECTED]->(Movie)",
+        1
+      ],
+      [
+        "(Person)-[:PRODUCED]->(Movie)",
         1
       ]
     ],
@@ -2343,10 +3109,10 @@
         1
       ]
     ],
-    "producer": [
+    "producers": [
       [
         "(Person)-[:PRODUCED]->(Movie)",
-        5
+        4
       ],
       [
         "(Person)-[:ACTED_IN]->(Movie)",
@@ -2366,7 +3132,7 @@
     "rating": [
       [
         "(Person)-[:REVIEWED]->(Movie)",
-        17
+        15
       ],
       [
         "(Person)-[:DIRECTED]->(Movie)",
@@ -2375,6 +3141,12 @@
       [
         "(Person)-[:WROTE]->(Movie)",
         1
+      ]
+    ],
+    "ratings": [
+      [
+        "(Person)-[:REVIEWED]->(Movie)",
+        2
       ]
     ],
     "reeves": [
@@ -2424,7 +3196,7 @@
     "review": [
       [
         "(Person)-[:REVIEWED]->(Movie)",
-        8
+        6
       ]
     ],
     "reviewed": [
@@ -2441,6 +3213,12 @@
         1
       ]
     ],
+    "reviews": [
+      [
+        "(Person)-[:REVIEWED]->(Movie)",
+        2
+      ]
+    ],
     "roles": [
       [
         "(Person)-[:ACTED_IN]->(Movie)",
@@ -2452,16 +3230,6 @@
       ],
       [
         "(Person)-[:DIRECTED]->(Movie)",
-        1
-      ]
-    ],
-    "s": [
-      [
-        "(Person)-[:FOLLOWS]->(Person)",
-        2
-      ],
-      [
-        "(Person)-[:ACTED_IN]->(Movie)",
         1
       ]
     ],
@@ -2484,6 +3252,20 @@
       ],
       [
         "(Person)-[:FOLLOWS]->(Person)",
+        1
+      ],
+      [
+        "(Person)-[:REVIEWED]->(Movie)",
+        1
+      ]
+    ],
+    "show": [
+      [
+        "(Person)-[:DIRECTED]->(Movie)",
+        1
+      ],
+      [
+        "(Person)-[:ACTED_IN]->(Movie)",
         1
       ],
       [
@@ -2583,6 +3365,76 @@
         1
       ]
     ],
+    "that": [
+      [
+        "(Person)-[:ACTED_IN]->(Movie)",
+        3
+      ],
+      [
+        "(Person)-[:DIRECTED]->(Movie)",
+        2
+      ],
+      [
+        "(Person)-[:PRODUCED]->(Movie)",
+        2
+      ],
+      [
+        "(Person)-[:FOLLOWS]->(Person)",
+        1
+      ]
+    ],
+    "the": [
+      [
+        "(Person)-[:ACTED_IN]->(Movie)",
+        46
+      ],
+      [
+        "(Person)-[:DIRECTED]->(Movie)",
+        40
+      ],
+      [
+        "(Person)-[:REVIEWED]->(Movie)",
+        30
+      ],
+      [
+        "(Person)-[:PRODUCED]->(Movie)",
+        20
+      ],
+      [
+        "(Person)-[:WROTE]->(Movie)",
+        10
+      ],
+      [
+        "(Person)-[:FOLLOWS]->(Person)",
+        8
+      ],
+      [
+        "(Movie)-[:DIRECTED]-(Person)",
+        1
+      ]
+    ],
+    "their": [
+      [
+        "(Person)-[:REVIEWED]->(Movie)",
+        4
+      ],
+      [
+        "(Person)-[:WROTE]->(Movie)",
+        2
+      ],
+      [
+        "(Person)-[:ACTED_IN]->(Movie)",
+        2
+      ],
+      [
+        "(Person)-[:DIRECTED]->(Movie)",
+        1
+      ],
+      [
+        "(Person)-[:PRODUCED]->(Movie)",
+        1
+      ]
+    ],
     "they": [
       [
         "(Person)-[:REVIEWED]->(Movie)",
@@ -2652,6 +3504,20 @@
       ],
       [
         "(Person)-[:WROTE]->(Movie)",
+        1
+      ]
+    ],
+    "to": [
+      [
+        "(Person)-[:REVIEWED]->(Movie)",
+        3
+      ],
+      [
+        "(Person)-[:PRODUCED]->(Movie)",
+        2
+      ],
+      [
+        "(Person)-[:ACTED_IN]->(Movie)",
         1
       ]
     ],
@@ -2729,6 +3595,32 @@
         1
       ]
     ],
+    "what": [
+      [
+        "(Person)-[:REVIEWED]->(Movie)",
+        11
+      ],
+      [
+        "(Person)-[:DIRECTED]->(Movie)",
+        6
+      ],
+      [
+        "(Person)-[:ACTED_IN]->(Movie)",
+        5
+      ],
+      [
+        "(Person)-[:WROTE]->(Movie)",
+        3
+      ],
+      [
+        "(Person)-[:PRODUCED]->(Movie)",
+        2
+      ],
+      [
+        "(Person)-[:FOLLOWS]->(Person)",
+        1
+      ]
+    ],
     "where": [
       [
         "(Person)-[:PRODUCED]->(Movie)",
@@ -2744,6 +3636,96 @@
       ],
       [
         "(Person)-[:WROTE]->(Movie)",
+        1
+      ]
+    ],
+    "which": [
+      [
+        "(Person)-[:DIRECTED]->(Movie)",
+        8
+      ],
+      [
+        "(Person)-[:ACTED_IN]->(Movie)",
+        8
+      ],
+      [
+        "(Person)-[:REVIEWED]->(Movie)",
+        6
+      ],
+      [
+        "(Person)-[:WROTE]->(Movie)",
+        3
+      ],
+      [
+        "(Person)-[:PRODUCED]->(Movie)",
+        3
+      ],
+      [
+        "(Person)-[:FOLLOWS]->(Person)",
+        1
+      ],
+      [
+        "(?)-[:ACTED_IN]->(Movie)",
+        1
+      ]
+    ],
+    "who": [
+      [
+        "(Person)-[:ACTED_IN]->(Movie)",
+        23
+      ],
+      [
+        "(Person)-[:DIRECTED]->(Movie)",
+        20
+      ],
+      [
+        "(Person)-[:PRODUCED]->(Movie)",
+        13
+      ],
+      [
+        "(Person)-[:REVIEWED]->(Movie)",
+        12
+      ],
+      [
+        "(Person)-[:WROTE]->(Movie)",
+        4
+      ],
+      [
+        "(Person)-[:FOLLOWS]->(Person)",
+        4
+      ],
+      [
+        "(Movie)-[:DIRECTED]-(Person)",
+        1
+      ]
+    ],
+    "with": [
+      [
+        "(Person)-[:REVIEWED]->(Movie)",
+        15
+      ],
+      [
+        "(Person)-[:ACTED_IN]->(Movie)",
+        9
+      ],
+      [
+        "(Person)-[:PRODUCED]->(Movie)",
+        7
+      ],
+      [
+        "(Person)-[:DIRECTED]->(Movie)",
+        7
+      ],
+      [
+        "(Person)-[:FOLLOWS]->(Person)",
+        2
+      ],
+      [
+        "(Person)-[:WROTE]->(Movie)",
+        1
+      ],
+      [
+        "(Movie)-[:DIRECTED]-(Person)",
         1
       ]
     ],
@@ -2816,18 +3798,17 @@
     {
       "row": 1,
       "question": "Find the top 5 movies with the most votes.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
           "find",
+          "the",
           "top",
           "5",
-          "movie",
+          "movies",
+          "with",
+          "the",
           "most",
           "votes"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit"
         ],
         "literals": [],
         "numbers": [
@@ -2873,19 +3854,19 @@
     {
       "row": 2,
       "question": "List all movies with a 'Pretty funny at times' review summary.",
-      "question_profile": {
-        "tokens": [
-          "movie",
+      "question_evidence": {
+        "terms": [
+          "list",
+          "all",
+          "movies",
+          "with",
+          "a",
           "pretty",
           "funny",
+          "at",
           "times",
           "review",
           "summary"
-        ],
-        "intents": [
-          "filter_literal",
-          "text_contains",
-          "relationship_property"
         ],
         "literals": [
           "Pretty funny at times"
@@ -2925,16 +3906,16 @@
     {
       "row": 3,
       "question": "List the movies with more than 100 votes.",
-      "question_profile": {
-        "tokens": [
-          "movie",
+      "question_evidence": {
+        "terms": [
+          "list",
+          "the",
+          "movies",
+          "with",
           "more",
           "than",
           "100",
           "votes"
-        ],
-        "intents": [
-          "filter_numeric"
         ],
         "literals": [],
         "numbers": [
@@ -2971,20 +3952,22 @@
     {
       "row": 4,
       "question": "Who are the top 3 producers by the number of movies with different taglines?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "who",
+          "are",
+          "the",
           "top",
           "3",
-          "producer",
+          "producers",
+          "by",
+          "the",
           "number",
-          "movie",
+          "of",
+          "movies",
+          "with",
           "different",
           "taglines"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "aggregation_count"
         ],
         "literals": [],
         "numbers": [
@@ -3036,19 +4019,20 @@
     {
       "row": 5,
       "question": "Which people have directed movies with a budget higher than $100 million?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "which",
           "people",
+          "have",
           "directed",
-          "movie",
+          "movies",
+          "with",
+          "a",
           "budget",
           "higher",
           "than",
           "100",
           "million"
-        ],
-        "intents": [
-          "filter_numeric"
         ],
         "literals": [],
         "numbers": [
@@ -3082,16 +4066,18 @@
     {
       "row": 6,
       "question": "What are the roles of Keanu Reeves in 'The Matrix'?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "what",
+          "are",
+          "the",
           "roles",
+          "of",
           "keanu",
           "reeves",
+          "in",
+          "the",
           "matrix"
-        ],
-        "intents": [
-          "filter_literal",
-          "relationship_property"
         ],
         "literals": [
           "The Matrix"
@@ -3134,15 +4120,20 @@
     {
       "row": 7,
       "question": "List all people who have written and directed the same movie.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "list",
+          "all",
           "people",
+          "who",
+          "have",
           "written",
+          "and",
           "directed",
+          "the",
           "same",
           "movie"
         ],
-        "intents": [],
         "literals": [],
         "numbers": []
       },
@@ -3181,22 +4172,20 @@
     {
       "row": 8,
       "question": "Which top 5 people have directed movies with more than 200 votes?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "which",
           "top",
           "5",
           "people",
+          "have",
           "directed",
-          "movie",
+          "movies",
+          "with",
           "more",
           "than",
           "200",
           "votes"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "filter_numeric"
         ],
         "literals": [],
         "numbers": [
@@ -3249,17 +4238,22 @@
     {
       "row": 9,
       "question": "List the names of people who acted in movies directed by Nancy Meyers.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "list",
+          "the",
           "names",
+          "of",
           "people",
+          "who",
           "acted",
-          "movie",
+          "in",
+          "movies",
           "directed",
+          "by",
           "nancy",
           "meyers"
         ],
-        "intents": [],
         "literals": [],
         "numbers": []
       },
@@ -3297,20 +4291,23 @@
     {
       "row": 10,
       "question": "What are the top 3 highest rated reviews and which movies they are associated with?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "what",
+          "are",
+          "the",
           "top",
           "3",
           "highest",
           "rated",
-          "review",
-          "movie",
+          "reviews",
+          "and",
+          "which",
+          "movies",
           "they",
-          "associated"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit"
+          "are",
+          "associated",
+          "with"
         ],
         "literals": [],
         "numbers": [
@@ -3365,19 +4362,25 @@
     {
       "row": 11,
       "question": "Which movies have been both written and directed by the same person and what are their titles?",
-      "question_profile": {
-        "tokens": [
-          "movie",
+      "question_evidence": {
+        "terms": [
+          "which",
+          "movies",
+          "have",
           "been",
           "both",
           "written",
+          "and",
           "directed",
+          "by",
+          "the",
           "same",
           "person",
+          "and",
+          "what",
+          "are",
+          "their",
           "titles"
-        ],
-        "intents": [
-          "same_entity_multi_role"
         ],
         "literals": [],
         "numbers": []
@@ -3416,18 +4419,19 @@
     {
       "row": 12,
       "question": "List the movies with exactly 3 roles in the ACTED_IN relationship.",
-      "question_profile": {
-        "tokens": [
-          "movie",
+      "question_evidence": {
+        "terms": [
+          "list",
+          "the",
+          "movies",
+          "with",
           "exactly",
           "3",
           "roles",
+          "in",
+          "the",
           "acted_in",
           "relationship"
-        ],
-        "intents": [
-          "filter_numeric",
-          "relationship_property"
         ],
         "literals": [],
         "numbers": [
@@ -3465,18 +4469,20 @@
     {
       "row": 13,
       "question": "What are the first 3 movies with a released year of 2008?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "what",
+          "are",
+          "the",
           "first",
           "3",
-          "movie",
+          "movies",
+          "with",
+          "a",
           "released",
           "year",
+          "of",
           "2008"
-        ],
-        "intents": [
-          "limit",
-          "date_or_year"
         ],
         "literals": [],
         "numbers": [
@@ -3523,24 +4529,26 @@
     {
       "row": 14,
       "question": "What is the average number of words in the review summaries of movies with a rating above 95?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "what",
+          "is",
+          "the",
           "average",
           "number",
+          "of",
           "words",
+          "in",
+          "the",
           "review",
           "summaries",
-          "movie",
+          "of",
+          "movies",
+          "with",
+          "a",
           "rating",
           "above",
           "95"
-        ],
-        "intents": [
-          "aggregation_count",
-          "aggregation_avg",
-          "filter_numeric",
-          "text_contains",
-          "relationship_property"
         ],
         "literals": [],
         "numbers": [
@@ -3582,19 +4590,22 @@
     {
       "row": 15,
       "question": "Which people follow Keanu Reeves and have also acted in a movie with him?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "which",
           "people",
           "follow",
           "keanu",
           "reeves",
+          "and",
+          "have",
           "also",
           "acted",
+          "in",
+          "a",
           "movie",
+          "with",
           "him"
-        ],
-        "intents": [
-          "same_entity_multi_role"
         ],
         "literals": [],
         "numbers": []
@@ -3634,20 +4645,21 @@
     {
       "row": 16,
       "question": "Show top 3 persons who directed, produced, and acted in the same movie.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "show",
           "top",
           "3",
           "persons",
+          "who",
           "directed",
           "produced",
+          "and",
           "acted",
+          "in",
+          "the",
           "same",
           "movie"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit"
         ],
         "literals": [],
         "numbers": [
@@ -3698,18 +4710,22 @@
     {
       "row": 17,
       "question": "Who are the first three people who have directed and reviewed the same movie?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "who",
+          "are",
+          "the",
           "first",
           "three",
           "people",
+          "who",
+          "have",
           "directed",
+          "and",
           "reviewed",
+          "the",
           "same",
           "movie"
-        ],
-        "intents": [
-          "limit"
         ],
         "literals": [],
         "numbers": []
@@ -3748,17 +4764,16 @@
     {
       "row": 18,
       "question": "Find all movies with a rating above 90.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
           "find",
-          "movie",
+          "all",
+          "movies",
+          "with",
+          "a",
           "rating",
           "above",
           "90"
-        ],
-        "intents": [
-          "filter_numeric",
-          "relationship_property"
         ],
         "literals": [],
         "numbers": [
@@ -3805,17 +4820,17 @@
     {
       "row": 19,
       "question": "Which year saw the release of the most movies?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "which",
           "year",
           "saw",
+          "the",
           "release",
+          "of",
+          "the",
           "most",
-          "movie"
-        ],
-        "intents": [
-          "ranking_desc",
-          "date_or_year"
+          "movies"
         ],
         "literals": [],
         "numbers": []
@@ -3857,21 +4872,22 @@
     {
       "row": 20,
       "question": "List all movies that have a 'Fun, but a little far fetched' review summary.",
-      "question_profile": {
-        "tokens": [
-          "movie",
+      "question_evidence": {
+        "terms": [
+          "list",
+          "all",
+          "movies",
+          "that",
+          "have",
+          "a",
           "fun",
           "but",
+          "a",
           "little",
           "far",
           "fetched",
           "review",
           "summary"
-        ],
-        "intents": [
-          "filter_literal",
-          "text_contains",
-          "relationship_property"
         ],
         "literals": [
           "Fun, but a little far fetched"
@@ -3911,20 +4927,22 @@
     {
       "row": 21,
       "question": "Which people have reviewed a movie with the words \"Robin Williams\" in the summary?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "which",
           "people",
+          "have",
           "reviewed",
+          "a",
           "movie",
+          "with",
+          "the",
           "words",
           "robin",
           "williams",
+          "in",
+          "the",
           "summary"
-        ],
-        "intents": [
-          "filter_literal",
-          "text_contains",
-          "relationship_property"
         ],
         "literals": [
           "Robin Williams"
@@ -3966,17 +4984,17 @@
     {
       "row": 22,
       "question": "List 3 actors who also have roles as producers.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "list",
           "3",
-          "actor",
+          "actors",
+          "who",
           "also",
+          "have",
           "roles",
-          "producer"
-        ],
-        "intents": [
-          "same_entity_multi_role",
-          "relationship_property"
+          "as",
+          "producers"
         ],
         "literals": [],
         "numbers": [
@@ -4017,19 +5035,20 @@
     {
       "row": 23,
       "question": "Who are the first 3 actors in the movie titled 'Speed Racer'?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "who",
+          "are",
+          "the",
           "first",
           "3",
-          "actor",
+          "actors",
+          "in",
+          "the",
           "movie",
           "titled",
           "speed",
           "racer"
-        ],
-        "intents": [
-          "limit",
-          "filter_literal"
         ],
         "literals": [
           "Speed Racer"
@@ -4078,20 +5097,23 @@
     {
       "row": 24,
       "question": "List the first 3 movies that have been produced and directed by the same person.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "list",
+          "the",
           "first",
           "3",
-          "movie",
+          "movies",
+          "that",
+          "have",
           "been",
           "produced",
+          "and",
           "directed",
+          "by",
+          "the",
           "same",
           "person"
-        ],
-        "intents": [
-          "limit",
-          "same_entity_multi_role"
         ],
         "literals": [],
         "numbers": [
@@ -4132,18 +5154,18 @@
     {
       "row": 25,
       "question": "Which movies have the word \"coolest\" in their review summary?",
-      "question_profile": {
-        "tokens": [
-          "movie",
+      "question_evidence": {
+        "terms": [
+          "which",
+          "movies",
+          "have",
+          "the",
           "word",
           "coolest",
+          "in",
+          "their",
           "review",
           "summary"
-        ],
-        "intents": [
-          "filter_literal",
-          "text_contains",
-          "relationship_property"
         ],
         "literals": [
           "coolest"
@@ -4183,21 +5205,21 @@
     {
       "row": 26,
       "question": "Who are the top 3 producers of movies with a tagline including 'Speed'?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "who",
+          "are",
+          "the",
           "top",
           "3",
-          "producer",
-          "movie",
+          "producers",
+          "of",
+          "movies",
+          "with",
+          "a",
           "tagline",
           "including",
           "speed"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "filter_literal",
-          "text_contains"
         ],
         "literals": [
           "Speed"
@@ -4250,22 +5272,22 @@
     {
       "row": 27,
       "question": "List the first 3 movies released in the 21st century that Laurence Fishburne produced.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "list",
+          "the",
           "first",
           "3",
-          "movie",
+          "movies",
           "released",
-          "21",
-          "st",
+          "in",
+          "the",
+          "21st",
           "century",
+          "that",
           "laurence",
           "fishburne",
           "produced"
-        ],
-        "intents": [
-          "limit",
-          "date_or_year"
         ],
         "literals": [],
         "numbers": [
@@ -4309,20 +5331,19 @@
     {
       "row": 28,
       "question": "Which person has the highest average rating for movies they wrote?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "which",
           "person",
+          "has",
+          "the",
           "highest",
           "average",
           "rating",
-          "movie",
+          "for",
+          "movies",
           "they",
           "wrote"
-        ],
-        "intents": [
-          "ranking_desc",
-          "aggregation_avg",
-          "relationship_property"
         ],
         "literals": [],
         "numbers": []
@@ -4370,21 +5391,20 @@
     {
       "row": 29,
       "question": "Who has the most movies with a 'Silly, but fun' review summary?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "who",
+          "has",
+          "the",
           "most",
-          "movie",
+          "movies",
+          "with",
+          "a",
           "silly",
           "but",
           "fun",
           "review",
           "summary"
-        ],
-        "intents": [
-          "ranking_desc",
-          "filter_literal",
-          "text_contains",
-          "relationship_property"
         ],
         "literals": [
           "Silly, but fun"
@@ -4433,18 +5453,19 @@
     {
       "row": 30,
       "question": "What are the 3 most common taglines found in the movies?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "what",
+          "are",
+          "the",
           "3",
           "most",
           "common",
           "taglines",
           "found",
-          "movie"
-        ],
-        "intents": [
-          "ranking_desc",
-          "aggregation_count"
+          "in",
+          "the",
+          "movies"
         ],
         "literals": [],
         "numbers": [
@@ -4490,17 +5511,17 @@
     {
       "row": 31,
       "question": "Who has produced movies but never acted in any?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "who",
+          "has",
           "produced",
-          "movie",
+          "movies",
           "but",
           "never",
           "acted",
+          "in",
           "any"
-        ],
-        "intents": [
-          "same_entity_multi_role"
         ],
         "literals": [],
         "numbers": []
@@ -4539,15 +5560,19 @@
     {
       "row": 32,
       "question": "Which persons have acted in and directed the same movie?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "which",
           "persons",
+          "have",
           "acted",
+          "in",
+          "and",
           "directed",
+          "the",
           "same",
           "movie"
         ],
-        "intents": [],
         "literals": [],
         "numbers": []
       },
@@ -4591,19 +5616,20 @@
     {
       "row": 33,
       "question": "Which persons have directed the most movies with a tagline containing 'world'?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "which",
           "persons",
+          "have",
           "directed",
+          "the",
           "most",
-          "movie",
+          "movies",
+          "with",
+          "a",
           "tagline",
           "containing",
           "world"
-        ],
-        "intents": [
-          "ranking_desc",
-          "filter_literal"
         ],
         "literals": [
           "world"
@@ -4655,18 +5681,17 @@
     {
       "row": 34,
       "question": "Find the top 5 movies with the most votes.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
           "find",
+          "the",
           "top",
           "5",
-          "movie",
+          "movies",
+          "with",
+          "the",
           "most",
           "votes"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit"
         ],
         "literals": [],
         "numbers": [
@@ -4705,16 +5730,20 @@
     {
       "row": 35,
       "question": "Find all people born in 1949 who have directed a movie.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
           "find",
+          "all",
           "people",
           "born",
+          "in",
           "1949",
+          "who",
+          "have",
           "directed",
+          "a",
           "movie"
         ],
-        "intents": [],
         "literals": [],
         "numbers": [
           "1949"
@@ -4754,24 +5783,24 @@
     {
       "row": 36,
       "question": "Find all movies that have been produced by persons born after 1960 limited to top 5.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
           "find",
-          "movie",
+          "all",
+          "movies",
+          "that",
+          "have",
           "been",
           "produced",
+          "by",
           "persons",
           "born",
           "after",
           "1960",
           "limited",
+          "to",
           "top",
           "5"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "filter_numeric"
         ],
         "literals": [],
         "numbers": [
@@ -4815,16 +5844,16 @@
     {
       "row": 37,
       "question": "List all movies with more than 2000 votes.",
-      "question_profile": {
-        "tokens": [
-          "movie",
+      "question_evidence": {
+        "terms": [
+          "list",
+          "all",
+          "movies",
+          "with",
           "more",
           "than",
           "2000",
           "votes"
-        ],
-        "intents": [
-          "filter_numeric"
         ],
         "literals": [],
         "numbers": [
@@ -4868,19 +5897,19 @@
     {
       "row": 38,
       "question": "Who are the top 3 actors with the most diverse roles?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "who",
+          "are",
+          "the",
           "top",
           "3",
-          "actor",
+          "actors",
+          "with",
+          "the",
           "most",
           "diverse",
           "roles"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "relationship_property"
         ],
         "literals": [],
         "numbers": [
@@ -4930,21 +5959,21 @@
     {
       "row": 39,
       "question": "List the top 5 movies with the most roles listed in ACTED_IN relationship.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "list",
+          "the",
           "top",
           "5",
-          "movie",
+          "movies",
+          "with",
+          "the",
           "most",
           "roles",
           "listed",
+          "in",
           "acted_in",
           "relationship"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "relationship_property"
         ],
         "literals": [],
         "numbers": [
@@ -4990,18 +6019,20 @@
     {
       "row": 40,
       "question": "Find the people who have followed someone with the same birth year.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
           "find",
+          "the",
           "people",
+          "who",
+          "have",
           "followed",
           "someone",
+          "with",
+          "the",
           "same",
           "birth",
           "year"
-        ],
-        "intents": [
-          "date_or_year"
         ],
         "literals": [],
         "numbers": []
@@ -5047,17 +6078,18 @@
     {
       "row": 41,
       "question": "Who has reviewed 'Speed Racer' and what was their rating?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "who",
+          "has",
           "reviewed",
           "speed",
           "racer",
+          "and",
+          "what",
           "was",
+          "their",
           "rating"
-        ],
-        "intents": [
-          "filter_literal",
-          "relationship_property"
         ],
         "literals": [
           "Speed Racer"
@@ -5103,19 +6135,23 @@
     {
       "row": 42,
       "question": "List the first 3 movies that Keanu Reeves has acted in with their release years.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "list",
+          "the",
           "first",
           "3",
-          "movie",
+          "movies",
+          "that",
           "keanu",
           "reeves",
+          "has",
           "acted",
+          "in",
+          "with",
+          "their",
           "release",
           "years"
-        ],
-        "intents": [
-          "limit"
         ],
         "literals": [],
         "numbers": [
@@ -5163,18 +6199,17 @@
     {
       "row": 43,
       "question": "List the top 5 oldest movies in the database.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "list",
+          "the",
           "top",
           "5",
           "oldest",
-          "movie",
+          "movies",
+          "in",
+          "the",
           "database"
-        ],
-        "intents": [
-          "ranking_desc",
-          "ranking_asc",
-          "limit"
         ],
         "literals": [],
         "numbers": [
@@ -5217,18 +6252,19 @@
     {
       "row": 44,
       "question": "List the top 5 youngest people who have written a movie.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "list",
+          "the",
           "top",
           "5",
           "youngest",
           "people",
+          "who",
+          "have",
           "written",
+          "a",
           "movie"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit"
         ],
         "literals": [],
         "numbers": [
@@ -5275,18 +6311,18 @@
     {
       "row": 45,
       "question": "Who are the top 3 actors by number of followers?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "who",
+          "are",
+          "the",
           "top",
           "3",
-          "actor",
+          "actors",
+          "by",
           "number",
-          "follower"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "aggregation_count"
+          "of",
+          "followers"
         ],
         "literals": [],
         "numbers": [
@@ -5337,15 +6373,19 @@
     {
       "row": 46,
       "question": "What is the name of the person who directed 'The Matrix'?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "what",
+          "is",
+          "the",
           "name",
+          "of",
+          "the",
           "person",
+          "who",
           "directed",
+          "the",
           "matrix"
-        ],
-        "intents": [
-          "filter_literal"
         ],
         "literals": [
           "The Matrix"
@@ -5384,17 +6424,19 @@
     {
       "row": 47,
       "question": "Which people have both acted in and reviewed the same movie?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "which",
           "people",
+          "have",
           "both",
           "acted",
+          "in",
+          "and",
           "reviewed",
+          "the",
           "same",
           "movie"
-        ],
-        "intents": [
-          "same_entity_multi_role"
         ],
         "literals": [],
         "numbers": []
@@ -5460,20 +6502,22 @@
     {
       "row": 48,
       "question": "What are the top 5 movies with the least votes and their release years?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "what",
+          "are",
+          "the",
           "top",
           "5",
-          "movie",
+          "movies",
+          "with",
+          "the",
           "least",
           "votes",
+          "and",
+          "their",
           "release",
           "years"
-        ],
-        "intents": [
-          "ranking_desc",
-          "ranking_asc",
-          "limit"
         ],
         "literals": [],
         "numbers": [
@@ -5523,18 +6567,20 @@
     {
       "row": 49,
       "question": "What are the 3 newest relationships formed in the graph (any type)?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "what",
+          "are",
+          "the",
           "3",
           "newest",
           "relationships",
           "formed",
+          "in",
+          "the",
           "graph",
           "any",
           "type"
-        ],
-        "intents": [
-          "date_or_year"
         ],
         "literals": [],
         "numbers": [
@@ -5575,20 +6621,15 @@
     {
       "row": 50,
       "question": "List top 3 movies released before 1980.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "list",
           "top",
           "3",
-          "movie",
+          "movies",
           "released",
           "before",
           "1980"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "filter_numeric",
-          "date_or_year"
         ],
         "literals": [],
         "numbers": [
@@ -5628,21 +6669,22 @@
     {
       "row": 51,
       "question": "Name 3 people who have the most combined roles across all their ACTED_IN movies.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
           "name",
           "3",
           "people",
+          "who",
+          "have",
+          "the",
           "most",
           "combined",
           "roles",
           "across",
+          "all",
+          "their",
           "acted_in",
-          "movie"
-        ],
-        "intents": [
-          "ranking_desc",
-          "relationship_property"
+          "movies"
         ],
         "literals": [],
         "numbers": [
@@ -5691,21 +6733,19 @@
     {
       "row": 52,
       "question": "Find the 3 oldest movies reviewed by someone born after 1970.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
           "find",
+          "the",
           "3",
           "oldest",
-          "movie",
+          "movies",
           "reviewed",
+          "by",
           "someone",
           "born",
           "after",
           "1970"
-        ],
-        "intents": [
-          "ranking_asc",
-          "filter_numeric"
         ],
         "literals": [],
         "numbers": [
@@ -5750,26 +6790,28 @@
     {
       "row": 53,
       "question": "Who are the first three actors who acted in more than three movies with a tagline containing the word 'limit'?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "who",
+          "are",
+          "the",
           "first",
           "three",
-          "actor",
+          "actors",
+          "who",
           "acted",
+          "in",
           "more",
           "than",
           "three",
-          "movie",
+          "movies",
+          "with",
+          "a",
           "tagline",
           "containing",
+          "the",
           "word",
           "limit"
-        ],
-        "intents": [
-          "limit",
-          "filter_literal",
-          "filter_numeric",
-          "text_contains"
         ],
         "literals": [
           "limit"
@@ -5813,16 +6855,18 @@
     {
       "row": 54,
       "question": "Who has produced, directed, and acted in the most movies?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "who",
+          "has",
           "produced",
           "directed",
+          "and",
           "acted",
+          "in",
+          "the",
           "most",
-          "movie"
-        ],
-        "intents": [
-          "ranking_desc"
+          "movies"
         ],
         "literals": [],
         "numbers": []
@@ -5887,23 +6931,23 @@
     {
       "row": 55,
       "question": "Show the first 3 movies with the most complex role lists in the 'ACTED_IN' relationship.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "show",
+          "the",
           "first",
           "3",
-          "movie",
+          "movies",
+          "with",
+          "the",
           "most",
           "complex",
           "role",
           "lists",
+          "in",
+          "the",
           "acted_in",
           "relationship"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "filter_literal",
-          "relationship_property"
         ],
         "literals": [
           "ACTED_IN"
@@ -5951,21 +6995,24 @@
     {
       "row": 56,
       "question": "List the roles of actors in the 3 movies with the highest number of actors involved.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "list",
+          "the",
           "roles",
-          "actor",
+          "of",
+          "actors",
+          "in",
+          "the",
           "3",
-          "movie",
+          "movies",
+          "with",
+          "the",
           "highest",
           "number",
-          "actor",
+          "of",
+          "actors",
           "involved"
-        ],
-        "intents": [
-          "ranking_desc",
-          "aggregation_count",
-          "relationship_property"
         ],
         "literals": [],
         "numbers": [
@@ -6019,15 +7066,18 @@
     {
       "row": 57,
       "question": "Who are the people who have reviewed the most movies?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "who",
+          "are",
+          "the",
           "people",
+          "who",
+          "have",
           "reviewed",
+          "the",
           "most",
-          "movie"
-        ],
-        "intents": [
-          "ranking_desc"
+          "movies"
         ],
         "literals": [],
         "numbers": []
@@ -6074,17 +7124,17 @@
     {
       "row": 58,
       "question": "List the movies directed by persons born after 1960.",
-      "question_profile": {
-        "tokens": [
-          "movie",
+      "question_evidence": {
+        "terms": [
+          "list",
+          "the",
+          "movies",
           "directed",
+          "by",
           "persons",
           "born",
           "after",
           "1960"
-        ],
-        "intents": [
-          "filter_numeric"
         ],
         "literals": [],
         "numbers": [
@@ -6126,18 +7176,20 @@
     {
       "row": 59,
       "question": "What are the roles of actors in the movie titled 'Speed Racer'?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "what",
+          "are",
+          "the",
           "roles",
-          "actor",
+          "of",
+          "actors",
+          "in",
+          "the",
           "movie",
           "titled",
           "speed",
           "racer"
-        ],
-        "intents": [
-          "filter_literal",
-          "relationship_property"
         ],
         "literals": [
           "Speed Racer"
@@ -6183,19 +7235,20 @@
     {
       "row": 60,
       "question": "What are the top 3 least voted for movies in the database?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "what",
+          "are",
+          "the",
           "top",
           "3",
           "least",
           "voted",
-          "movie",
+          "for",
+          "movies",
+          "in",
+          "the",
           "database"
-        ],
-        "intents": [
-          "ranking_desc",
-          "ranking_asc",
-          "limit"
         ],
         "literals": [],
         "numbers": [
@@ -6238,20 +7291,23 @@
     {
       "row": 61,
       "question": "What are the top 3 movies with the most distinct actors in the ACTED_IN relationship?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "what",
+          "are",
+          "the",
           "top",
           "3",
-          "movie",
+          "movies",
+          "with",
+          "the",
           "most",
           "distinct",
-          "actor",
+          "actors",
+          "in",
+          "the",
           "acted_in",
           "relationship"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit"
         ],
         "literals": [],
         "numbers": [
@@ -6298,23 +7354,25 @@
     {
       "row": 62,
       "question": "Who are the first 3 people to review a movie with a summary 'Pretty funny at times'?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "who",
+          "are",
+          "the",
           "first",
           "3",
           "people",
+          "to",
           "review",
+          "a",
           "movie",
+          "with",
+          "a",
           "summary",
           "pretty",
           "funny",
+          "at",
           "times"
-        ],
-        "intents": [
-          "limit",
-          "filter_literal",
-          "text_contains",
-          "relationship_property"
         ],
         "literals": [
           "Pretty funny at times"
@@ -6360,20 +7418,20 @@
     {
       "row": 63,
       "question": "List 3 movies that have been reviewed with a summary mentioning 'funny'.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "list",
           "3",
-          "movie",
+          "movies",
+          "that",
+          "have",
           "been",
           "reviewed",
+          "with",
+          "a",
           "summary",
           "mentioning",
           "funny"
-        ],
-        "intents": [
-          "filter_literal",
-          "text_contains",
-          "relationship_property"
         ],
         "literals": [
           "funny"
@@ -6416,18 +7474,21 @@
     {
       "row": 64,
       "question": "What is the average rating for movies with \"The Matrix\" in the title?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "what",
+          "is",
+          "the",
           "average",
           "rating",
-          "movie",
+          "for",
+          "movies",
+          "with",
+          "the",
           "matrix",
+          "in",
+          "the",
           "title"
-        ],
-        "intents": [
-          "aggregation_avg",
-          "filter_literal",
-          "relationship_property"
         ],
         "literals": [
           "The Matrix"
@@ -6470,18 +7531,20 @@
     {
       "row": 65,
       "question": "Find all movies where the director is also listed as an actor.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
           "find",
-          "movie",
+          "all",
+          "movies",
           "where",
+          "the",
           "director",
+          "is",
           "also",
           "listed",
+          "as",
+          "an",
           "actor"
-        ],
-        "intents": [
-          "same_entity_multi_role"
         ],
         "literals": [],
         "numbers": []
@@ -6521,17 +7584,18 @@
     {
       "row": 66,
       "question": "List the movies where Joel Silver has a production role.",
-      "question_profile": {
-        "tokens": [
-          "movie",
+      "question_evidence": {
+        "terms": [
+          "list",
+          "the",
+          "movies",
           "where",
           "joel",
           "silver",
+          "has",
+          "a",
           "production",
           "role"
-        ],
-        "intents": [
-          "relationship_property"
         ],
         "literals": [],
         "numbers": []
@@ -6575,20 +7639,23 @@
     {
       "row": 67,
       "question": "Which movie has the most roles in the 'ACTED_IN' relationship and what are those roles?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "which",
           "movie",
+          "has",
+          "the",
           "most",
           "roles",
+          "in",
+          "the",
           "acted_in",
           "relationship",
+          "and",
+          "what",
+          "are",
           "those",
           "roles"
-        ],
-        "intents": [
-          "ranking_desc",
-          "filter_literal",
-          "relationship_property"
         ],
         "literals": [
           "ACTED_IN"
@@ -6636,19 +7703,21 @@
     {
       "row": 68,
       "question": "Who reviewed the movie with the highest rating and what was the summary?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "who",
           "reviewed",
+          "the",
           "movie",
+          "with",
+          "the",
           "highest",
           "rating",
+          "and",
+          "what",
           "was",
+          "the",
           "summary"
-        ],
-        "intents": [
-          "ranking_desc",
-          "text_contains",
-          "relationship_property"
         ],
         "literals": [],
         "numbers": []
@@ -6693,20 +7762,18 @@
     {
       "row": 69,
       "question": "Who are the top 3 reviewers by average rating given?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "who",
+          "are",
+          "the",
           "top",
           "3",
           "reviewers",
+          "by",
           "average",
           "rating",
           "given"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "aggregation_avg",
-          "relationship_property"
         ],
         "literals": [],
         "numbers": [
@@ -6755,17 +7822,18 @@
     {
       "row": 70,
       "question": "Find all people who have both produced and directed movies.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
           "find",
+          "all",
           "people",
+          "who",
+          "have",
           "both",
           "produced",
+          "and",
           "directed",
-          "movie"
-        ],
-        "intents": [
-          "same_entity_multi_role"
+          "movies"
         ],
         "literals": [],
         "numbers": []
@@ -6804,20 +7872,22 @@
     {
       "row": 71,
       "question": "What is the average rating for movies with a tagline longer than 20 characters?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "what",
+          "is",
+          "the",
           "average",
           "rating",
-          "movie",
+          "for",
+          "movies",
+          "with",
+          "a",
           "tagline",
           "longer",
           "than",
           "20",
           "characters"
-        ],
-        "intents": [
-          "aggregation_avg",
-          "relationship_property"
         ],
         "literals": [],
         "numbers": [
@@ -6854,23 +7924,25 @@
     {
       "row": 72,
       "question": "Find the movie with the highest number of votes that has the word \"Welcome\" in its tagline.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
           "find",
+          "the",
           "movie",
+          "with",
+          "the",
           "highest",
           "number",
+          "of",
           "votes",
+          "that",
+          "has",
+          "the",
           "word",
           "welcome",
+          "in",
           "its",
           "tagline"
-        ],
-        "intents": [
-          "ranking_desc",
-          "aggregation_count",
-          "filter_literal",
-          "text_contains"
         ],
         "literals": [
           "Welcome"
@@ -6916,22 +7988,22 @@
     {
       "row": 73,
       "question": "List the movies released between 1990 and 2000 with a rating higher than 80.",
-      "question_profile": {
-        "tokens": [
-          "movie",
+      "question_evidence": {
+        "terms": [
+          "list",
+          "the",
+          "movies",
           "released",
           "between",
           "1990",
+          "and",
           "2000",
+          "with",
+          "a",
           "rating",
           "higher",
           "than",
           "80"
-        ],
-        "intents": [
-          "filter_numeric",
-          "relationship_property",
-          "date_or_year"
         ],
         "literals": [],
         "numbers": [
@@ -6975,18 +8047,18 @@
     {
       "row": 74,
       "question": "Which movies have been directed by persons born after 1970?",
-      "question_profile": {
-        "tokens": [
-          "movie",
+      "question_evidence": {
+        "terms": [
+          "which",
+          "movies",
+          "have",
           "been",
           "directed",
+          "by",
           "persons",
           "born",
           "after",
           "1970"
-        ],
-        "intents": [
-          "filter_numeric"
         ],
         "literals": [],
         "numbers": [
@@ -7035,25 +8107,26 @@
     {
       "row": 75,
       "question": "Find the movie with the lowest number of votes that has the word \"times\" in its review summary.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
           "find",
+          "the",
           "movie",
+          "with",
+          "the",
           "lowest",
           "number",
+          "of",
           "votes",
+          "that",
+          "has",
+          "the",
           "word",
           "times",
+          "in",
           "its",
           "review",
           "summary"
-        ],
-        "intents": [
-          "ranking_asc",
-          "aggregation_count",
-          "filter_literal",
-          "text_contains",
-          "relationship_property"
         ],
         "literals": [
           "times"
@@ -7101,25 +8174,26 @@
     {
       "row": 76,
       "question": "Who are the top 3 people born after 1960 who have directed a movie titled 'V for Vendetta'?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "who",
+          "are",
+          "the",
           "top",
           "3",
           "people",
           "born",
           "after",
           "1960",
+          "who",
+          "have",
           "directed",
+          "a",
           "movie",
           "titled",
           "v",
+          "for",
           "vendetta"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "filter_literal",
-          "filter_numeric"
         ],
         "literals": [
           "V for Vendetta"
@@ -7173,21 +8247,22 @@
     {
       "row": 77,
       "question": "Which movies released between 2005 and 2010 have the tagline 'Speed has no limits'?",
-      "question_profile": {
-        "tokens": [
-          "movie",
+      "question_evidence": {
+        "terms": [
+          "which",
+          "movies",
           "released",
           "between",
           "2005",
+          "and",
           "2010",
+          "have",
+          "the",
           "tagline",
           "speed",
+          "has",
           "no",
           "limits"
-        ],
-        "intents": [
-          "filter_literal",
-          "date_or_year"
         ],
         "literals": [
           "Speed has no limits"
@@ -7229,15 +8304,17 @@
     {
       "row": 78,
       "question": "Who has the most directed movies in the database?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "who",
+          "has",
+          "the",
           "most",
           "directed",
-          "movie",
+          "movies",
+          "in",
+          "the",
           "database"
-        ],
-        "intents": [
-          "ranking_desc"
         ],
         "literals": [],
         "numbers": []
@@ -7284,17 +8361,20 @@
     {
       "row": 79,
       "question": "List all movies where the writer is also credited as a producer.",
-      "question_profile": {
-        "tokens": [
-          "movie",
+      "question_evidence": {
+        "terms": [
+          "list",
+          "all",
+          "movies",
           "where",
+          "the",
           "writer",
+          "is",
           "also",
           "credited",
+          "as",
+          "a",
           "producer"
-        ],
-        "intents": [
-          "same_entity_multi_role"
         ],
         "literals": [],
         "numbers": []
@@ -7333,16 +8413,18 @@
     {
       "row": 80,
       "question": "Which persons have reviewed movies with a rating of 100?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "which",
           "persons",
+          "have",
           "reviewed",
-          "movie",
+          "movies",
+          "with",
+          "a",
           "rating",
+          "of",
           "100"
-        ],
-        "intents": [
-          "relationship_property"
         ],
         "literals": [],
         "numbers": [
@@ -7384,19 +8466,24 @@
     {
       "row": 81,
       "question": "List all movies produced by persons who have also directed a movie with the same title.",
-      "question_profile": {
-        "tokens": [
-          "movie",
+      "question_evidence": {
+        "terms": [
+          "list",
+          "all",
+          "movies",
           "produced",
+          "by",
           "persons",
+          "who",
+          "have",
           "also",
           "directed",
+          "a",
           "movie",
+          "with",
+          "the",
           "same",
           "title"
-        ],
-        "intents": [
-          "same_entity_multi_role"
         ],
         "literals": [],
         "numbers": []
@@ -7445,16 +8532,17 @@
     {
       "row": 82,
       "question": "Who has the most roles in a single movie?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "who",
+          "has",
+          "the",
           "most",
           "roles",
+          "in",
+          "a",
           "single",
           "movie"
-        ],
-        "intents": [
-          "ranking_desc",
-          "relationship_property"
         ],
         "literals": [],
         "numbers": []
@@ -7507,22 +8595,20 @@
     {
       "row": 83,
       "question": "Name 3 persons who have reviewed the most movies released before 2000.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
           "name",
           "3",
           "persons",
+          "who",
+          "have",
           "reviewed",
+          "the",
           "most",
-          "movie",
+          "movies",
           "released",
           "before",
           "2000"
-        ],
-        "intents": [
-          "ranking_desc",
-          "filter_numeric",
-          "date_or_year"
         ],
         "literals": [],
         "numbers": [
@@ -7575,16 +8661,17 @@
     {
       "row": 84,
       "question": "Which person produced movies directed by Lana Wachowski?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "which",
           "person",
           "produced",
-          "movie",
+          "movies",
           "directed",
+          "by",
           "lana",
           "wachowski"
         ],
-        "intents": [],
         "literals": [],
         "numbers": []
       },
@@ -7622,18 +8709,18 @@
     {
       "row": 85,
       "question": "Which movies have been produced by more than one person?",
-      "question_profile": {
-        "tokens": [
-          "movie",
+      "question_evidence": {
+        "terms": [
+          "which",
+          "movies",
+          "have",
           "been",
           "produced",
+          "by",
           "more",
           "than",
           "one",
           "person"
-        ],
-        "intents": [
-          "filter_numeric"
         ],
         "literals": [],
         "numbers": []
@@ -7679,20 +8766,19 @@
     {
       "row": 86,
       "question": "Show the top 3 movies with the lowest number of votes.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "show",
+          "the",
           "top",
           "3",
-          "movie",
+          "movies",
+          "with",
+          "the",
           "lowest",
           "number",
+          "of",
           "votes"
-        ],
-        "intents": [
-          "ranking_desc",
-          "ranking_asc",
-          "limit",
-          "aggregation_count"
         ],
         "literals": [],
         "numbers": [
@@ -7735,20 +8821,21 @@
     {
       "row": 87,
       "question": "Which persons born after 1980 have acted in, directed, or produced any movies?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "which",
           "persons",
           "born",
           "after",
           "1980",
+          "have",
           "acted",
+          "in",
           "directed",
+          "or",
           "produced",
           "any",
-          "movie"
-        ],
-        "intents": [
-          "filter_numeric"
+          "movies"
         ],
         "literals": [],
         "numbers": [
@@ -7793,20 +8880,26 @@
     {
       "row": 88,
       "question": "What are the names of the first 3 people who have produced, directed, and written the same movie?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "what",
+          "are",
+          "the",
           "names",
+          "of",
+          "the",
           "first",
           "3",
           "people",
+          "who",
+          "have",
           "produced",
           "directed",
+          "and",
           "written",
+          "the",
           "same",
           "movie"
-        ],
-        "intents": [
-          "limit"
         ],
         "literals": [],
         "numbers": [
@@ -7851,17 +8944,21 @@
     {
       "row": 89,
       "question": "What is the title of the movie with the highest number of votes?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "what",
+          "is",
+          "the",
           "title",
+          "of",
+          "the",
           "movie",
+          "with",
+          "the",
           "highest",
           "number",
+          "of",
           "votes"
-        ],
-        "intents": [
-          "ranking_desc",
-          "aggregation_count"
         ],
         "literals": [],
         "numbers": []
@@ -7902,15 +8999,19 @@
     {
       "row": 90,
       "question": "What is the title of the movie with the oldest director?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "what",
+          "is",
+          "the",
           "title",
+          "of",
+          "the",
           "movie",
+          "with",
+          "the",
           "oldest",
           "director"
-        ],
-        "intents": [
-          "ranking_asc"
         ],
         "literals": [],
         "numbers": []
@@ -7956,19 +9057,25 @@
     {
       "row": 91,
       "question": "Find the actors who have acted in movies with a release year that is a prime number.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
           "find",
-          "actor",
+          "the",
+          "actors",
+          "who",
+          "have",
           "acted",
-          "movie",
+          "in",
+          "movies",
+          "with",
+          "a",
           "release",
           "year",
+          "that",
+          "is",
+          "a",
           "prime",
           "number"
-        ],
-        "intents": [
-          "date_or_year"
         ],
         "literals": [],
         "numbers": []
@@ -8006,19 +9113,19 @@
     {
       "row": 92,
       "question": "Who has reviewed the most movies with a rating above 90?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "who",
+          "has",
           "reviewed",
+          "the",
           "most",
-          "movie",
+          "movies",
+          "with",
+          "a",
           "rating",
           "above",
           "90"
-        ],
-        "intents": [
-          "ranking_desc",
-          "filter_numeric",
-          "relationship_property"
         ],
         "literals": [],
         "numbers": [
@@ -8070,17 +9177,21 @@
     {
       "row": 93,
       "question": "List all the movies where the director and writer are the same person.",
-      "question_profile": {
-        "tokens": [
-          "movie",
+      "question_evidence": {
+        "terms": [
+          "list",
+          "all",
+          "the",
+          "movies",
           "where",
+          "the",
           "director",
+          "and",
           "writer",
+          "are",
+          "the",
           "same",
           "person"
-        ],
-        "intents": [
-          "same_entity_multi_role"
         ],
         "literals": [],
         "numbers": []
@@ -8124,18 +9235,20 @@
     {
       "row": 94,
       "question": "Which people have directed movies with the word \"Give\" in the title?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "which",
           "people",
+          "have",
           "directed",
-          "movie",
+          "movies",
+          "with",
+          "the",
           "word",
           "give",
+          "in",
+          "the",
           "title"
-        ],
-        "intents": [
-          "filter_literal",
-          "text_contains"
         ],
         "literals": [
           "Give"
@@ -8175,18 +9288,28 @@
     {
       "row": 95,
       "question": "Who are the actors who have acted in movies directed by someone born in the same decade as them?",
-      "question_profile": {
-        "tokens": [
-          "actor",
+      "question_evidence": {
+        "terms": [
+          "who",
+          "are",
+          "the",
+          "actors",
+          "who",
+          "have",
           "acted",
-          "movie",
+          "in",
+          "movies",
           "directed",
+          "by",
           "someone",
           "born",
+          "in",
+          "the",
           "same",
-          "decade"
+          "decade",
+          "as",
+          "them"
         ],
-        "intents": [],
         "literals": [],
         "numbers": []
       },
@@ -8224,18 +9347,17 @@
     {
       "row": 96,
       "question": "Who reviewed movies with a rating higher than 90?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "who",
           "reviewed",
-          "movie",
+          "movies",
+          "with",
+          "a",
           "rating",
           "higher",
           "than",
           "90"
-        ],
-        "intents": [
-          "filter_numeric",
-          "relationship_property"
         ],
         "literals": [],
         "numbers": [
@@ -8277,15 +9399,17 @@
     {
       "row": 97,
       "question": "What are the 3 oldest movies in the database?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "what",
+          "are",
+          "the",
           "3",
           "oldest",
-          "movie",
+          "movies",
+          "in",
+          "the",
           "database"
-        ],
-        "intents": [
-          "ranking_asc"
         ],
         "literals": [],
         "numbers": [
@@ -8328,20 +9452,22 @@
     {
       "row": 98,
       "question": "Who are the top 5 actors by the number of movies they acted in?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "who",
+          "are",
+          "the",
           "top",
           "5",
-          "actor",
+          "actors",
+          "by",
+          "the",
           "number",
-          "movie",
+          "of",
+          "movies",
           "they",
-          "acted"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "aggregation_count"
+          "acted",
+          "in"
         ],
         "literals": [],
         "numbers": [
@@ -8390,21 +9516,22 @@
     {
       "row": 99,
       "question": "Who has directed the most movies released after 2000 and what are those movies?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "who",
+          "has",
           "directed",
+          "the",
           "most",
-          "movie",
+          "movies",
           "released",
           "after",
           "2000",
+          "and",
+          "what",
+          "are",
           "those",
-          "movie"
-        ],
-        "intents": [
-          "ranking_desc",
-          "filter_numeric",
-          "date_or_year"
+          "movies"
         ],
         "literals": [],
         "numbers": [
@@ -8456,20 +9583,20 @@
     {
       "row": 100,
       "question": "List the first 3 movies with a tagline containing the word 'journey'.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "list",
+          "the",
           "first",
           "3",
-          "movie",
+          "movies",
+          "with",
+          "a",
           "tagline",
           "containing",
+          "the",
           "word",
           "journey"
-        ],
-        "intents": [
-          "limit",
-          "filter_literal",
-          "text_contains"
         ],
         "literals": [
           "journey"
@@ -8509,20 +9636,22 @@
     {
       "row": 101,
       "question": "List the actors born after 1980 who have acted in more than one movie.",
-      "question_profile": {
-        "tokens": [
-          "actor",
+      "question_evidence": {
+        "terms": [
+          "list",
+          "the",
+          "actors",
           "born",
           "after",
           "1980",
+          "who",
+          "have",
           "acted",
+          "in",
           "more",
           "than",
           "one",
           "movie"
-        ],
-        "intents": [
-          "filter_numeric"
         ],
         "literals": [],
         "numbers": [
@@ -8572,18 +9701,19 @@
     {
       "row": 102,
       "question": "List all the movies reviewed with the summary 'An amazing journey'.",
-      "question_profile": {
-        "tokens": [
-          "movie",
+      "question_evidence": {
+        "terms": [
+          "list",
+          "all",
+          "the",
+          "movies",
           "reviewed",
+          "with",
+          "the",
           "summary",
+          "an",
           "amazing",
           "journey"
-        ],
-        "intents": [
-          "filter_literal",
-          "text_contains",
-          "relationship_property"
         ],
         "literals": [
           "An amazing journey"
@@ -8619,24 +9749,27 @@
     {
       "row": 103,
       "question": "Which movies have been reviewed with a summary 'Fun, but a little far fetched' and what were their ratings?",
-      "question_profile": {
-        "tokens": [
-          "movie",
+      "question_evidence": {
+        "terms": [
+          "which",
+          "movies",
+          "have",
           "been",
           "reviewed",
+          "with",
+          "a",
           "summary",
           "fun",
           "but",
+          "a",
           "little",
           "far",
           "fetched",
+          "and",
+          "what",
           "were",
-          "rating"
-        ],
-        "intents": [
-          "filter_literal",
-          "text_contains",
-          "relationship_property"
+          "their",
+          "ratings"
         ],
         "literals": [
           "Fun, but a little far fetched"
@@ -8685,16 +9818,14 @@
     {
       "row": 104,
       "question": "Which actors were born after 1970?",
-      "question_profile": {
-        "tokens": [
-          "actor",
+      "question_evidence": {
+        "terms": [
+          "which",
+          "actors",
           "were",
           "born",
           "after",
           "1970"
-        ],
-        "intents": [
-          "filter_numeric"
         ],
         "literals": [],
         "numbers": [
@@ -8742,17 +9873,19 @@
     {
       "row": 105,
       "question": "List all movies where the same person has acted and produced.",
-      "question_profile": {
-        "tokens": [
-          "movie",
+      "question_evidence": {
+        "terms": [
+          "list",
+          "all",
+          "movies",
           "where",
+          "the",
           "same",
           "person",
+          "has",
           "acted",
+          "and",
           "produced"
-        ],
-        "intents": [
-          "same_entity_multi_role"
         ],
         "literals": [],
         "numbers": []
@@ -8798,20 +9931,19 @@
     {
       "row": 106,
       "question": "Find the top 5 movies with the lowest ratings in REVIEWS.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
           "find",
+          "the",
           "top",
           "5",
-          "movie",
+          "movies",
+          "with",
+          "the",
           "lowest",
-          "rating",
-          "review"
-        ],
-        "intents": [
-          "ranking_desc",
-          "ranking_asc",
-          "limit"
+          "ratings",
+          "in",
+          "reviews"
         ],
         "literals": [],
         "numbers": [
@@ -8858,14 +9990,17 @@
     {
       "row": 107,
       "question": "Who has produced and written the same movie?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "who",
+          "has",
           "produced",
+          "and",
           "written",
+          "the",
           "same",
           "movie"
         ],
-        "intents": [],
         "literals": [],
         "numbers": []
       },
@@ -8909,20 +10044,24 @@
     {
       "row": 108,
       "question": "List the actors who have acted in movies directed by both Lilly Wachowski and Lana Wachowski.",
-      "question_profile": {
-        "tokens": [
-          "actor",
+      "question_evidence": {
+        "terms": [
+          "list",
+          "the",
+          "actors",
+          "who",
+          "have",
           "acted",
-          "movie",
+          "in",
+          "movies",
           "directed",
+          "by",
           "both",
           "lilly",
           "wachowski",
+          "and",
           "lana",
           "wachowski"
-        ],
-        "intents": [
-          "same_entity_multi_role"
         ],
         "literals": [],
         "numbers": []
@@ -8962,20 +10101,19 @@
     {
       "row": 109,
       "question": "Show the top 3 movies with the lowest number of votes.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "show",
+          "the",
           "top",
           "3",
-          "movie",
+          "movies",
+          "with",
+          "the",
           "lowest",
           "number",
+          "of",
           "votes"
-        ],
-        "intents": [
-          "ranking_desc",
-          "ranking_asc",
-          "limit",
-          "aggregation_count"
         ],
         "literals": [],
         "numbers": [
@@ -9014,18 +10152,18 @@
     {
       "row": 110,
       "question": "List the top 5 movies that have not been reviewed.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "list",
+          "the",
           "top",
           "5",
-          "movie",
+          "movies",
+          "that",
+          "have",
           "not",
           "been",
           "reviewed"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit"
         ],
         "literals": [],
         "numbers": [
@@ -9063,18 +10201,19 @@
     {
       "row": 111,
       "question": "What are the top 3 movies with the most distinct taglines?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "what",
+          "are",
+          "the",
           "top",
           "3",
-          "movie",
+          "movies",
+          "with",
+          "the",
           "most",
           "distinct",
           "taglines"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit"
         ],
         "literals": [],
         "numbers": [
@@ -9120,21 +10259,22 @@
     {
       "row": 112,
       "question": "Name 3 persons who acted in the most movies with a tagline containing 'journey'.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
           "name",
           "3",
           "persons",
+          "who",
           "acted",
+          "in",
+          "the",
           "most",
-          "movie",
+          "movies",
+          "with",
+          "a",
           "tagline",
           "containing",
           "journey"
-        ],
-        "intents": [
-          "ranking_desc",
-          "filter_literal"
         ],
         "literals": [
           "journey"
@@ -9181,19 +10321,20 @@
     {
       "row": 113,
       "question": "Which 3 persons have the most distinct roles in the ACTED_IN relationship?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "which",
           "3",
           "persons",
+          "have",
+          "the",
           "most",
           "distinct",
           "roles",
+          "in",
+          "the",
           "acted_in",
           "relationship"
-        ],
-        "intents": [
-          "ranking_desc",
-          "relationship_property"
         ],
         "literals": [],
         "numbers": [
@@ -9242,14 +10383,18 @@
     {
       "row": 114,
       "question": "What is the longest movie title in the database?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "what",
+          "is",
+          "the",
           "longest",
           "movie",
           "title",
+          "in",
+          "the",
           "database"
         ],
-        "intents": [],
         "literals": [],
         "numbers": []
       },
@@ -9289,16 +10434,16 @@
     {
       "row": 115,
       "question": "Which person directed the movie \"V for Vendetta\"?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "which",
           "person",
           "directed",
+          "the",
           "movie",
           "v",
+          "for",
           "vendetta"
-        ],
-        "intents": [
-          "filter_literal"
         ],
         "literals": [
           "V for Vendetta"
@@ -9335,21 +10480,22 @@
     {
       "row": 116,
       "question": "List the top 3 directors who have directed movies with the highest average votes.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "list",
+          "the",
           "top",
           "3",
-          "director",
+          "directors",
+          "who",
+          "have",
           "directed",
-          "movie",
+          "movies",
+          "with",
+          "the",
           "highest",
           "average",
           "votes"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "aggregation_avg"
         ],
         "literals": [],
         "numbers": [
@@ -9398,21 +10544,21 @@
     {
       "row": 117,
       "question": "What are the first 3 movies with a vote count less than 100?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "what",
+          "are",
+          "the",
           "first",
           "3",
-          "movie",
+          "movies",
+          "with",
+          "a",
           "vote",
           "count",
           "less",
           "than",
           "100"
-        ],
-        "intents": [
-          "limit",
-          "aggregation_count",
-          "filter_numeric"
         ],
         "literals": [],
         "numbers": [
@@ -9452,21 +10598,22 @@
     {
       "row": 118,
       "question": "Find the first 3 people who acted in a movie released in the 1990s.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
           "find",
+          "the",
           "first",
           "3",
           "people",
+          "who",
           "acted",
+          "in",
+          "a",
           "movie",
           "released",
-          "1990",
-          "s"
-        ],
-        "intents": [
-          "limit",
-          "date_or_year"
+          "in",
+          "the",
+          "1990s"
         ],
         "literals": [],
         "numbers": [
@@ -9510,21 +10657,24 @@
     {
       "row": 119,
       "question": "Who are the first 3 people to have produced a movie with more than 500 votes?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "who",
+          "are",
+          "the",
           "first",
           "3",
           "people",
+          "to",
+          "have",
           "produced",
+          "a",
           "movie",
+          "with",
           "more",
           "than",
           "500",
           "votes"
-        ],
-        "intents": [
-          "limit",
-          "filter_numeric"
         ],
         "literals": [],
         "numbers": [
@@ -9568,21 +10718,22 @@
     {
       "row": 120,
       "question": "List the top 5 movies by the number of roles and their respective actors.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "list",
+          "the",
           "top",
           "5",
-          "movie",
+          "movies",
+          "by",
+          "the",
           "number",
+          "of",
           "roles",
+          "and",
+          "their",
           "respective",
-          "actor"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "aggregation_count",
-          "relationship_property"
+          "actors"
         ],
         "literals": [],
         "numbers": [
@@ -9635,20 +10786,22 @@
     {
       "row": 121,
       "question": "Who are the first 3 people born in the 1960s that Keanu Reeves follows?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "who",
+          "are",
+          "the",
           "first",
           "3",
           "people",
           "born",
-          "1960",
-          "s",
+          "in",
+          "the",
+          "1960s",
+          "that",
           "keanu",
           "reeves",
           "follows"
-        ],
-        "intents": [
-          "limit"
         ],
         "literals": [],
         "numbers": [
@@ -9692,17 +10845,16 @@
     {
       "row": 122,
       "question": "Which movies have more than 3 actors listed?",
-      "question_profile": {
-        "tokens": [
-          "movie",
+      "question_evidence": {
+        "terms": [
+          "which",
+          "movies",
+          "have",
           "more",
           "than",
           "3",
-          "actor",
+          "actors",
           "listed"
-        ],
-        "intents": [
-          "filter_numeric"
         ],
         "literals": [],
         "numbers": [
@@ -9748,17 +10900,17 @@
     {
       "row": 123,
       "question": "Which person reviewed the movie with the lowest rating?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "which",
           "person",
           "reviewed",
+          "the",
           "movie",
+          "with",
+          "the",
           "lowest",
           "rating"
-        ],
-        "intents": [
-          "ranking_asc",
-          "relationship_property"
         ],
         "literals": [],
         "numbers": []
@@ -9812,19 +10964,21 @@
     {
       "row": 124,
       "question": "List the first 3 people who acted in a movie released in 2012.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "list",
+          "the",
           "first",
           "3",
           "people",
+          "who",
           "acted",
+          "in",
+          "a",
           "movie",
           "released",
+          "in",
           "2012"
-        ],
-        "intents": [
-          "limit",
-          "date_or_year"
         ],
         "literals": [],
         "numbers": [
@@ -9868,17 +11022,18 @@
     {
       "row": 125,
       "question": "Show the top 5 people who have the most followers.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "show",
+          "the",
           "top",
           "5",
           "people",
+          "who",
+          "have",
+          "the",
           "most",
-          "follower"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit"
+          "followers"
         ],
         "literals": [],
         "numbers": [
@@ -9924,20 +11079,20 @@
     {
       "row": 126,
       "question": "Show the first 3 people who have reviewed more than one movie.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "show",
+          "the",
           "first",
           "3",
           "people",
+          "who",
+          "have",
           "reviewed",
           "more",
           "than",
           "one",
           "movie"
-        ],
-        "intents": [
-          "limit",
-          "filter_numeric"
         ],
         "literals": [],
         "numbers": [
@@ -9979,25 +11134,20 @@
     {
       "row": 127,
       "question": "How many movies released after 2000 have \"coolest\" in their review summary?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
           "how",
           "many",
-          "movie",
+          "movies",
           "released",
           "after",
           "2000",
+          "have",
           "coolest",
+          "in",
+          "their",
           "review",
           "summary"
-        ],
-        "intents": [
-          "aggregation_count",
-          "filter_literal",
-          "filter_numeric",
-          "text_contains",
-          "relationship_property",
-          "date_or_year"
         ],
         "literals": [
           "coolest"
@@ -10040,18 +11190,18 @@
     {
       "row": 128,
       "question": "What is the average rating of movies released in 2003?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "what",
+          "is",
+          "the",
           "average",
           "rating",
-          "movie",
+          "of",
+          "movies",
           "released",
+          "in",
           "2003"
-        ],
-        "intents": [
-          "aggregation_avg",
-          "relationship_property",
-          "date_or_year"
         ],
         "literals": [],
         "numbers": [
@@ -10088,19 +11238,21 @@
     {
       "row": 129,
       "question": "List the roles of any person in movies with a title containing 'Matrix'.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "list",
+          "the",
           "roles",
+          "of",
           "any",
           "person",
-          "movie",
+          "in",
+          "movies",
+          "with",
+          "a",
           "title",
           "containing",
           "matrix"
-        ],
-        "intents": [
-          "filter_literal",
-          "relationship_property"
         ],
         "literals": [
           "Matrix"
@@ -10156,16 +11308,18 @@
     {
       "row": 130,
       "question": "What is the oldest movie that Keanu Reeves acted in?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "what",
+          "is",
+          "the",
           "oldest",
           "movie",
+          "that",
           "keanu",
           "reeves",
-          "acted"
-        ],
-        "intents": [
-          "ranking_asc"
+          "acted",
+          "in"
         ],
         "literals": [],
         "numbers": []
@@ -10213,15 +11367,17 @@
     {
       "row": 131,
       "question": "What are the 3 oldest persons in the database?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "what",
+          "are",
+          "the",
           "3",
           "oldest",
           "persons",
+          "in",
+          "the",
           "database"
-        ],
-        "intents": [
-          "ranking_asc"
         ],
         "literals": [],
         "numbers": [
@@ -10264,19 +11420,18 @@
     {
       "row": 132,
       "question": "Name 3 movies with taglines that contain the word 'Speed'.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
           "name",
           "3",
-          "movie",
+          "movies",
+          "with",
           "taglines",
+          "that",
           "contain",
+          "the",
           "word",
           "speed"
-        ],
-        "intents": [
-          "filter_literal",
-          "text_contains"
         ],
         "literals": [
           "Speed"
@@ -10316,21 +11471,21 @@
     {
       "row": 133,
       "question": "What are the top 3 oldest movies in the database by release year?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "what",
+          "are",
+          "the",
           "top",
           "3",
           "oldest",
-          "movie",
+          "movies",
+          "in",
+          "the",
           "database",
+          "by",
           "release",
           "year"
-        ],
-        "intents": [
-          "ranking_desc",
-          "ranking_asc",
-          "limit",
-          "date_or_year"
         ],
         "literals": [],
         "numbers": [
@@ -10373,19 +11528,19 @@
     {
       "row": 134,
       "question": "What are the top 5 highest rated movies based on votes?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "what",
+          "are",
+          "the",
           "top",
           "5",
           "highest",
           "rated",
-          "movie",
+          "movies",
           "based",
+          "on",
           "votes"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit"
         ],
         "literals": [],
         "numbers": [
@@ -10428,19 +11583,18 @@
     {
       "row": 135,
       "question": "List the top 5 movies with a tagline containing 'football'.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "list",
+          "the",
           "top",
           "5",
-          "movie",
+          "movies",
+          "with",
+          "a",
           "tagline",
           "containing",
           "football"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "filter_literal"
         ],
         "literals": [
           "football"
@@ -10481,18 +11635,20 @@
     {
       "row": 136,
       "question": "What are the common roles for Keanu Reeves across all his movies?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "what",
+          "are",
+          "the",
           "common",
           "roles",
+          "for",
           "keanu",
           "reeves",
           "across",
+          "all",
           "his",
-          "movie"
-        ],
-        "intents": [
-          "relationship_property"
+          "movies"
         ],
         "literals": [],
         "numbers": []
@@ -10546,17 +11702,18 @@
     {
       "row": 137,
       "question": "Find movies with the tagline 'Welcome to the Real World'.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
           "find",
-          "movie",
+          "movies",
+          "with",
+          "the",
           "tagline",
           "welcome",
+          "to",
+          "the",
           "real",
           "world"
-        ],
-        "intents": [
-          "filter_literal"
         ],
         "literals": [
           "Welcome to the Real World"
@@ -10590,18 +11747,22 @@
     {
       "row": 138,
       "question": "List the movies that have been both directed and produced by the same person.",
-      "question_profile": {
-        "tokens": [
-          "movie",
+      "question_evidence": {
+        "terms": [
+          "list",
+          "the",
+          "movies",
+          "that",
+          "have",
           "been",
           "both",
           "directed",
+          "and",
           "produced",
+          "by",
+          "the",
           "same",
           "person"
-        ],
-        "intents": [
-          "same_entity_multi_role"
         ],
         "literals": [],
         "numbers": []
@@ -10639,17 +11800,15 @@
     {
       "row": 139,
       "question": "Who has the highest average review rating?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "who",
+          "has",
+          "the",
           "highest",
           "average",
           "review",
           "rating"
-        ],
-        "intents": [
-          "ranking_desc",
-          "aggregation_avg",
-          "relationship_property"
         ],
         "literals": [],
         "numbers": []
@@ -10696,18 +11855,17 @@
     {
       "row": 140,
       "question": "List three movies reviewed with a rating above 90.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "list",
           "three",
-          "movie",
+          "movies",
           "reviewed",
+          "with",
+          "a",
           "rating",
           "above",
           "90"
-        ],
-        "intents": [
-          "filter_numeric",
-          "relationship_property"
         ],
         "literals": [],
         "numbers": [
@@ -10748,21 +11906,23 @@
     {
       "row": 141,
       "question": "List the roles played by actors in the first 3 movies directed by Nancy Meyers.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "list",
+          "the",
           "roles",
           "played",
-          "actor",
+          "by",
+          "actors",
+          "in",
+          "the",
           "first",
           "3",
-          "movie",
+          "movies",
           "directed",
+          "by",
           "nancy",
           "meyers"
-        ],
-        "intents": [
-          "limit",
-          "relationship_property"
         ],
         "literals": [],
         "numbers": [
@@ -10820,21 +11980,21 @@
     {
       "row": 142,
       "question": "Who are the top 3 producers of movies with a tagline including 'Speed'?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "who",
+          "are",
+          "the",
           "top",
           "3",
-          "producer",
-          "movie",
+          "producers",
+          "of",
+          "movies",
+          "with",
+          "a",
           "tagline",
           "including",
           "speed"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "filter_literal",
-          "text_contains"
         ],
         "literals": [
           "Speed"
@@ -10887,21 +12047,21 @@
     {
       "row": 143,
       "question": "What is the average rating difference between movies directed by the same person?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "what",
+          "is",
+          "the",
           "average",
           "rating",
           "difference",
           "between",
-          "movie",
+          "movies",
           "directed",
+          "by",
+          "the",
           "same",
           "person"
-        ],
-        "intents": [
-          "aggregation_avg",
-          "same_entity_multi_role",
-          "relationship_property"
         ],
         "literals": [],
         "numbers": []
@@ -10940,20 +12100,24 @@
     {
       "row": 144,
       "question": "Who are the top 3 actors in terms of movies acted in from 1990 to 2000?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "who",
+          "are",
+          "the",
           "top",
           "3",
-          "actor",
+          "actors",
+          "in",
           "terms",
-          "movie",
+          "of",
+          "movies",
           "acted",
+          "in",
+          "from",
           "1990",
+          "to",
           "2000"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit"
         ],
         "literals": [],
         "numbers": [
@@ -11008,14 +12172,13 @@
     {
       "row": 145,
       "question": "Who reviewed the most movies?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "who",
           "reviewed",
+          "the",
           "most",
-          "movie"
-        ],
-        "intents": [
-          "ranking_desc"
+          "movies"
         ],
         "literals": [],
         "numbers": []
@@ -11061,20 +12224,22 @@
     {
       "row": 146,
       "question": "What are the top 5 movies with the least votes and their release years?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "what",
+          "are",
+          "the",
           "top",
           "5",
-          "movie",
+          "movies",
+          "with",
+          "the",
           "least",
           "votes",
+          "and",
+          "their",
           "release",
           "years"
-        ],
-        "intents": [
-          "ranking_desc",
-          "ranking_asc",
-          "limit"
         ],
         "literals": [],
         "numbers": [
@@ -11127,21 +12292,19 @@
     {
       "row": 147,
       "question": "Which 3 directors have directed the most movies released after 2005?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "which",
           "3",
-          "director",
+          "directors",
+          "have",
           "directed",
+          "the",
           "most",
-          "movie",
+          "movies",
           "released",
           "after",
           "2005"
-        ],
-        "intents": [
-          "ranking_desc",
-          "filter_numeric",
-          "date_or_year"
         ],
         "literals": [],
         "numbers": [
@@ -11194,18 +12357,18 @@
     {
       "row": 148,
       "question": "Who are the top 3 actors by number of followers?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "who",
+          "are",
+          "the",
           "top",
           "3",
-          "actor",
+          "actors",
+          "by",
           "number",
-          "follower"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "aggregation_count"
+          "of",
+          "followers"
         ],
         "literals": [],
         "numbers": [
@@ -11253,18 +12416,17 @@
     {
       "row": 149,
       "question": "Name 3 movies reviewed with a rating over 90.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
           "name",
           "3",
-          "movie",
+          "movies",
           "reviewed",
+          "with",
+          "a",
           "rating",
           "over",
           "90"
-        ],
-        "intents": [
-          "relationship_property"
         ],
         "literals": [],
         "numbers": [
@@ -11308,25 +12470,26 @@
     {
       "row": 150,
       "question": "What is the average number of votes for movies released in the same year \"Speed Racer\" was released?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "what",
+          "is",
+          "the",
           "average",
           "number",
+          "of",
           "votes",
-          "movie",
+          "for",
+          "movies",
           "released",
+          "in",
+          "the",
           "same",
           "year",
           "speed",
           "racer",
           "was",
           "released"
-        ],
-        "intents": [
-          "aggregation_count",
-          "aggregation_avg",
-          "filter_literal",
-          "date_or_year"
         ],
         "literals": [
           "Speed Racer"
@@ -11364,25 +12527,26 @@
     {
       "row": 151,
       "question": "Name the first 3 people born before 1950 who have written a movie with a tagline mentioning 'journey'.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
           "name",
+          "the",
           "first",
           "3",
           "people",
           "born",
           "before",
           "1950",
+          "who",
+          "have",
           "written",
+          "a",
           "movie",
+          "with",
+          "a",
           "tagline",
           "mentioning",
           "journey"
-        ],
-        "intents": [
-          "limit",
-          "filter_literal",
-          "filter_numeric"
         ],
         "literals": [
           "journey"
@@ -11429,20 +12593,21 @@
     {
       "row": 152,
       "question": "Name 3 directors who have directed movies with the least number of votes.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
           "name",
           "3",
-          "director",
+          "directors",
+          "who",
+          "have",
           "directed",
-          "movie",
+          "movies",
+          "with",
+          "the",
           "least",
           "number",
+          "of",
           "votes"
-        ],
-        "intents": [
-          "ranking_asc",
-          "aggregation_count"
         ],
         "literals": [],
         "numbers": [
@@ -11484,15 +12649,14 @@
     {
       "row": 153,
       "question": "List the actors born before 1960.",
-      "question_profile": {
-        "tokens": [
-          "actor",
+      "question_evidence": {
+        "terms": [
+          "list",
+          "the",
+          "actors",
           "born",
           "before",
           "1960"
-        ],
-        "intents": [
-          "filter_numeric"
         ],
         "literals": [],
         "numbers": [
@@ -11529,20 +12693,22 @@
     {
       "row": 154,
       "question": "Who are the top 3 actors in terms of the diversity of roles played?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "who",
+          "are",
+          "the",
           "top",
           "3",
-          "actor",
+          "actors",
+          "in",
           "terms",
+          "of",
+          "the",
           "diversity",
+          "of",
           "roles",
           "played"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "relationship_property"
         ],
         "literals": [],
         "numbers": [
@@ -11591,15 +12757,18 @@
     {
       "row": 155,
       "question": "Which people have written and directed the same movie?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "which",
           "people",
+          "have",
           "written",
+          "and",
           "directed",
+          "the",
           "same",
           "movie"
         ],
-        "intents": [],
         "literals": [],
         "numbers": []
       },
@@ -11636,17 +12805,18 @@
     {
       "row": 156,
       "question": "List all the movies with the summary \"A solid romp\".",
-      "question_profile": {
-        "tokens": [
-          "movie",
+      "question_evidence": {
+        "terms": [
+          "list",
+          "all",
+          "the",
+          "movies",
+          "with",
+          "the",
           "summary",
+          "a",
           "solid",
           "romp"
-        ],
-        "intents": [
-          "filter_literal",
-          "text_contains",
-          "relationship_property"
         ],
         "literals": [
           "A solid romp"
@@ -11685,16 +12855,17 @@
     {
       "row": 157,
       "question": "Which people were born between 1940 and 1960?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "which",
           "people",
           "were",
           "born",
           "between",
           "1940",
+          "and",
           "1960"
         ],
-        "intents": [],
         "literals": [],
         "numbers": [
           "1940",
@@ -11739,22 +12910,26 @@
     {
       "row": 158,
       "question": "What are the first 3 movies where Nancy Meyers was involved as a writer and their release years?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "what",
+          "are",
+          "the",
           "first",
           "3",
-          "movie",
+          "movies",
           "where",
           "nancy",
           "meyers",
           "was",
           "involved",
+          "as",
+          "a",
           "writer",
+          "and",
+          "their",
           "release",
           "years"
-        ],
-        "intents": [
-          "limit"
         ],
         "literals": [],
         "numbers": [
@@ -11802,17 +12977,17 @@
     {
       "row": 159,
       "question": "List the movies directed by persons born after 1960.",
-      "question_profile": {
-        "tokens": [
-          "movie",
+      "question_evidence": {
+        "terms": [
+          "list",
+          "the",
+          "movies",
           "directed",
+          "by",
           "persons",
           "born",
           "after",
           "1960"
-        ],
-        "intents": [
-          "filter_numeric"
         ],
         "literals": [],
         "numbers": [
@@ -11861,20 +13036,19 @@
     {
       "row": 160,
       "question": "What is the average rating given by people born after 1980?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "what",
+          "is",
+          "the",
           "average",
           "rating",
           "given",
+          "by",
           "people",
           "born",
           "after",
           "1980"
-        ],
-        "intents": [
-          "aggregation_avg",
-          "filter_numeric",
-          "relationship_property"
         ],
         "literals": [],
         "numbers": [
@@ -11916,22 +13090,23 @@
     {
       "row": 161,
       "question": "Which 3 people born before 1950 acted in a movie with a tagline containing 'limits'?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "which",
           "3",
           "people",
           "born",
           "before",
           "1950",
           "acted",
+          "in",
+          "a",
           "movie",
+          "with",
+          "a",
           "tagline",
           "containing",
           "limits"
-        ],
-        "intents": [
-          "filter_literal",
-          "filter_numeric"
         ],
         "literals": [
           "limits"
@@ -11978,19 +13153,20 @@
     {
       "row": 162,
       "question": "Name the people who have produced movies with less than 100 votes.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
           "name",
+          "the",
           "people",
+          "who",
+          "have",
           "produced",
-          "movie",
+          "movies",
+          "with",
           "less",
           "than",
           "100",
           "votes"
-        ],
-        "intents": [
-          "filter_numeric"
         ],
         "literals": [],
         "numbers": [
@@ -12032,19 +13208,22 @@
     {
       "row": 163,
       "question": "Who are the first 3 actors by the number of different movies acted in?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "who",
+          "are",
+          "the",
           "first",
           "3",
-          "actor",
+          "actors",
+          "by",
+          "the",
           "number",
+          "of",
           "different",
-          "movie",
-          "acted"
-        ],
-        "intents": [
-          "limit",
-          "aggregation_count"
+          "movies",
+          "acted",
+          "in"
         ],
         "literals": [],
         "numbers": [
@@ -12093,22 +13272,21 @@
     {
       "row": 164,
       "question": "List the top 5 movies by number of roles in the 'ACTED_IN' relationship.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "list",
+          "the",
           "top",
           "5",
-          "movie",
+          "movies",
+          "by",
           "number",
+          "of",
           "roles",
+          "in",
+          "the",
           "acted_in",
           "relationship"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "aggregation_count",
-          "filter_literal",
-          "relationship_property"
         ],
         "literals": [
           "ACTED_IN"
@@ -12156,24 +13334,27 @@
     {
       "row": 165,
       "question": "Find the movie with the highest number of votes that does not have the word \"a\" in its title.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
           "find",
+          "the",
           "movie",
+          "with",
+          "the",
           "highest",
           "number",
+          "of",
           "votes",
+          "that",
           "does",
           "not",
+          "have",
+          "the",
           "word",
+          "a",
+          "in",
           "its",
           "title"
-        ],
-        "intents": [
-          "ranking_desc",
-          "aggregation_count",
-          "filter_literal",
-          "text_contains"
         ],
         "literals": [
           "a"
@@ -12212,20 +13393,20 @@
     {
       "row": 166,
       "question": "Show the top 5 movies by the number of reviews they received.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "show",
+          "the",
           "top",
           "5",
-          "movie",
+          "movies",
+          "by",
+          "the",
           "number",
-          "review",
+          "of",
+          "reviews",
           "they",
           "received"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "aggregation_count"
         ],
         "literals": [],
         "numbers": [
@@ -12272,21 +13453,22 @@
     {
       "row": 167,
       "question": "List the roles of Laurence Fishburne in movies with a release year after 2000.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "list",
+          "the",
           "roles",
+          "of",
           "laurence",
           "fishburne",
-          "movie",
+          "in",
+          "movies",
+          "with",
+          "a",
           "release",
           "year",
           "after",
           "2000"
-        ],
-        "intents": [
-          "filter_numeric",
-          "relationship_property",
-          "date_or_year"
         ],
         "literals": [],
         "numbers": [
@@ -12342,21 +13524,22 @@
     {
       "row": 168,
       "question": "What is the average number of votes for movies with a rating above 90?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "what",
+          "is",
+          "the",
           "average",
           "number",
+          "of",
           "votes",
-          "movie",
+          "for",
+          "movies",
+          "with",
+          "a",
           "rating",
           "above",
           "90"
-        ],
-        "intents": [
-          "aggregation_count",
-          "aggregation_avg",
-          "filter_numeric",
-          "relationship_property"
         ],
         "literals": [],
         "numbers": [
@@ -12398,19 +13581,19 @@
     {
       "row": 169,
       "question": "Which person has directed movies with a rating higher than 95?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "which",
           "person",
+          "has",
           "directed",
-          "movie",
+          "movies",
+          "with",
+          "a",
           "rating",
           "higher",
           "than",
           "95"
-        ],
-        "intents": [
-          "filter_numeric",
-          "relationship_property"
         ],
         "literals": [],
         "numbers": [
@@ -12453,19 +13636,21 @@
     {
       "row": 170,
       "question": "What is the average number of followers for people born in the 1980s?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "what",
+          "is",
+          "the",
           "average",
           "number",
-          "follower",
+          "of",
+          "followers",
+          "for",
           "people",
           "born",
-          "1980",
-          "s"
-        ],
-        "intents": [
-          "aggregation_count",
-          "aggregation_avg"
+          "in",
+          "the",
+          "1980s"
         ],
         "literals": [],
         "numbers": []
@@ -12506,26 +13691,27 @@
     {
       "row": 171,
       "question": "What is the average rating of movies with the word \"funny\" in their review summary and released after 2010?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "what",
+          "is",
+          "the",
           "average",
           "rating",
-          "movie",
+          "of",
+          "movies",
+          "with",
+          "the",
           "word",
           "funny",
+          "in",
+          "their",
           "review",
           "summary",
+          "and",
           "released",
           "after",
           "2010"
-        ],
-        "intents": [
-          "aggregation_avg",
-          "filter_literal",
-          "filter_numeric",
-          "text_contains",
-          "relationship_property",
-          "date_or_year"
         ],
         "literals": [
           "funny"
@@ -12570,19 +13756,18 @@
     {
       "row": 172,
       "question": "List the top 5 most recent movies in the graph.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "list",
+          "the",
           "top",
           "5",
           "most",
           "recent",
-          "movie",
+          "movies",
+          "in",
+          "the",
           "graph"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "date_or_year"
         ],
         "literals": [],
         "numbers": [
@@ -12618,17 +13803,22 @@
     {
       "row": 173,
       "question": "Which people have reviewed the same movie and what were their review summaries?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "which",
           "people",
+          "have",
           "reviewed",
+          "the",
           "same",
           "movie",
+          "and",
+          "what",
           "were",
+          "their",
           "review",
           "summaries"
         ],
-        "intents": [],
         "literals": [],
         "numbers": []
       },
@@ -12693,16 +13883,17 @@
     {
       "row": 174,
       "question": "What is the highest rating given to a movie?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "what",
+          "is",
+          "the",
           "highest",
           "rating",
           "given",
+          "to",
+          "a",
           "movie"
-        ],
-        "intents": [
-          "ranking_desc",
-          "relationship_property"
         ],
         "literals": [],
         "numbers": []
@@ -12737,20 +13928,21 @@
     {
       "row": 175,
       "question": "What is the average number of votes for movies released in the 2000s?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "what",
+          "is",
+          "the",
           "average",
           "number",
+          "of",
           "votes",
-          "movie",
+          "for",
+          "movies",
           "released",
-          "2000",
-          "s"
-        ],
-        "intents": [
-          "aggregation_count",
-          "aggregation_avg",
-          "date_or_year"
+          "in",
+          "the",
+          "2000s"
         ],
         "literals": [],
         "numbers": []
@@ -12786,18 +13978,20 @@
     {
       "row": 176,
       "question": "What are the combined total votes of all movies Joel Silver produced?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "what",
+          "are",
+          "the",
           "combined",
           "total",
           "votes",
-          "movie",
+          "of",
+          "all",
+          "movies",
           "joel",
           "silver",
           "produced"
-        ],
-        "intents": [
-          "aggregation_sum"
         ],
         "literals": [],
         "numbers": []
@@ -12834,17 +14028,19 @@
     {
       "row": 177,
       "question": "Who are the directors of movies with more than 1000 votes?",
-      "question_profile": {
-        "tokens": [
-          "director",
-          "movie",
+      "question_evidence": {
+        "terms": [
+          "who",
+          "are",
+          "the",
+          "directors",
+          "of",
+          "movies",
+          "with",
           "more",
           "than",
           "1000",
           "votes"
-        ],
-        "intents": [
-          "filter_numeric"
         ],
         "literals": [],
         "numbers": [
@@ -12893,22 +14089,20 @@
     {
       "row": 178,
       "question": "What are the top 5 reviewed movies by summary 'An amazing journey'?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "what",
+          "are",
+          "the",
           "top",
           "5",
           "reviewed",
-          "movie",
+          "movies",
+          "by",
           "summary",
+          "an",
           "amazing",
           "journey"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "filter_literal",
-          "text_contains",
-          "relationship_property"
         ],
         "literals": [
           "An amazing journey"
@@ -12959,24 +14153,25 @@
     {
       "row": 179,
       "question": "Who are the first three actors born after 1970 who acted in a movie released before 1990?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "who",
+          "are",
+          "the",
           "first",
           "three",
-          "actor",
+          "actors",
           "born",
           "after",
           "1970",
+          "who",
           "acted",
+          "in",
+          "a",
           "movie",
           "released",
           "before",
           "1990"
-        ],
-        "intents": [
-          "limit",
-          "filter_numeric",
-          "date_or_year"
         ],
         "literals": [],
         "numbers": [
@@ -13043,20 +14238,18 @@
     {
       "row": 180,
       "question": "How many people born before 1950 have directed a movie?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
           "how",
           "many",
           "people",
           "born",
           "before",
           "1950",
+          "have",
           "directed",
+          "a",
           "movie"
-        ],
-        "intents": [
-          "aggregation_count",
-          "filter_numeric"
         ],
         "literals": [],
         "numbers": [
@@ -13098,19 +14291,20 @@
     {
       "row": 181,
       "question": "What is the highest rating given to any movie by any person?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "what",
+          "is",
+          "the",
           "highest",
           "rating",
           "given",
+          "to",
           "any",
           "movie",
+          "by",
           "any",
           "person"
-        ],
-        "intents": [
-          "ranking_desc",
-          "relationship_property"
         ],
         "literals": [],
         "numbers": []
@@ -13144,17 +14338,19 @@
     {
       "row": 182,
       "question": "Which person has both acted in and directed the same movie?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "which",
           "person",
+          "has",
           "both",
           "acted",
+          "in",
+          "and",
           "directed",
+          "the",
           "same",
           "movie"
-        ],
-        "intents": [
-          "same_entity_multi_role"
         ],
         "literals": [],
         "numbers": []
@@ -13199,17 +14395,17 @@
     {
       "row": 183,
       "question": "List the movies with the summary \"A solid romp\".",
-      "question_profile": {
-        "tokens": [
-          "movie",
+      "question_evidence": {
+        "terms": [
+          "list",
+          "the",
+          "movies",
+          "with",
+          "the",
           "summary",
+          "a",
           "solid",
           "romp"
-        ],
-        "intents": [
-          "filter_literal",
-          "text_contains",
-          "relationship_property"
         ],
         "literals": [
           "A solid romp"
@@ -13248,23 +14444,26 @@
     {
       "row": 184,
       "question": "What is the average number of votes for movies released in the same year as \"The Matrix Revolutions\"?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "what",
+          "is",
+          "the",
           "average",
           "number",
+          "of",
           "votes",
-          "movie",
+          "for",
+          "movies",
           "released",
+          "in",
+          "the",
           "same",
           "year",
+          "as",
+          "the",
           "matrix",
           "revolutions"
-        ],
-        "intents": [
-          "aggregation_count",
-          "aggregation_avg",
-          "filter_literal",
-          "date_or_year"
         ],
         "literals": [
           "The Matrix Revolutions"
@@ -13300,22 +14499,25 @@
     {
       "row": 185,
       "question": "List the top 5 people who have produced the most number of movies with their birth years.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "list",
+          "the",
           "top",
           "5",
           "people",
+          "who",
+          "have",
           "produced",
+          "the",
           "most",
           "number",
-          "movie",
+          "of",
+          "movies",
+          "with",
+          "their",
           "birth",
           "years"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "aggregation_count"
         ],
         "literals": [],
         "numbers": [

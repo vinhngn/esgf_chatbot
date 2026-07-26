@@ -1,5 +1,60 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "neo4j-t2c"
+version = "0.1.0"
+description = "Profile-grounded Text-to-Cypher generation for Neo4j"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "flask>=3.0.0",
+    "keyring>=25.0.0",
+    "langchain>=0.3.0",
+    "langchain-community>=0.3.0",
+    "langchain-neo4j>=0.1.0",
+    "langchain-openai>=0.3.0",
+    "neo4j>=5.18.0",
+    "openai>=1.0.0",
+    "paramiko>=3.4.0",
+    "pydantic>=2.0.0",
+    "python-dotenv>=1.0.0",
+    "requests>=2.31.0",
+    "retry>=0.9.2",
+    "streamlit>=1.27.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "ruff>=0.12.0",
+]
+
+[tool.setuptools]
+include-package-data = true
+py-modules = ["config", "constants"]
+
+[tool.setuptools.packages.find]
+where = [".", "src"]
+include = [
+    "models*",
+    "neo4j_t2c*",
+    "services*",
+    "templates*",
+    "utils*",
+    "views*",
+]
+exclude = ["tests*", "tools*"]
+namespaces = false
+
+[tool.setuptools.package-data]
+templates = ["*.json"]
+neo4j_t2c = ["prompts/*.json"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["src", "."]
 
 [tool.ruff]
 target-version = "py311"

@@ -14,7 +14,7 @@ from services.control_center.models import DatabaseConnection, ModelConfiguratio
 from services.control_center.runtime import RuntimeManager
 from services.control_center.secrets import KeyringSecretStore
 from services.control_center.store import ConnectionStore
-from services.evaluation import BenchmarkManager
+from services.evaluation import BenchmarkManager, BenchmarkStore
 
 
 @dataclass
@@ -76,17 +76,50 @@ def get_compatible_studio_state() -> StudioState:
             "stop_api_on_port",
         )
     )
-    if runtime_is_current and hasattr(state, "benchmarks"):
+    benchmarks = getattr(state, "benchmarks", None)
+    benchmark_is_current = bool(
+        benchmarks
+        and hasattr(benchmarks, "resume")
+        and hasattr(benchmarks.store, "benchmark_config")
+        and hasattr(benchmarks.store, "completed_row_ids")
+    )
+    if runtime_is_current and benchmark_is_current:
+        return state
+    if runtime_is_current and benchmarks is not None:
+        benchmarks.stop_all()
+        store_path = getattr(benchmarks.store, "path", None)
+        state.benchmarks = BenchmarkManager(
+            framework_root=benchmarks.framework_root,
+            store=BenchmarkStore(store_path),
+        )
         return state
     state.runtime.stop_all()
-    if hasattr(state, "benchmarks"):
-        state.benchmarks.stop_all()
+    if benchmarks is not None:
+        benchmarks.stop_all()
     get_studio_state.clear()
     return get_studio_state()
 
 
+def runtime_matches_connection(
+    health: dict,
+    connection: DatabaseConnection,
+) -> bool:
+    return (
+        str(health.get("database") or "").casefold()
+        == connection.profile_name.casefold()
+        and str(health.get("physical_database") or "").casefold()
+        == connection.database.casefold()
+    )
+
+
 def runtime_api_ready(state: StudioState) -> bool:
     if not state.runtime.api_running:
+        return False
+    selected = state.active_connection
+    if (
+        state.runtime.connection is None
+        or state.runtime.connection.id != selected.id
+    ):
         return False
     try:
         with urllib.request.urlopen(f"{state.runtime.api_url}/health", timeout=1) as response:
@@ -95,7 +128,10 @@ def runtime_api_ready(state: StudioState) -> bool:
             health = json.loads(response.read().decode("utf-8", errors="replace"))
     except (OSError, ValueError, urllib.error.URLError):
         return False
-    return health.get("status") == "ok"
+    return health.get("status") == "ok" and runtime_matches_connection(
+        health,
+        selected,
+    )
 
 
 def select_connection(state: StudioState, connection_id: str) -> None:

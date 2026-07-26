@@ -2,48 +2,19 @@
 
 from langchain_core.messages import HumanMessage, SystemMessage
 
-from services.text2cypher.domain_repair import apply_domain_repairs
 from services.text2cypher.execution import (
     cap_execution_cypher,
     result_quality_feedback,
 )
 from services.text2cypher.postprocessing import (
-    ensure_rank_order,
-    ensure_requested_limit,
     repair_backticked_label_with_inline_map,
 )
-from services.text2cypher.prompting import build_coder_messages, build_coder_prompt
+from services.text2cypher.prompting import (
+    SYSTEM_PROMPT,
+    build_coder_messages,
+    build_coder_prompt,
+)
 from services.text2cypher.result_utils import extract_cypher_queries
-
-
-def test_requested_limit_uses_real_movie_question() -> None:
-    cypher = "MATCH (m:Movie) RETURN m.title"
-
-    actual = ensure_requested_limit(
-        cypher,
-        "List the first 3 movies that have been directed by actors.",
-    )
-
-    assert actual == "MATCH (m:Movie) RETURN m.title LIMIT 3"
-
-
-def test_requested_limit_preserves_existing_limit() -> None:
-    cypher = "MATCH (m:Movie) RETURN m.title LIMIT 7"
-
-    actual = ensure_requested_limit(cypher, "List the first 3 movies.")
-
-    assert actual == cypher
-
-
-def test_rank_order_uses_metric_projection_before_limit() -> None:
-    cypher = "MATCH (m:Movie) RETURN m.title, m.votes LIMIT 5"
-
-    actual = ensure_rank_order(
-        cypher,
-        "Find the top 5 movies with the most votes.",
-    )
-
-    assert actual == ("MATCH (m:Movie) RETURN m.title, m.votes ORDER BY m.votes DESC LIMIT 5")
 
 
 def test_execution_cap_does_not_change_generated_query_when_under_cap() -> None:
@@ -82,6 +53,14 @@ def test_empty_result_is_not_automatically_treated_as_invalid() -> None:
     assert result_quality_feedback([]) is None
 
 
+def test_interactive_rag_can_request_empty_result_verification() -> None:
+    feedback = result_quality_feedback([], retry_empty=True)
+
+    assert feedback is not None
+    assert "relationship direction" in feedback
+    assert "do not remove" in feedback
+
+
 def test_extract_cypher_queries_preserves_clean_query() -> None:
     cypher = "MATCH (m:Movie) RETURN m.title LIMIT 3"
     chain_result = {"intermediate_steps": [{"query": cypher}]}
@@ -95,7 +74,6 @@ def test_extract_cypher_queries_preserves_clean_query() -> None:
 def test_retry_prompt_contains_previous_query_and_database_feedback() -> None:
     prompt = build_coder_prompt(
         schema="(:Movie {title: STRING})",
-        domain_template="DOMAIN FACTS",
         learned_context="PROFILE CONTEXT",
         question="List movies.",
         current_cypher="MATCH (m:Movie) RETURN m",
@@ -111,7 +89,6 @@ def test_retry_prompt_contains_previous_query_and_database_feedback() -> None:
 def test_coder_prompt_separates_stable_policy_from_profile_context() -> None:
     messages = build_coder_messages(
         schema="(:Company)-[:OWNS]->(:Product)",
-        domain_template="",
         learned_context="Primary selected query recipe: MATCH (c:Company) RETURN c",
         evidence_context="Company.name is populated",
         question="List companies.",
@@ -121,31 +98,17 @@ def test_coder_prompt_separates_stable_policy_from_profile_context() -> None:
 
     assert isinstance(messages[0], SystemMessage)
     assert isinstance(messages[1], HumanMessage)
-    assert "runtime Neo4j schema is authoritative" in messages[0].content
+    assert "Runtime schema defines valid graph structure" in messages[0].content
     assert "movies, products, users" not in messages[0].content
     assert "Primary selected query recipe" in messages[1].content
     assert "(:Company)-[:OWNS]->(:Product)" in messages[1].content
+    assert "FALLBACK DOMAIN CONTEXT" not in messages[1].content
 
 
-def test_northwind_adapter_moves_order_line_metric_to_relationship() -> None:
-    cypher = "MATCH (p:Product)<-[o:ORDERS]-(:Order) RETURN avg(p.unitPrice), sum(o.quantity)"
-
-    actual = apply_domain_repairs(
-        cypher,
-        question="What is the average unit price of ordered products?",
-        database="northwind",
-    )
-
-    assert "avg(toFloat(o.unitPrice))" in actual
-
-
-def test_other_database_does_not_apply_northwind_repairs() -> None:
-    cypher = "MATCH (c:Customer) RETURN c.customerID"
-
-    actual = apply_domain_repairs(
-        cypher,
-        question="List customers.",
-        database="company",
-    )
-
-    assert actual == cypher
+def test_system_prompt_is_a_small_evidence_protocol() -> None:
+    assert len(SYSTEM_PROMPT) < 750
+    assert "Output only raw Cypher" in SYSTEM_PROMPT
+    assert "Runtime schema defines valid graph structure" in SYSTEM_PROMPT
+    assert "movie" not in SYSTEM_PROMPT.casefold()
+    assert "northwind" not in SYSTEM_PROMPT.casefold()
+    assert "vector" not in SYSTEM_PROMPT.casefold()

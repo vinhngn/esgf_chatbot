@@ -104,7 +104,12 @@ class _QueryExecutor:
         return rows, ""
 
 
-def _cases(config: BenchmarkConfig) -> Iterator[tuple[int, dict[str, str]]]:
+def _cases(
+    config: BenchmarkConfig,
+    *,
+    skip_rows: set[int] | None = None,
+) -> Iterator[tuple[int, dict[str, str]]]:
+    skipped = skip_rows or set()
     csv.field_size_limit(2_147_483_647)
     with config.input_file.open("r", encoding="utf-8", newline="") as handle:
         reader = csv.DictReader(handle)
@@ -115,6 +120,8 @@ def _cases(config: BenchmarkConfig) -> Iterator[tuple[int, dict[str, str]]]:
         for row_id, raw in enumerate(reader, start=1):
             if config.row_limit and row_id > config.row_limit:
                 return
+            if row_id in skipped:
+                continue
             yield row_id, {key: value or "" for key, value in raw.items()}
 
 
@@ -231,7 +238,12 @@ def run_benchmark(
     try:
         scorer = T2CScorer(framework_root)
         executor = _QueryExecutor(target, config)
-        cases = iter(_cases(config))
+        cases = iter(
+            _cases(
+                config,
+                skip_rows=store.completed_row_ids(run_id),
+            )
+        )
         pending: set[Future] = set()
 
         with ThreadPoolExecutor(max_workers=config.workers) as pool:

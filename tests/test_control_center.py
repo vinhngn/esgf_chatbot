@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from types import SimpleNamespace
 
 import httpx
 from openai import APIConnectionError
@@ -18,6 +19,7 @@ from services.control_center.models import (
     SshTunnel,
 )
 from services.control_center.presets import built_in_connections
+from services.control_center.profile_service import build_connection_profile
 from services.control_center.runtime import RuntimeManager, is_t2c_api_health
 from services.control_center.secrets import MemorySecretStore
 from services.control_center.store import ConnectionStore
@@ -123,6 +125,31 @@ def test_t2c_health_signature_rejects_unknown_port_services() -> None:
     assert not is_t2c_api_health("ok")
 
 
+def test_runtime_health_must_match_the_selected_connection() -> None:
+    from views.studio.state import runtime_matches_connection
+
+    recommendations = next(
+        item
+        for item in built_in_connections()
+        if item.profile_name == "recommendations"
+    )
+
+    assert runtime_matches_connection(
+        {
+            "database": "recommendations",
+            "physical_database": "recommendations",
+        },
+        recommendations,
+    )
+    assert not runtime_matches_connection(
+        {
+            "database": "northwind",
+            "physical_database": "northwind",
+        },
+        recommendations,
+    )
+
+
 def test_runtime_environment_uses_saved_model_selection(tmp_path: Path) -> None:
     connection = next(
         item for item in built_in_connections() if item.profile_name == "movies"
@@ -164,6 +191,81 @@ def test_public_presets_have_convenience_password_hints() -> None:
 
     assert suggested_database_password(presets["movies"]) == "movies"
     assert suggested_database_password(presets["company"]) == "cypherbench"
+
+
+def test_profile_build_composes_matching_csv_with_live_schema(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    from services.control_center import profile_service
+
+    input_directory = tmp_path / "inputs"
+    input_directory.mkdir()
+    (input_directory / "research.csv").write_text(
+        "question,schema,cypher\n"
+        '"Which records are newest?","","'
+        'MATCH (n:Record) RETURN n.name ORDER BY n.createdAt DESC LIMIT 5"\n',
+        encoding="utf-8",
+    )
+    connection = DatabaseConnection(
+        name="Research",
+        profile_name="research",
+        uri="neo4j://localhost:7687",
+        database="neo4j",
+        username="neo4j",
+    )
+
+    monkeypatch.setattr(
+        profile_service,
+        "build_profile_from_neo4j",
+        lambda **_: {
+            "source": "neo4j://localhost:7687",
+            "source_type": "neo4j_live",
+            "database": "research",
+            "physical_database": "neo4j",
+            "row_count": 1,
+            "examples": [
+                {
+                    "row": 1,
+                    "question": "List Record nodes.",
+                    "cypher": "MATCH (n:Record) RETURN n",
+                }
+            ],
+            "schema_profile": {
+                "labels": [
+                    {
+                        "label": "Record",
+                        "count": 10,
+                        "properties": [
+                            {"name": "name", "types": ["String"], "role": "text"}
+                        ],
+                    }
+                ],
+                "relationships": [],
+                "paths": [],
+                "vector_indexes": [],
+                "summary": {
+                    "label_count": 1,
+                    "relationship_type_count": 0,
+                    "schema_path_count": 0,
+                    "vector_index_count": 0,
+                },
+            },
+        },
+    )
+
+    _, profile = build_connection_profile(
+        project_root=tmp_path,
+        connection=connection,
+        secrets=MemorySecretStore(),
+        session=SimpleNamespace(database_password="password"),
+        dataset_directory=input_directory,
+    )
+
+    assert profile["source_type"] == "hybrid"
+    assert profile["row_count"] == 1
+    assert profile["examples"][0]["question"] == "Which records are newest?"
+    assert profile["schema_profile"]["labels"][0]["label"] == "Record"
 
 
 def test_trace_store_keeps_bounded_structured_events(monkeypatch) -> None:
@@ -209,7 +311,8 @@ def test_runtime_api_exposes_model_and_prompt_without_secrets() -> None:
 
     assert response.status_code == 200
     assert body["llm"]["primary"] in {"openai", "local"}
-    assert body["prompt"]["strategy"] == "profile-grounded-system-human-v2"
+    assert body["prompt"]["strategy"] == "schema-profile-evidence-v3"
+    assert body["prompt"]["legacy_domain_context"] is False
     assert "api_key" not in response.get_data(as_text=True).lower()
 
 
@@ -228,6 +331,10 @@ def test_rag_api_forwards_conversation_history(monkeypatch) -> None:
             "verified_triples": [],
             "instance_triples": [],
             "trace_id": "trace-rag",
+            "question_tag": "GRAPH_FOLLOW_UP",
+            "answer_source": "NEO4J",
+            "route_confidence": 0.94,
+            "referenced_turn_ids": ["turn-1"],
         }
 
     monkeypatch.setattr(flask_api, "get_results", fake_get_results)
@@ -243,6 +350,8 @@ def test_rag_api_forwards_conversation_history(monkeypatch) -> None:
     assert captured["question"] == "hello"
     assert captured["history"][0]["input"] == "before"
     assert response.get_json()["rewritten"] == "hello"
+    assert response.get_json()["question_tag"] == "GRAPH_FOLLOW_UP"
+    assert response.get_json()["answer_source"] == "NEO4J"
 
 
 def test_text2cypher_api_returns_concise_provider_error(monkeypatch) -> None:

@@ -35,7 +35,7 @@ def render(state: StudioState) -> None:
     if selected_id != active_id:
         select_connection(state, selected_id)
         st.rerun()
-    if add.button("Add database", use_container_width=True):
+    if add.button("Add database", width="stretch"):
         _add_connection(state)
         st.rerun()
 
@@ -46,7 +46,7 @@ def render(state: StudioState) -> None:
     status, action = st.columns([4, 1])
     stop_clicked = action.button(
         "Stop T2C API",
-        use_container_width=True,
+        width="stretch",
         disabled=not api_port_in_use,
     )
     if runtime_api_ready(state) and runtime_connection:

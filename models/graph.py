@@ -14,7 +14,7 @@ import time
 from langchain_neo4j import Neo4jGraph
 
 from config import get_settings
-from utils.helpers import parse_schema
+from neo4j_t2c.schema.parser import parse_schema_symbols as parse_schema
 
 logger = logging.getLogger(__name__)
 

@@ -17,8 +17,7 @@ import re
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_neo4j import Neo4jGraph
 
-from templates.entity_definitions import get_entity_definitions
-from utils.helpers import strip_quotes
+from neo4j_t2c.execution.values import strip_quotes
 
 logger = logging.getLogger(__name__)
 
@@ -79,8 +78,6 @@ def interpret_question_with_schema(
     """Schema-guided triple extraction."""
     labels_str = "\n".join(f"- {label}" for label in sorted(schema_labels))
     rels_str = "\n".join(f"- {r}" for r in sorted(schema_relationships))
-    entity_defs = get_entity_definitions(database)
-
     system_prompt = f"""You are a Neo4j graph assistant.
 
 Your job is to:
@@ -105,9 +102,7 @@ Output format:
 Rewritten: <clarified question>
 Triples:
 1. (<subject_label>, <relationship_type>, <object_label>)
-2. ...
-
-{entity_defs}""".strip()
+2. ...""".strip()
 
     messages: list = [SystemMessage(content=system_prompt)]
     for turn in (conversation_history or [])[-3:]:

@@ -40,8 +40,8 @@ def render(state: StudioState) -> None:
         return
 
     refresh, clear = st.columns(2)
-    refresh.button("Refresh", use_container_width=True)
-    if clear.button("Clear traces", use_container_width=True):
+    refresh.button("Refresh", width="stretch")
+    if clear.button("Clear traces", width="stretch"):
         try:
             request_json(state.runtime.api_url, "DELETE", "/api/traces")
         except ApiError as exc:

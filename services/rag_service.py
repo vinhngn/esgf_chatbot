@@ -21,9 +21,16 @@ from collections import OrderedDict
 
 from config import get_settings
 from models.graph import get_graph, get_schema_labels, get_schema_relationships
-from services.text2cypher.pipeline import invoke_chain
-from services.text2cypher.result_utils import (
+from neo4j_t2c.execution.results import (
     extract_cypher_queries as _extract_cypher_queries,
+)
+from neo4j_t2c.execution.values import normalize_value
+from neo4j_t2c.pipeline import invoke_chain
+from services.conversation_router import (
+    AnswerSource,
+    QuestionDecision,
+    QuestionRoute,
+    classify_question,
 )
 from services.text2cypher.service import (
     get_available_databases,
@@ -32,7 +39,6 @@ from services.text2cypher.service import (
     get_schema_info,
 )
 from services.triple_service import build_enhanced_question, extract_triples_with_retry
-from utils.helpers import normalize_value
 from utils.pipeline_trace import new_trace_id, trace_event
 
 logger = logging.getLogger(__name__)
@@ -97,6 +103,9 @@ def _set_cached_pipeline(database: str, question: str, payload: dict) -> None:
 def _run_pipeline(
     question: str,
     conversation_history: list[dict[str, str]],
+    *,
+    standalone_question: str = "",
+    trace_id: str | None = None,
 ) -> dict:
     """
       Run the shared RAG pipeline steps 1–3:
@@ -113,10 +122,8 @@ def _run_pipeline(
           encoded_query      : str | None
           decoded_query      : str | None
     """
-    from models.llm import get_interpreter_llm
-
     db_name = get_settings().profile_database_name
-    trace_id = new_trace_id()
+    trace_id = trace_id or new_trace_id()
     trace_event(
         logger,
         trace_id,
@@ -141,34 +148,48 @@ def _run_pipeline(
             )
             return cached
 
-    interpreter_llm = get_interpreter_llm()
-    graph = get_graph()
-    schema_labels = get_schema_labels()
-    schema_relationships = get_schema_relationships()
-
-    # --- Step 1: Triple extraction with retry ---
-    try:
-        rewritten, verified_triples, instance_triples = extract_triples_with_retry(
-            question=question,
-            interpreter_llm=interpreter_llm,
-            schema_labels=schema_labels,
-            schema_relationships=schema_relationships,
-            graph=graph,
-            database=db_name,
-            conversation_history=conversation_history,
-        )
-    except Exception as exc:
+    if standalone_question:
+        rewritten = standalone_question
+        verified_triples: list[tuple[str, str, str]] = []
+        instance_triples: list[tuple[str, str, str]] = []
         trace_event(
             logger,
             trace_id,
-            "RAG-ERROR",
-            "Interpreter preprocessing failed",
-            {
-                "error_type": type(exc).__name__,
-                "error": str(exc),
-            },
+            "RAG-02",
+            "Question router supplied a standalone graph question; "
+            "skip redundant triple extraction",
+            {"standalone_question": standalone_question},
         )
-        raise
+    else:
+        from models.llm import get_interpreter_llm
+
+        interpreter_llm = get_interpreter_llm()
+        graph = get_graph()
+        schema_labels = get_schema_labels()
+        schema_relationships = get_schema_relationships()
+
+        try:
+            rewritten, verified_triples, instance_triples = extract_triples_with_retry(
+                question=question,
+                interpreter_llm=interpreter_llm,
+                schema_labels=schema_labels,
+                schema_relationships=schema_relationships,
+                graph=graph,
+                database=db_name,
+                conversation_history=conversation_history,
+            )
+        except Exception as exc:
+            trace_event(
+                logger,
+                trace_id,
+                "RAG-ERROR",
+                "Interpreter preprocessing failed",
+                {
+                    "error_type": type(exc).__name__,
+                    "error": str(exc),
+                },
+            )
+            raise
 
     logger.debug("[RAGService] rewritten=%r", rewritten)
     logger.debug("[RAGService] verified_triples=%s", verified_triples)
@@ -186,12 +207,16 @@ def _run_pipeline(
     )
 
     # --- Step 2: Build enriched question ---
-    enhanced_question = build_enhanced_question(
-        question=question,
-        rewritten=rewritten,
-        verified_triples=verified_triples,
-        instance_triples=instance_triples,
-        conversation_history=conversation_history,
+    enhanced_question = (
+        standalone_question
+        if standalone_question
+        else build_enhanced_question(
+            question=question,
+            rewritten=rewritten,
+            verified_triples=verified_triples,
+            instance_triples=instance_triples,
+            conversation_history=conversation_history,
+        )
     )
     trace_event(
         logger,
@@ -203,7 +228,12 @@ def _run_pipeline(
 
     # --- Step 3: Invoke chain ---
     try:
-        chain_result = invoke_chain(enhanced_question, trace_id=trace_id)
+        chain_result = invoke_chain(
+            enhanced_question,
+            trace_id=trace_id,
+            execute=True,
+            max_retries=2,
+        )
     except Exception as exc:
         trace_event(
             logger,
@@ -254,18 +284,77 @@ def process_question(
     Returns dict with keys:
         input, output, cypher_query, rewritten, verified_triples, instance_triples
     """
-    from models.llm import get_main_llm
-
     conversation_history = conversation_history or []
-    main_llm = get_main_llm()
+    trace_id = new_trace_id()
+    from models.llm import get_interpreter_llm
 
-    pipe = _run_pipeline(question, conversation_history)
+    try:
+        decision = classify_question(
+            question,
+            conversation_history,
+            get_interpreter_llm(),
+        )
+    except Exception as exc:
+        trace_event(
+            logger,
+            trace_id,
+            "RAG-ROUTE-ERROR",
+            "Question router failed closed and requested clarification",
+            {
+                "error_type": type(exc).__name__,
+                "error": str(exc),
+            },
+        )
+        decision = QuestionDecision(
+            route=QuestionRoute.CLARIFY,
+            speech_act="REQUEST_CLARIFICATION",
+            answer_source=AnswerSource.NONE,
+            confidence=0,
+            clarification=(
+                "I could not determine whether this request needs the graph. "
+                "Could you restate it more specifically?"
+            ),
+        )
+
+    trace_event(
+        logger,
+        trace_id,
+        "RAG-ROUTE",
+        "Question classified before any graph access",
+        decision.model_dump(mode="json"),
+    )
+
+    if not decision.requires_graph:
+        output = decision.clarification or decision.direct_answer
+        return {
+            "input": question,
+            "output": output,
+            "cypher_query": "",
+            "rewritten": "",
+            "verified_triples": [],
+            "instance_triples": [],
+            "trace_id": trace_id,
+            "question_tag": decision.route.value,
+            "answer_source": decision.answer_source.value,
+            "route_confidence": decision.confidence,
+            "referenced_turn_ids": decision.referenced_turn_ids,
+        }
+
+    pipe = _run_pipeline(
+        question,
+        conversation_history,
+        standalone_question=decision.standalone_question,
+        trace_id=trace_id,
+    )
     chain_result = pipe["chain_result"]
     encoded_query = pipe["encoded_query"]
     decoded_query = pipe["decoded_query"]
     rewritten = pipe["rewritten"]
     verified_triples = pipe["verified_triples"]
     instance_triples = pipe["instance_triples"]
+    from models.llm import get_main_llm
+
+    main_llm = get_main_llm()
 
     neo4j_link = _build_neo4j_link(encoded_query)
 
@@ -279,6 +368,10 @@ def process_question(
             "verified_triples": verified_triples,
             "instance_triples": instance_triples,
             "trace_id": pipe.get("trace_id", ""),
+            "question_tag": decision.route.value,
+            "answer_source": decision.answer_source.value,
+            "route_confidence": decision.confidence,
+            "referenced_turn_ids": decision.referenced_turn_ids,
         }
 
     # Normalize Neo4j result
@@ -358,6 +451,10 @@ def process_question(
         "verified_triples": verified_triples,
         "instance_triples": instance_triples,
         "trace_id": pipe.get("trace_id", ""),
+        "question_tag": decision.route.value,
+        "answer_source": decision.answer_source.value,
+        "route_confidence": decision.confidence,
+        "referenced_turn_ids": decision.referenced_turn_ids,
     }
 
 

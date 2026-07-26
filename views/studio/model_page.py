@@ -99,12 +99,12 @@ def _model_form(state: StudioState) -> tuple[str, dict]:
         save_column, restart_column = st.columns([1, 2])
         save = save_column.form_submit_button(
             "Save model settings",
-            use_container_width=True,
+            width="stretch",
         )
         restart = restart_column.form_submit_button(
             "Save and restart T2C API",
             type="primary",
-            use_container_width=True,
+            width="stretch",
         )
 
     action = "restart" if restart else "save" if save else ""

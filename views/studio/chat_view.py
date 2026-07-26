@@ -25,10 +25,28 @@ def _pipeline_details(result: dict) -> dict:
         "cypher_query": result.get("cypher_query", ""),
         "verified_triples": result.get("verified_triples", []),
         "instance_triples": result.get("instance_triples", []),
+        "question_tag": result.get("question_tag", ""),
+        "answer_source": result.get("answer_source", ""),
+        "route_confidence": result.get("route_confidence", 0),
+        "referenced_turn_ids": result.get("referenced_turn_ids", []),
     }
 
 
 def _render_pipeline_details(details: dict) -> None:
+    route = details.get("question_tag", "")
+    if route:
+        confidence = float(details.get("route_confidence") or 0)
+        st.markdown(
+            f"**Question route:** `{route}` "
+            f"· source `{details.get('answer_source') or 'NONE'}` "
+            f"· confidence `{confidence:.2f}`"
+        )
+        references = details.get("referenced_turn_ids", [])
+        if references:
+            st.markdown(
+                "**Referenced turns:** "
+                + ", ".join(f"`{turn_id}`" for turn_id in references)
+            )
     st.markdown(f"**Rewritten question:** {details.get('rewritten') or '—'}")
     verified = details.get("verified_triples", [])
     st.markdown("**Verified triples:**")
