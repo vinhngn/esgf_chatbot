@@ -20,7 +20,7 @@
       }
     ]
   },
-  "schema_fingerprint": "sha256:1bdafe44a7290fb08f3877b5bbef06115a2ce3704cb2e819a383d51537c098ce",
+  "schema_fingerprint": "sha256:ed5877f637314408f26148a072ce2f3c153ced272f9b2a62bd8d2e6bbfce66b5",
   "row_count": 142,
   "schema_profile": {
     "labels": [
@@ -274,14 +274,28 @@
         "type": "AMPLIFIES",
         "patterns": [
           {
-            "from": "Me",
-            "to": "User",
-            "count": null
-          },
-          {
             "from": "User",
             "to": "User",
-            "count": null
+            "count": 145,
+            "count_kind": "upper_bound",
+            "count_method": "neo4j_min_endpoint_counts",
+            "relationship_count": 145,
+            "start_endpoint_count": 145,
+            "end_endpoint_count": 145,
+            "outgoing_fanout": 0.003719283845482994,
+            "incoming_fanout": 0.003719283845482994
+          },
+          {
+            "from": "Me",
+            "to": "User",
+            "count": 144,
+            "count_kind": "upper_bound",
+            "count_method": "neo4j_min_endpoint_counts",
+            "relationship_count": 145,
+            "start_endpoint_count": 144,
+            "end_endpoint_count": 145,
+            "outgoing_fanout": 144.0,
+            "incoming_fanout": 0.0036936336120658698
           }
         ],
         "properties": []
@@ -292,7 +306,14 @@
           {
             "from": "Tweet",
             "to": "Link",
-            "count": null
+            "count": 1757,
+            "count_kind": "upper_bound",
+            "count_method": "neo4j_min_endpoint_counts",
+            "relationship_count": 1757,
+            "start_endpoint_count": 1757,
+            "end_endpoint_count": 1757,
+            "outgoing_fanout": 0.7299542999584545,
+            "incoming_fanout": 1.1255605381165918
           }
         ],
         "properties": []
@@ -302,23 +323,51 @@
         "patterns": [
           {
             "from": "Me",
-            "to": "Me",
-            "count": null
-          },
-          {
-            "from": "User",
             "to": "User",
-            "count": null
+            "count": 10124,
+            "count_kind": "upper_bound",
+            "count_method": "neo4j_min_endpoint_counts",
+            "relationship_count": 44630,
+            "start_endpoint_count": 10124,
+            "end_endpoint_count": 44630,
+            "outgoing_fanout": 10124.0,
+            "incoming_fanout": 0.25968296311496436
           },
           {
             "from": "Me",
+            "to": "Me",
+            "count": 10124,
+            "count_kind": "upper_bound",
+            "count_method": "neo4j_min_endpoint_counts",
+            "relationship_count": 44630,
+            "start_endpoint_count": 10124,
+            "end_endpoint_count": 34506,
+            "outgoing_fanout": 10124.0,
+            "incoming_fanout": 10124.0
+          },
+          {
+            "from": "User",
             "to": "User",
-            "count": null
+            "count": 44630,
+            "count_kind": "upper_bound",
+            "count_method": "neo4j_min_endpoint_counts",
+            "relationship_count": 44630,
+            "start_endpoint_count": 44630,
+            "end_endpoint_count": 44630,
+            "outgoing_fanout": 1.1447699174062484,
+            "incoming_fanout": 1.1447699174062484
           },
           {
             "from": "User",
             "to": "Me",
-            "count": null
+            "count": 34506,
+            "count_kind": "upper_bound",
+            "count_method": "neo4j_min_endpoint_counts",
+            "relationship_count": 44630,
+            "start_endpoint_count": 44630,
+            "end_endpoint_count": 34506,
+            "outgoing_fanout": 0.885086954291284,
+            "incoming_fanout": 34506.0
           }
         ],
         "properties": []
@@ -329,12 +378,26 @@
           {
             "from": "Me",
             "to": "User",
-            "count": null
+            "count": 312,
+            "count_kind": "upper_bound",
+            "count_method": "neo4j_min_endpoint_counts",
+            "relationship_count": 901,
+            "start_endpoint_count": 312,
+            "end_endpoint_count": 901,
+            "outgoing_fanout": 312.0,
+            "incoming_fanout": 0.008002872826142718
           },
           {
             "from": "User",
             "to": "User",
-            "count": null
+            "count": 901,
+            "count_kind": "upper_bound",
+            "count_method": "neo4j_min_endpoint_counts",
+            "relationship_count": 901,
+            "start_endpoint_count": 901,
+            "end_endpoint_count": 901,
+            "outgoing_fanout": 0.02311086030882881,
+            "incoming_fanout": 0.02311086030882881
           }
         ],
         "properties": []
@@ -345,12 +408,26 @@
           {
             "from": "Tweet",
             "to": "Me",
-            "count": null
+            "count": 899,
+            "count_kind": "upper_bound",
+            "count_method": "neo4j_min_endpoint_counts",
+            "relationship_count": 3459,
+            "start_endpoint_count": 3459,
+            "end_endpoint_count": 899,
+            "outgoing_fanout": 0.37349397590361444,
+            "incoming_fanout": 899.0
           },
           {
             "from": "Tweet",
             "to": "User",
-            "count": null
+            "count": 3459,
+            "count_kind": "upper_bound",
+            "count_method": "neo4j_min_endpoint_counts",
+            "relationship_count": 3459,
+            "start_endpoint_count": 3459,
+            "end_endpoint_count": 3459,
+            "outgoing_fanout": 1.4370585791441628,
+            "incoming_fanout": 0.08872415738983225
           }
         ],
         "properties": []
@@ -361,12 +438,26 @@
           {
             "from": "User",
             "to": "Tweet",
-            "count": null
+            "count": 2338,
+            "count_kind": "upper_bound",
+            "count_method": "neo4j_min_endpoint_counts",
+            "relationship_count": 2338,
+            "start_endpoint_count": 2338,
+            "end_endpoint_count": 2338,
+            "outgoing_fanout": 0.059970245729236135,
+            "incoming_fanout": 0.9713336103032821
           },
           {
             "from": "Me",
             "to": "Tweet",
-            "count": null
+            "count": 1199,
+            "count_kind": "upper_bound",
+            "count_method": "neo4j_min_endpoint_counts",
+            "relationship_count": 2338,
+            "start_endpoint_count": 1199,
+            "end_endpoint_count": 2338,
+            "outgoing_fanout": 1199.0,
+            "incoming_fanout": 0.4981304528458662
           }
         ],
         "properties": []
@@ -377,7 +468,14 @@
           {
             "from": "Tweet",
             "to": "Tweet",
-            "count": null
+            "count": 504,
+            "count_kind": "upper_bound",
+            "count_method": "neo4j_min_endpoint_counts",
+            "relationship_count": 504,
+            "start_endpoint_count": 504,
+            "end_endpoint_count": 504,
+            "outgoing_fanout": 0.20938928126298298,
+            "incoming_fanout": 0.20938928126298298
           }
         ],
         "properties": []
@@ -388,7 +486,14 @@
           {
             "from": "Tweet",
             "to": "Tweet",
-            "count": null
+            "count": 268,
+            "count_kind": "upper_bound",
+            "count_method": "neo4j_min_endpoint_counts",
+            "relationship_count": 268,
+            "start_endpoint_count": 268,
+            "end_endpoint_count": 268,
+            "outgoing_fanout": 0.11134191940174491,
+            "incoming_fanout": 0.11134191940174491
           }
         ],
         "properties": []
@@ -397,14 +502,28 @@
         "type": "RT_MENTIONS",
         "patterns": [
           {
-            "from": "User",
-            "to": "User",
-            "count": null
-          },
-          {
             "from": "Me",
             "to": "User",
-            "count": null
+            "count": 25,
+            "count_kind": "upper_bound",
+            "count_method": "neo4j_min_endpoint_counts",
+            "relationship_count": 45,
+            "start_endpoint_count": 25,
+            "end_endpoint_count": 45,
+            "outgoing_fanout": 25.0,
+            "incoming_fanout": 0.0006412558354281024
+          },
+          {
+            "from": "User",
+            "to": "User",
+            "count": 45,
+            "count_kind": "upper_bound",
+            "count_method": "neo4j_min_endpoint_counts",
+            "relationship_count": 45,
+            "start_endpoint_count": 45,
+            "end_endpoint_count": 45,
+            "outgoing_fanout": 0.0011542605037705843,
+            "incoming_fanout": 0.0011542605037705843
           }
         ],
         "properties": []
@@ -415,12 +534,26 @@
           {
             "from": "User",
             "to": "User",
-            "count": null
+            "count": 210,
+            "count_kind": "upper_bound",
+            "count_method": "neo4j_min_endpoint_counts",
+            "relationship_count": 210,
+            "start_endpoint_count": 210,
+            "end_endpoint_count": 210,
+            "outgoing_fanout": 0.00538654901759606,
+            "incoming_fanout": 0.00538654901759606
           },
           {
             "from": "User",
             "to": "Me",
-            "count": null
+            "count": 55,
+            "count_kind": "upper_bound",
+            "count_method": "neo4j_min_endpoint_counts",
+            "relationship_count": 210,
+            "start_endpoint_count": 210,
+            "end_endpoint_count": 55,
+            "outgoing_fanout": 0.0014107628379418252,
+            "incoming_fanout": 55.0
           }
         ],
         "properties": [
@@ -440,7 +573,14 @@
           {
             "from": "Tweet",
             "to": "Hashtag",
-            "count": null
+            "count": 1493,
+            "count_kind": "upper_bound",
+            "count_method": "neo4j_min_endpoint_counts",
+            "relationship_count": 1493,
+            "start_endpoint_count": 1493,
+            "end_endpoint_count": 1493,
+            "outgoing_fanout": 0.6202742002492729,
+            "incoming_fanout": 4.340116279069767
           }
         ],
         "properties": []
@@ -451,7 +591,14 @@
           {
             "from": "Tweet",
             "to": "Source",
-            "count": null
+            "count": 2146,
+            "count_kind": "upper_bound",
+            "count_method": "neo4j_min_endpoint_counts",
+            "relationship_count": 2146,
+            "start_endpoint_count": 2146,
+            "end_endpoint_count": 2146,
+            "outgoing_fanout": 0.891566265060241,
+            "incoming_fanout": 79.48148148148148
           }
         ],
         "properties": []
@@ -2044,18 +2191,6 @@
       },
       {
         "hops": 1,
-        "signature": "(Me)-[:FOLLOWS]->(Me)",
-        "edges": [
-          {
-            "from": "Me",
-            "type": "FOLLOWS",
-            "to": "Me",
-            "direction": "outgoing"
-          }
-        ]
-      },
-      {
-        "hops": 1,
         "signature": "(Me)-[:FOLLOWS]->(User)",
         "edges": [
           {
@@ -2242,6 +2377,18 @@
             "from": "Tweet",
             "type": "USING",
             "to": "Source",
+            "direction": "outgoing"
+          }
+        ]
+      },
+      {
+        "hops": 1,
+        "signature": "(Me)-[:FOLLOWS]->(Me)",
+        "edges": [
+          {
+            "from": "Me",
+            "type": "FOLLOWS",
+            "to": "Me",
             "direction": "outgoing"
           }
         ]
@@ -4456,6 +4603,18 @@
       },
       {
         "hops": 1,
+        "signature": "(User)-[:AMPLIFIES]->(User)",
+        "edges": [
+          {
+            "from": "User",
+            "type": "AMPLIFIES",
+            "to": "User",
+            "direction": "outgoing"
+          }
+        ]
+      },
+      {
+        "hops": 1,
         "signature": "(User)<-[:AMPLIFIES]-(Me)",
         "edges": [
           {
@@ -4648,30 +4807,6 @@
       },
       {
         "hops": 1,
-        "signature": "(User)-[:AMPLIFIES]->(User)",
-        "edges": [
-          {
-            "from": "User",
-            "type": "AMPLIFIES",
-            "to": "User",
-            "direction": "outgoing"
-          }
-        ]
-      },
-      {
-        "hops": 1,
-        "signature": "(User)-[:FOLLOWS]->(User)",
-        "edges": [
-          {
-            "from": "User",
-            "type": "FOLLOWS",
-            "to": "User",
-            "direction": "outgoing"
-          }
-        ]
-      },
-      {
-        "hops": 1,
         "signature": "(User)<-[:FOLLOWS]-(Me)",
         "edges": [
           {
@@ -4858,6 +4993,18 @@
             "from": "Tweet",
             "type": "USING",
             "to": "Source",
+            "direction": "outgoing"
+          }
+        ]
+      },
+      {
+        "hops": 1,
+        "signature": "(User)-[:FOLLOWS]->(User)",
+        "edges": [
+          {
+            "from": "User",
+            "type": "FOLLOWS",
+            "to": "User",
             "direction": "outgoing"
           }
         ]
@@ -5464,18 +5611,6 @@
       },
       {
         "hops": 1,
-        "signature": "(User)-[:RT_MENTIONS]->(User)",
-        "edges": [
-          {
-            "from": "User",
-            "type": "RT_MENTIONS",
-            "to": "User",
-            "direction": "outgoing"
-          }
-        ]
-      },
-      {
-        "hops": 1,
         "signature": "(User)<-[:RT_MENTIONS]-(Me)",
         "edges": [
           {
@@ -5662,6 +5797,18 @@
             "from": "Tweet",
             "type": "USING",
             "to": "Source",
+            "direction": "outgoing"
+          }
+        ]
+      },
+      {
+        "hops": 1,
+        "signature": "(User)-[:RT_MENTIONS]->(User)",
+        "edges": [
+          {
+            "from": "User",
+            "type": "RT_MENTIONS",
+            "to": "User",
             "direction": "outgoing"
           }
         ]
@@ -5877,6 +6024,202 @@
       "limit": 10000,
       "max_hops": 3
     },
+    "indexes": [
+      {
+        "name": "__org_neo4j_schema_index_label_scan_store_converted_to_token_index",
+        "type": "LOOKUP",
+        "entity_type": "NODE",
+        "labels_or_types": [],
+        "properties": [],
+        "state": "ONLINE",
+        "population_percent": 100.0,
+        "owning_constraint": null,
+        "dimensions": null,
+        "similarity_function": null,
+        "provider": "token-lookup-1.0"
+      },
+      {
+        "name": "constraint_189951f0",
+        "type": "RANGE",
+        "entity_type": "NODE",
+        "labels_or_types": [
+          "Source"
+        ],
+        "properties": [
+          "name"
+        ],
+        "state": "ONLINE",
+        "population_percent": 100.0,
+        "owning_constraint": "constraint_189951f0",
+        "dimensions": null,
+        "similarity_function": null,
+        "provider": "range-1.0"
+      },
+      {
+        "name": "constraint_5f75e2f6",
+        "type": "RANGE",
+        "entity_type": "NODE",
+        "labels_or_types": [
+          "Tweet"
+        ],
+        "properties": [
+          "id"
+        ],
+        "state": "ONLINE",
+        "population_percent": 100.0,
+        "owning_constraint": "constraint_5f75e2f6",
+        "dimensions": null,
+        "similarity_function": null,
+        "provider": "range-1.0"
+      },
+      {
+        "name": "constraint_71a506e6",
+        "type": "RANGE",
+        "entity_type": "NODE",
+        "labels_or_types": [
+          "Hashtag"
+        ],
+        "properties": [
+          "name"
+        ],
+        "state": "ONLINE",
+        "population_percent": 100.0,
+        "owning_constraint": "constraint_71a506e6",
+        "dimensions": null,
+        "similarity_function": null,
+        "provider": "range-1.0"
+      },
+      {
+        "name": "constraint_9191d2a4",
+        "type": "RANGE",
+        "entity_type": "NODE",
+        "labels_or_types": [
+          "User"
+        ],
+        "properties": [
+          "screen_name"
+        ],
+        "state": "ONLINE",
+        "population_percent": 100.0,
+        "owning_constraint": "constraint_9191d2a4",
+        "dimensions": null,
+        "similarity_function": null,
+        "provider": "range-1.0"
+      },
+      {
+        "name": "constraint_d198d4ee",
+        "type": "RANGE",
+        "entity_type": "NODE",
+        "labels_or_types": [
+          "Link"
+        ],
+        "properties": [
+          "url"
+        ],
+        "state": "ONLINE",
+        "population_percent": 100.0,
+        "owning_constraint": "constraint_d198d4ee",
+        "dimensions": null,
+        "similarity_function": null,
+        "provider": "range-1.0"
+      },
+      {
+        "name": "index_73a44986",
+        "type": "RANGE",
+        "entity_type": "NODE",
+        "labels_or_types": [
+          "Tweet"
+        ],
+        "properties": [
+          "created_at"
+        ],
+        "state": "ONLINE",
+        "population_percent": 100.0,
+        "owning_constraint": null,
+        "dimensions": null,
+        "similarity_function": null,
+        "provider": "range-1.0"
+      }
+    ],
+    "index_discovery": {
+      "status": "available",
+      "count": 7,
+      "error_type": null,
+      "message": ""
+    },
+    "constraints": [
+      {
+        "name": "constraint_189951f0",
+        "type": "UNIQUENESS",
+        "entity_type": "NODE",
+        "labels_or_types": [
+          "Source"
+        ],
+        "properties": [
+          "name"
+        ],
+        "owned_index": "constraint_189951f0",
+        "property_type": null
+      },
+      {
+        "name": "constraint_5f75e2f6",
+        "type": "UNIQUENESS",
+        "entity_type": "NODE",
+        "labels_or_types": [
+          "Tweet"
+        ],
+        "properties": [
+          "id"
+        ],
+        "owned_index": "constraint_5f75e2f6",
+        "property_type": null
+      },
+      {
+        "name": "constraint_71a506e6",
+        "type": "UNIQUENESS",
+        "entity_type": "NODE",
+        "labels_or_types": [
+          "Hashtag"
+        ],
+        "properties": [
+          "name"
+        ],
+        "owned_index": "constraint_71a506e6",
+        "property_type": null
+      },
+      {
+        "name": "constraint_9191d2a4",
+        "type": "UNIQUENESS",
+        "entity_type": "NODE",
+        "labels_or_types": [
+          "User"
+        ],
+        "properties": [
+          "screen_name"
+        ],
+        "owned_index": "constraint_9191d2a4",
+        "property_type": null
+      },
+      {
+        "name": "constraint_d198d4ee",
+        "type": "UNIQUENESS",
+        "entity_type": "NODE",
+        "labels_or_types": [
+          "Link"
+        ],
+        "properties": [
+          "url"
+        ],
+        "owned_index": "constraint_d198d4ee",
+        "property_type": null
+      }
+    ],
+    "constraint_discovery": {
+      "status": "available",
+      "count": 5,
+      "error_type": null,
+      "message": ""
+    },
     "vector_indexes": [],
     "vector_index_discovery": {
       "status": "available",
@@ -5930,125 +6273,607 @@
       "top_relationship_patterns": [
         {
           "type": "AMPLIFIES",
-          "from": "Me",
+          "from": "User",
           "to": "User",
-          "count": null
+          "count": 145
         },
         {
           "type": "AMPLIFIES",
-          "from": "User",
+          "from": "Me",
           "to": "User",
-          "count": null
+          "count": 144
         },
         {
           "type": "CONTAINS",
           "from": "Tweet",
           "to": "Link",
-          "count": null
+          "count": 1757
+        },
+        {
+          "type": "FOLLOWS",
+          "from": "Me",
+          "to": "User",
+          "count": 10124
         },
         {
           "type": "FOLLOWS",
           "from": "Me",
           "to": "Me",
-          "count": null
+          "count": 10124
         },
         {
           "type": "FOLLOWS",
           "from": "User",
           "to": "User",
-          "count": null
-        },
-        {
-          "type": "FOLLOWS",
-          "from": "Me",
-          "to": "User",
-          "count": null
+          "count": 44630
         },
         {
           "type": "INTERACTS_WITH",
           "from": "Me",
           "to": "User",
-          "count": null
+          "count": 312
         },
         {
           "type": "INTERACTS_WITH",
           "from": "User",
           "to": "User",
-          "count": null
+          "count": 901
         },
         {
           "type": "MENTIONS",
           "from": "Tweet",
           "to": "Me",
-          "count": null
+          "count": 899
         },
         {
           "type": "MENTIONS",
           "from": "Tweet",
           "to": "User",
-          "count": null
+          "count": 3459
         },
         {
           "type": "POSTS",
           "from": "User",
           "to": "Tweet",
-          "count": null
+          "count": 2338
         },
         {
           "type": "POSTS",
           "from": "Me",
           "to": "Tweet",
-          "count": null
+          "count": 1199
         },
         {
           "type": "REPLY_TO",
           "from": "Tweet",
           "to": "Tweet",
-          "count": null
+          "count": 504
         },
         {
           "type": "RETWEETS",
           "from": "Tweet",
           "to": "Tweet",
-          "count": null
-        },
-        {
-          "type": "RT_MENTIONS",
-          "from": "User",
-          "to": "User",
-          "count": null
+          "count": 268
         },
         {
           "type": "RT_MENTIONS",
           "from": "Me",
           "to": "User",
-          "count": null
+          "count": 25
+        },
+        {
+          "type": "RT_MENTIONS",
+          "from": "User",
+          "to": "User",
+          "count": 45
         },
         {
           "type": "SIMILAR_TO",
           "from": "User",
           "to": "User",
-          "count": null
+          "count": 210
         },
         {
           "type": "SIMILAR_TO",
           "from": "User",
           "to": "Me",
-          "count": null
+          "count": 55
         },
         {
           "type": "TAGS",
           "from": "Tweet",
           "to": "Hashtag",
-          "count": null
+          "count": 1493
         },
         {
           "type": "USING",
           "from": "Tweet",
           "to": "Source",
-          "count": null
+          "count": 2146
         }
       ]
+    }
+  },
+  "planner_profile": {
+    "access_paths": {
+      "indexes": [
+        {
+          "name": "__org_neo4j_schema_index_label_scan_store_converted_to_token_index",
+          "type": "LOOKUP",
+          "entity_type": "NODE",
+          "labels_or_types": [],
+          "properties": [],
+          "state": "ONLINE",
+          "population_percent": 100.0,
+          "owning_constraint": null,
+          "dimensions": null,
+          "similarity_function": null,
+          "provider": "token-lookup-1.0"
+        },
+        {
+          "name": "constraint_189951f0",
+          "type": "RANGE",
+          "entity_type": "NODE",
+          "labels_or_types": [
+            "Source"
+          ],
+          "properties": [
+            "name"
+          ],
+          "state": "ONLINE",
+          "population_percent": 100.0,
+          "owning_constraint": "constraint_189951f0",
+          "dimensions": null,
+          "similarity_function": null,
+          "provider": "range-1.0"
+        },
+        {
+          "name": "constraint_5f75e2f6",
+          "type": "RANGE",
+          "entity_type": "NODE",
+          "labels_or_types": [
+            "Tweet"
+          ],
+          "properties": [
+            "id"
+          ],
+          "state": "ONLINE",
+          "population_percent": 100.0,
+          "owning_constraint": "constraint_5f75e2f6",
+          "dimensions": null,
+          "similarity_function": null,
+          "provider": "range-1.0"
+        },
+        {
+          "name": "constraint_71a506e6",
+          "type": "RANGE",
+          "entity_type": "NODE",
+          "labels_or_types": [
+            "Hashtag"
+          ],
+          "properties": [
+            "name"
+          ],
+          "state": "ONLINE",
+          "population_percent": 100.0,
+          "owning_constraint": "constraint_71a506e6",
+          "dimensions": null,
+          "similarity_function": null,
+          "provider": "range-1.0"
+        },
+        {
+          "name": "constraint_9191d2a4",
+          "type": "RANGE",
+          "entity_type": "NODE",
+          "labels_or_types": [
+            "User"
+          ],
+          "properties": [
+            "screen_name"
+          ],
+          "state": "ONLINE",
+          "population_percent": 100.0,
+          "owning_constraint": "constraint_9191d2a4",
+          "dimensions": null,
+          "similarity_function": null,
+          "provider": "range-1.0"
+        },
+        {
+          "name": "constraint_d198d4ee",
+          "type": "RANGE",
+          "entity_type": "NODE",
+          "labels_or_types": [
+            "Link"
+          ],
+          "properties": [
+            "url"
+          ],
+          "state": "ONLINE",
+          "population_percent": 100.0,
+          "owning_constraint": "constraint_d198d4ee",
+          "dimensions": null,
+          "similarity_function": null,
+          "provider": "range-1.0"
+        },
+        {
+          "name": "index_73a44986",
+          "type": "RANGE",
+          "entity_type": "NODE",
+          "labels_or_types": [
+            "Tweet"
+          ],
+          "properties": [
+            "created_at"
+          ],
+          "state": "ONLINE",
+          "population_percent": 100.0,
+          "owning_constraint": null,
+          "dimensions": null,
+          "similarity_function": null,
+          "provider": "range-1.0"
+        }
+      ],
+      "constraints": [
+        {
+          "name": "constraint_189951f0",
+          "type": "UNIQUENESS",
+          "entity_type": "NODE",
+          "labels_or_types": [
+            "Source"
+          ],
+          "properties": [
+            "name"
+          ],
+          "owned_index": "constraint_189951f0",
+          "property_type": null
+        },
+        {
+          "name": "constraint_5f75e2f6",
+          "type": "UNIQUENESS",
+          "entity_type": "NODE",
+          "labels_or_types": [
+            "Tweet"
+          ],
+          "properties": [
+            "id"
+          ],
+          "owned_index": "constraint_5f75e2f6",
+          "property_type": null
+        },
+        {
+          "name": "constraint_71a506e6",
+          "type": "UNIQUENESS",
+          "entity_type": "NODE",
+          "labels_or_types": [
+            "Hashtag"
+          ],
+          "properties": [
+            "name"
+          ],
+          "owned_index": "constraint_71a506e6",
+          "property_type": null
+        },
+        {
+          "name": "constraint_9191d2a4",
+          "type": "UNIQUENESS",
+          "entity_type": "NODE",
+          "labels_or_types": [
+            "User"
+          ],
+          "properties": [
+            "screen_name"
+          ],
+          "owned_index": "constraint_9191d2a4",
+          "property_type": null
+        },
+        {
+          "name": "constraint_d198d4ee",
+          "type": "UNIQUENESS",
+          "entity_type": "NODE",
+          "labels_or_types": [
+            "Link"
+          ],
+          "properties": [
+            "url"
+          ],
+          "owned_index": "constraint_d198d4ee",
+          "property_type": null
+        }
+      ],
+      "index_discovery": {
+        "status": "available",
+        "count": 7,
+        "error_type": null,
+        "message": ""
+      },
+      "constraint_discovery": {
+        "status": "available",
+        "count": 5,
+        "error_type": null,
+        "message": ""
+      }
+    },
+    "graph_statistics": {
+      "source": "cypher_count_store_queries",
+      "all_node_count": 43325,
+      "all_relationship_count": 57896,
+      "node_counts": {
+        "Hashtag": 344,
+        "Link": 1561,
+        "Me": 1,
+        "Source": 27,
+        "Tweet": 2407,
+        "User": 38986
+      },
+      "relationship_counts": {
+        "AMPLIFIES": 145,
+        "CONTAINS": 1757,
+        "FOLLOWS": 44630,
+        "INTERACTS_WITH": 901,
+        "MENTIONS": 3459,
+        "POSTS": 2338,
+        "REPLY_TO": 504,
+        "RETWEETS": 268,
+        "RT_MENTIONS": 45,
+        "SIMILAR_TO": 210,
+        "TAGS": 1493,
+        "USING": 2146
+      },
+      "relationship_start_counts": {
+        "User|AMPLIFIES": 145,
+        "Me|AMPLIFIES": 144,
+        "Tweet|CONTAINS": 1757,
+        "Me|FOLLOWS": 10124,
+        "User|FOLLOWS": 44630,
+        "Me|INTERACTS_WITH": 312,
+        "User|INTERACTS_WITH": 901,
+        "Tweet|MENTIONS": 3459,
+        "User|POSTS": 2338,
+        "Me|POSTS": 1199,
+        "Tweet|REPLY_TO": 504,
+        "Tweet|RETWEETS": 268,
+        "Me|RT_MENTIONS": 25,
+        "User|RT_MENTIONS": 45,
+        "User|SIMILAR_TO": 210,
+        "Tweet|TAGS": 1493,
+        "Tweet|USING": 2146
+      },
+      "relationship_end_counts": {
+        "AMPLIFIES|User": 145,
+        "CONTAINS|Link": 1757,
+        "FOLLOWS|User": 44630,
+        "FOLLOWS|Me": 34506,
+        "INTERACTS_WITH|User": 901,
+        "MENTIONS|Me": 899,
+        "MENTIONS|User": 3459,
+        "POSTS|Tweet": 2338,
+        "REPLY_TO|Tweet": 504,
+        "RETWEETS|Tweet": 268,
+        "RT_MENTIONS|User": 45,
+        "SIMILAR_TO|User": 210,
+        "SIMILAR_TO|Me": 55,
+        "TAGS|Hashtag": 1493,
+        "USING|Source": 2146
+      },
+      "index_statistics": [],
+      "pattern_steps": [
+        {
+          "from": "User",
+          "type": "AMPLIFIES",
+          "to": "User",
+          "estimated_count": 145,
+          "count_kind": "upper_bound",
+          "count_method": "neo4j_min_endpoint_counts",
+          "outgoing_fanout": 0.003719283845482994,
+          "incoming_fanout": 0.003719283845482994
+        },
+        {
+          "from": "Me",
+          "type": "AMPLIFIES",
+          "to": "User",
+          "estimated_count": 144,
+          "count_kind": "upper_bound",
+          "count_method": "neo4j_min_endpoint_counts",
+          "outgoing_fanout": 144.0,
+          "incoming_fanout": 0.0036936336120658698
+        },
+        {
+          "from": "Tweet",
+          "type": "CONTAINS",
+          "to": "Link",
+          "estimated_count": 1757,
+          "count_kind": "upper_bound",
+          "count_method": "neo4j_min_endpoint_counts",
+          "outgoing_fanout": 0.7299542999584545,
+          "incoming_fanout": 1.1255605381165918
+        },
+        {
+          "from": "Me",
+          "type": "FOLLOWS",
+          "to": "User",
+          "estimated_count": 10124,
+          "count_kind": "upper_bound",
+          "count_method": "neo4j_min_endpoint_counts",
+          "outgoing_fanout": 10124.0,
+          "incoming_fanout": 0.25968296311496436
+        },
+        {
+          "from": "Me",
+          "type": "FOLLOWS",
+          "to": "Me",
+          "estimated_count": 10124,
+          "count_kind": "upper_bound",
+          "count_method": "neo4j_min_endpoint_counts",
+          "outgoing_fanout": 10124.0,
+          "incoming_fanout": 10124.0
+        },
+        {
+          "from": "User",
+          "type": "FOLLOWS",
+          "to": "User",
+          "estimated_count": 44630,
+          "count_kind": "upper_bound",
+          "count_method": "neo4j_min_endpoint_counts",
+          "outgoing_fanout": 1.1447699174062484,
+          "incoming_fanout": 1.1447699174062484
+        },
+        {
+          "from": "User",
+          "type": "FOLLOWS",
+          "to": "Me",
+          "estimated_count": 34506,
+          "count_kind": "upper_bound",
+          "count_method": "neo4j_min_endpoint_counts",
+          "outgoing_fanout": 0.885086954291284,
+          "incoming_fanout": 34506.0
+        },
+        {
+          "from": "Me",
+          "type": "INTERACTS_WITH",
+          "to": "User",
+          "estimated_count": 312,
+          "count_kind": "upper_bound",
+          "count_method": "neo4j_min_endpoint_counts",
+          "outgoing_fanout": 312.0,
+          "incoming_fanout": 0.008002872826142718
+        },
+        {
+          "from": "User",
+          "type": "INTERACTS_WITH",
+          "to": "User",
+          "estimated_count": 901,
+          "count_kind": "upper_bound",
+          "count_method": "neo4j_min_endpoint_counts",
+          "outgoing_fanout": 0.02311086030882881,
+          "incoming_fanout": 0.02311086030882881
+        },
+        {
+          "from": "Tweet",
+          "type": "MENTIONS",
+          "to": "Me",
+          "estimated_count": 899,
+          "count_kind": "upper_bound",
+          "count_method": "neo4j_min_endpoint_counts",
+          "outgoing_fanout": 0.37349397590361444,
+          "incoming_fanout": 899.0
+        },
+        {
+          "from": "Tweet",
+          "type": "MENTIONS",
+          "to": "User",
+          "estimated_count": 3459,
+          "count_kind": "upper_bound",
+          "count_method": "neo4j_min_endpoint_counts",
+          "outgoing_fanout": 1.4370585791441628,
+          "incoming_fanout": 0.08872415738983225
+        },
+        {
+          "from": "User",
+          "type": "POSTS",
+          "to": "Tweet",
+          "estimated_count": 2338,
+          "count_kind": "upper_bound",
+          "count_method": "neo4j_min_endpoint_counts",
+          "outgoing_fanout": 0.059970245729236135,
+          "incoming_fanout": 0.9713336103032821
+        },
+        {
+          "from": "Me",
+          "type": "POSTS",
+          "to": "Tweet",
+          "estimated_count": 1199,
+          "count_kind": "upper_bound",
+          "count_method": "neo4j_min_endpoint_counts",
+          "outgoing_fanout": 1199.0,
+          "incoming_fanout": 0.4981304528458662
+        },
+        {
+          "from": "Tweet",
+          "type": "REPLY_TO",
+          "to": "Tweet",
+          "estimated_count": 504,
+          "count_kind": "upper_bound",
+          "count_method": "neo4j_min_endpoint_counts",
+          "outgoing_fanout": 0.20938928126298298,
+          "incoming_fanout": 0.20938928126298298
+        },
+        {
+          "from": "Tweet",
+          "type": "RETWEETS",
+          "to": "Tweet",
+          "estimated_count": 268,
+          "count_kind": "upper_bound",
+          "count_method": "neo4j_min_endpoint_counts",
+          "outgoing_fanout": 0.11134191940174491,
+          "incoming_fanout": 0.11134191940174491
+        },
+        {
+          "from": "Me",
+          "type": "RT_MENTIONS",
+          "to": "User",
+          "estimated_count": 25,
+          "count_kind": "upper_bound",
+          "count_method": "neo4j_min_endpoint_counts",
+          "outgoing_fanout": 25.0,
+          "incoming_fanout": 0.0006412558354281024
+        },
+        {
+          "from": "User",
+          "type": "RT_MENTIONS",
+          "to": "User",
+          "estimated_count": 45,
+          "count_kind": "upper_bound",
+          "count_method": "neo4j_min_endpoint_counts",
+          "outgoing_fanout": 0.0011542605037705843,
+          "incoming_fanout": 0.0011542605037705843
+        },
+        {
+          "from": "User",
+          "type": "SIMILAR_TO",
+          "to": "User",
+          "estimated_count": 210,
+          "count_kind": "upper_bound",
+          "count_method": "neo4j_min_endpoint_counts",
+          "outgoing_fanout": 0.00538654901759606,
+          "incoming_fanout": 0.00538654901759606
+        },
+        {
+          "from": "User",
+          "type": "SIMILAR_TO",
+          "to": "Me",
+          "estimated_count": 55,
+          "count_kind": "upper_bound",
+          "count_method": "neo4j_min_endpoint_counts",
+          "outgoing_fanout": 0.0014107628379418252,
+          "incoming_fanout": 55.0
+        },
+        {
+          "from": "Tweet",
+          "type": "TAGS",
+          "to": "Hashtag",
+          "estimated_count": 1493,
+          "count_kind": "upper_bound",
+          "count_method": "neo4j_min_endpoint_counts",
+          "outgoing_fanout": 0.6202742002492729,
+          "incoming_fanout": 4.340116279069767
+        },
+        {
+          "from": "Tweet",
+          "type": "USING",
+          "to": "Source",
+          "estimated_count": 2146,
+          "count_kind": "upper_bound",
+          "count_method": "neo4j_min_endpoint_counts",
+          "outgoing_fanout": 0.891566265060241,
+          "incoming_fanout": 79.48148148148148
+        }
+      ],
+      "discovery": {
+        "status": "fallback",
+        "count": 50,
+        "error_type": null,
+        "message": "db.stats unavailable; used count-store-compatible Cypher"
+      }
     }
   },
   "value_profile": {
@@ -7222,430 +8047,418 @@
       "location": [
         {
           "value": "",
-          "frequency": 12366
+          "frequency": 2982
         },
         {
           "value": "London, England",
-          "frequency": 358
+          "frequency": 100
         },
         {
           "value": "San Francisco, CA",
-          "frequency": 351
-        },
-        {
-          "value": "London",
-          "frequency": 339
-        },
-        {
-          "value": "Paris, France",
-          "frequency": 242
-        },
-        {
-          "value": "India",
-          "frequency": 226
-        },
-        {
-          "value": "Bengaluru, India",
-          "frequency": 214
-        },
-        {
-          "value": "New York, NY",
-          "frequency": 191
-        },
-        {
-          "value": "Paris",
-          "frequency": 161
-        },
-        {
-          "value": "United States",
-          "frequency": 152
-        },
-        {
-          "value": "Seattle, WA",
-          "frequency": 143
-        },
-        {
-          "value": "France",
-          "frequency": 135
-        },
-        {
-          "value": "Berlin, Germany",
-          "frequency": 130
-        },
-        {
-          "value": "Austin, TX",
-          "frequency": 123
-        },
-        {
-          "value": "London, UK",
-          "frequency": 121
-        },
-        {
-          "value": "San Francisco",
-          "frequency": 111
-        },
-        {
-          "value": "Boston, MA",
-          "frequency": 108
-        },
-        {
-          "value": "Chicago, IL",
-          "frequency": 108
-        },
-        {
-          "value": "Bangalore",
-          "frequency": 106
-        },
-        {
-          "value": "Washington, DC",
-          "frequency": 102
-        },
-        {
-          "value": "Germany",
-          "frequency": 99
-        },
-        {
-          "value": "Los Angeles, CA",
-          "frequency": 99
-        },
-        {
-          "value": "Madrid",
-          "frequency": 99
-        },
-        {
-          "value": "Stockholm, Sweden",
-          "frequency": 98
-        },
-        {
-          "value": "Singapore",
-          "frequency": 96
-        },
-        {
-          "value": "United Kingdom",
-          "frequency": 90
-        },
-        {
-          "value": "UK",
           "frequency": 89
         },
         {
-          "value": "Sweden",
-          "frequency": 85
+          "value": "India",
+          "frequency": 76
         },
         {
-          "value": "Earth",
-          "frequency": 83
-        },
-        {
-          "value": "Lagos, Nigeria",
-          "frequency": 82
-        },
-        {
-          "value": "Nigeria",
-          "frequency": 81
-        },
-        {
-          "value": "California, USA",
-          "frequency": 79
-        },
-        {
-          "value": "Belgium",
-          "frequency": 78
-        },
-        {
-          "value": "Pune, India",
-          "frequency": 78
-        },
-        {
-          "value": "Sao Paulo, Brazil",
-          "frequency": 77
-        },
-        {
-          "value": "Amsterdam, The Netherlands",
-          "frequency": 75
-        },
-        {
-          "value": "Mumbai, India",
-          "frequency": 75
-        },
-        {
-          "value": "Toronto, Ontario",
-          "frequency": 74
-        },
-        {
-          "value": "Barcelona",
-          "frequency": 72
-        },
-        {
-          "value": "Berlin",
-          "frequency": 72
-        },
-        {
-          "value": "Brazil",
-          "frequency": 71
-        },
-        {
-          "value": "Chennai, India",
+          "value": "Bengaluru, India",
           "frequency": 70
         },
         {
-          "value": "Hyderabad, India",
-          "frequency": 68
+          "value": "Lagos, Nigeria",
+          "frequency": 63
         },
         {
-          "value": "Atlanta, GA",
-          "frequency": 67
-        },
-        {
-          "value": "New Delhi, India",
-          "frequency": 67
-        },
-        {
-          "value": "Stockholm",
+          "value": "Nigeria",
           "frequency": 62
         },
         {
-          "value": "Amsterdam",
-          "frequency": 61
-        },
-        {
-          "value": "New York, USA",
-          "frequency": 61
-        },
-        {
-          "value": "New York",
+          "value": "Paris, France",
           "frequency": 60
         },
         {
-          "value": "Mexico",
+          "value": "London",
           "frequency": 58
+        },
+        {
+          "value": "United States",
+          "frequency": 41
+        },
+        {
+          "value": "New York, NY",
+          "frequency": 39
+        },
+        {
+          "value": "Chennai, India",
+          "frequency": 35
+        },
+        {
+          "value": "Earth",
+          "frequency": 34
+        },
+        {
+          "value": "London, UK",
+          "frequency": 33
+        },
+        {
+          "value": "Pune, India",
+          "frequency": 33
+        },
+        {
+          "value": "Boston, MA",
+          "frequency": 32
+        },
+        {
+          "value": "Mumbai, India",
+          "frequency": 32
+        },
+        {
+          "value": "Los Angeles, CA",
+          "frequency": 31
+        },
+        {
+          "value": "Berlin, Germany",
+          "frequency": 29
+        },
+        {
+          "value": "Austin, TX",
+          "frequency": 28
+        },
+        {
+          "value": "Seattle, WA",
+          "frequency": 28
+        },
+        {
+          "value": "Germany",
+          "frequency": 27
+        },
+        {
+          "value": "Paris",
+          "frequency": 27
+        },
+        {
+          "value": "United Kingdom",
+          "frequency": 27
+        },
+        {
+          "value": "Chicago, IL",
+          "frequency": 25
+        },
+        {
+          "value": "Sao Paulo, Brazil",
+          "frequency": 25
+        },
+        {
+          "value": "Washington, DC",
+          "frequency": 25
+        },
+        {
+          "value": "France",
+          "frequency": 24
+        },
+        {
+          "value": "New Delhi, India",
+          "frequency": 24
+        },
+        {
+          "value": "Singapore",
+          "frequency": 24
+        },
+        {
+          "value": "San Francisco",
+          "frequency": 23
+        },
+        {
+          "value": "Hyderabad, India",
+          "frequency": 22
+        },
+        {
+          "value": "Toronto, Ontario",
+          "frequency": 22
+        },
+        {
+          "value": "Bangalore",
+          "frequency": 21
+        },
+        {
+          "value": "Brazil",
+          "frequency": 21
+        },
+        {
+          "value": "Nairobi, Kenya",
+          "frequency": 21
+        },
+        {
+          "value": "Amsterdam, The Netherlands",
+          "frequency": 20
+        },
+        {
+          "value": "Global",
+          "frequency": 20
+        },
+        {
+          "value": "New York, USA",
+          "frequency": 20
+        },
+        {
+          "value": "Abuja, Nigeria",
+          "frequency": 19
+        },
+        {
+          "value": "California, USA",
+          "frequency": 19
+        },
+        {
+          "value": "Stockholm, Sweden",
+          "frequency": 19
+        },
+        {
+          "value": "New York",
+          "frequency": 17
+        },
+        {
+          "value": "Atlanta, GA",
+          "frequency": 16
+        },
+        {
+          "value": "Israel",
+          "frequency": 16
+        },
+        {
+          "value": "Kolkata, India",
+          "frequency": 16
+        },
+        {
+          "value": "Lagos",
+          "frequency": 16
+        },
+        {
+          "value": "Madrid, Spain",
+          "frequency": 16
+        },
+        {
+          "value": "Stockholm",
+          "frequency": 16
+        },
+        {
+          "value": "São Paulo",
+          "frequency": 16
         }
       ],
       "name": [
         {
           "value": "Alex",
-          "frequency": 25
-        },
-        {
-          "value": "David",
-          "frequency": 14
-        },
-        {
-          "value": "Andy",
-          "frequency": 11
-        },
-        {
-          "value": "Daniel",
-          "frequency": 10
-        },
-        {
-          "value": "Matt",
-          "frequency": 10
-        },
-        {
-          "value": ".",
-          "frequency": 9
-        },
-        {
-          "value": "Alejandro",
-          "frequency": 9
-        },
-        {
-          "value": "Chris",
-          "frequency": 9
-        },
-        {
-          "value": "Martin",
-          "frequency": 9
-        },
-        {
-          "value": "Paul",
-          "frequency": 9
-        },
-        {
-          "value": "Andrew",
-          "frequency": 8
-        },
-        {
-          "value": "John",
-          "frequency": 8
-        },
-        {
-          "value": "Kevin",
-          "frequency": 8
-        },
-        {
-          "value": "Tom",
-          "frequency": 8
-        },
-        {
-          "value": "Carlos",
-          "frequency": 7
-        },
-        {
-          "value": "Deepak",
-          "frequency": 7
-        },
-        {
-          "value": "Eric",
-          "frequency": 7
-        },
-        {
-          "value": "Fernando",
-          "frequency": 7
-        },
-        {
-          "value": "Frank",
-          "frequency": 7
-        },
-        {
-          "value": "James",
-          "frequency": 7
-        },
-        {
-          "value": "Max",
-          "frequency": 7
-        },
-        {
-          "value": "Michael",
-          "frequency": 7
-        },
-        {
-          "value": "Tim",
-          "frequency": 7
+          "frequency": 6
         },
         {
           "value": "Aaron",
-          "frequency": 6
+          "frequency": 4
         },
         {
-          "value": "Ashish",
-          "frequency": 6
+          "value": "James",
+          "frequency": 4
         },
         {
-          "value": "Ben",
-          "frequency": 6
+          "value": "Matt",
+          "frequency": 4
         },
         {
-          "value": "Dan",
-          "frequency": 6
+          "value": "Michael",
+          "frequency": 4
         },
         {
-          "value": "Dave",
-          "frequency": 6
+          "value": "Ajinkya",
+          "frequency": 3
         },
         {
-          "value": "Manu",
-          "frequency": 6
-        },
-        {
-          "value": "Mark",
-          "frequency": 6
-        },
-        {
-          "value": "Mike",
-          "frequency": 6
-        },
-        {
-          "value": "Roberto",
-          "frequency": 6
-        },
-        {
-          "value": "Sergio",
-          "frequency": 6
-        },
-        {
-          "value": "Akash",
-          "frequency": 5
-        },
-        {
-          "value": "Alberto",
-          "frequency": 5
-        },
-        {
-          "value": "Alexander",
-          "frequency": 5
+          "value": "Alejandro",
+          "frequency": 3
         },
         {
           "value": "Ali",
-          "frequency": 5
+          "frequency": 3
         },
         {
-          "value": "Gaurav",
-          "frequency": 5
+          "value": "Andrew",
+          "frequency": 3
         },
         {
-          "value": "J",
-          "frequency": 5
+          "value": "Ashish",
+          "frequency": 3
         },
         {
-          "value": "Jay",
-          "frequency": 5
+          "value": "Ben",
+          "frequency": 3
+        },
+        {
+          "value": "Carlos",
+          "frequency": 3
+        },
+        {
+          "value": "Chris",
+          "frequency": 3
+        },
+        {
+          "value": "Christophe",
+          "frequency": 3
+        },
+        {
+          "value": "Daniel",
+          "frequency": 3
+        },
+        {
+          "value": "David",
+          "frequency": 3
+        },
+        {
+          "value": "Ian",
+          "frequency": 3
         },
         {
           "value": "Jean",
-          "frequency": 5
+          "frequency": 3
         },
         {
-          "value": "Jonas",
-          "frequency": 5
+          "value": "Jim",
+          "frequency": 3
         },
         {
-          "value": "Julien",
-          "frequency": 5
-        },
-        {
-          "value": "Leo",
-          "frequency": 5
-        },
-        {
-          "value": "Marcelo",
-          "frequency": 5
-        },
-        {
-          "value": "Nick",
-          "frequency": 5
+          "value": "Mike",
+          "frequency": 3
         },
         {
           "value": "Nico",
-          "frequency": 5
+          "frequency": 3
         },
         {
-          "value": "Patrick",
-          "frequency": 5
+          "value": "Paul",
+          "frequency": 3
         },
         {
-          "value": "Phil",
-          "frequency": 5
+          "value": "Tim",
+          "frequency": 3
         },
         {
-          "value": "R",
-          "frequency": 5
+          "value": "Adrianna Dyczkowsky",
+          "frequency": 2
+        },
+        {
+          "value": "Akash",
+          "frequency": 2
+        },
+        {
+          "value": "Amadeus",
+          "frequency": 2
+        },
+        {
+          "value": "Anand",
+          "frequency": 2
+        },
+        {
+          "value": "Anil",
+          "frequency": 2
+        },
+        {
+          "value": "Annie Watawat",
+          "frequency": 2
+        },
+        {
+          "value": "Apache Spark",
+          "frequency": 2
+        },
+        {
+          "value": "BC",
+          "frequency": 2
+        },
+        {
+          "value": "Babu",
+          "frequency": 2
+        },
+        {
+          "value": "Bala",
+          "frequency": 2
+        },
+        {
+          "value": "Benjamin",
+          "frequency": 2
+        },
+        {
+          "value": "BetoX",
+          "frequency": 2
+        },
+        {
+          "value": "Bryan",
+          "frequency": 2
+        },
+        {
+          "value": "C",
+          "frequency": 2
+        },
+        {
+          "value": "Cameron",
+          "frequency": 2
+        },
+        {
+          "value": "Carina Birt",
+          "frequency": 2
+        },
+        {
+          "value": "Charlie",
+          "frequency": 2
+        },
+        {
+          "value": "Cindy",
+          "frequency": 2
+        },
+        {
+          "value": "Codex",
+          "frequency": 2
+        },
+        {
+          "value": "DD",
+          "frequency": 2
+        },
+        {
+          "value": "Dan",
+          "frequency": 2
+        },
+        {
+          "value": "Dave",
+          "frequency": 2
+        },
+        {
+          "value": "David Son",
+          "frequency": 2
+        },
+        {
+          "value": "DecisionProducts",
+          "frequency": 2
+        },
+        {
+          "value": "Diego",
+          "frequency": 2
+        },
+        {
+          "value": "Ehab",
+          "frequency": 2
+        },
+        {
+          "value": "Emily Robinson",
+          "frequency": 2
         }
       ],
       "profile_image_url": [
         {
           "value": "http://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png",
-          "frequency": 3759
+          "frequency": 737
         },
         {
           "value": "http://pbs.twimg.com/profile_images/1000010677078048768/CihLFSYE_normal.jpg",
           "frequency": 1
         },
         {
-          "value": "http://pbs.twimg.com/profile_images/1000024697243762688/AYCjMOsf_normal.jpg",
-          "frequency": 1
-        },
-        {
           "value": "http://pbs.twimg.com/profile_images/1000057350227615744/nxKo8X5H_normal.jpg",
-          "frequency": 1
-        },
-        {
-          "value": "http://pbs.twimg.com/profile_images/1000093503186141188/-vzkH33h_normal.jpg",
-          "frequency": 1
-        },
-        {
-          "value": "http://pbs.twimg.com/profile_images/1000099822542745601/XKZ3ykcq_normal.jpg",
           "frequency": 1
         },
         {
@@ -7661,43 +8474,7 @@
           "frequency": 1
         },
         {
-          "value": "http://pbs.twimg.com/profile_images/1000152356833648642/mSQ8YOBl_normal.jpg",
-          "frequency": 1
-        },
-        {
-          "value": "http://pbs.twimg.com/profile_images/1000177535584538624/8wW3NyEW_normal.jpg",
-          "frequency": 1
-        },
-        {
-          "value": "http://pbs.twimg.com/profile_images/1000216819171450880/iLKh8ulw_normal.jpg",
-          "frequency": 1
-        },
-        {
-          "value": "http://pbs.twimg.com/profile_images/1000270402147545089/TppOgUeo_normal.jpg",
-          "frequency": 1
-        },
-        {
-          "value": "http://pbs.twimg.com/profile_images/1000320802/DSC01490_normal.JPG",
-          "frequency": 1
-        },
-        {
-          "value": "http://pbs.twimg.com/profile_images/1000391565842448384/ukLkPK2k_normal.jpg",
-          "frequency": 1
-        },
-        {
-          "value": "http://pbs.twimg.com/profile_images/1000432168156385280/2_89dfXY_normal.jpg",
-          "frequency": 1
-        },
-        {
           "value": "http://pbs.twimg.com/profile_images/1000535630/logo_normal.jpg",
-          "frequency": 1
-        },
-        {
-          "value": "http://pbs.twimg.com/profile_images/1000650401807552512/HB1n-0RO_normal.jpg",
-          "frequency": 1
-        },
-        {
-          "value": "http://pbs.twimg.com/profile_images/1000659237104734209/1OogJyor_normal.jpg",
           "frequency": 1
         },
         {
@@ -7721,19 +8498,7 @@
           "frequency": 1
         },
         {
-          "value": "http://pbs.twimg.com/profile_images/1000755170865709056/JS_JEyYj_normal.jpg",
-          "frequency": 1
-        },
-        {
-          "value": "http://pbs.twimg.com/profile_images/1000790041180827648/3aidWlWX_normal.jpg",
-          "frequency": 1
-        },
-        {
           "value": "http://pbs.twimg.com/profile_images/1000976284250451969/NRAlWvjx_normal.jpg",
-          "frequency": 1
-        },
-        {
-          "value": "http://pbs.twimg.com/profile_images/1000987768531701760/cj27bJen_normal.jpg",
           "frequency": 1
         },
         {
@@ -7745,55 +8510,7 @@
           "frequency": 1
         },
         {
-          "value": "http://pbs.twimg.com/profile_images/1001122605103906817/RtQmG5ho_normal.jpg",
-          "frequency": 1
-        },
-        {
-          "value": "http://pbs.twimg.com/profile_images/1001147000056958978/UJsrY7dE_normal.jpg",
-          "frequency": 1
-        },
-        {
-          "value": "http://pbs.twimg.com/profile_images/1001156284564103168/7FfOxGxH_normal.jpg",
-          "frequency": 1
-        },
-        {
-          "value": "http://pbs.twimg.com/profile_images/1001163294277808128/F4irwXiz_normal.jpg",
-          "frequency": 1
-        },
-        {
-          "value": "http://pbs.twimg.com/profile_images/1001189831383318529/wEiZZ00__normal.jpg",
-          "frequency": 1
-        },
-        {
-          "value": "http://pbs.twimg.com/profile_images/1001211520548855809/WYVyjHRz_normal.jpg",
-          "frequency": 1
-        },
-        {
-          "value": "http://pbs.twimg.com/profile_images/1001211729727148032/3QzRDftL_normal.jpg",
-          "frequency": 1
-        },
-        {
-          "value": "http://pbs.twimg.com/profile_images/1001250799366877185/ghGCeLnH_normal.jpg",
-          "frequency": 1
-        },
-        {
-          "value": "http://pbs.twimg.com/profile_images/1001282709988216832/m4Glv3No_normal.jpg",
-          "frequency": 1
-        },
-        {
-          "value": "http://pbs.twimg.com/profile_images/1001290187349966848/GjcIqlIf_normal.jpg",
-          "frequency": 1
-        },
-        {
           "value": "http://pbs.twimg.com/profile_images/1001306156512428033/4UmA4d94_normal.jpg",
-          "frequency": 1
-        },
-        {
-          "value": "http://pbs.twimg.com/profile_images/1001309373040242688/Obw4vc7i_normal.jpg",
-          "frequency": 1
-        },
-        {
-          "value": "http://pbs.twimg.com/profile_images/1001312968691216384/WLYN4GGh_normal.jpg",
           "frequency": 1
         },
         {
@@ -7801,27 +8518,135 @@
           "frequency": 1
         },
         {
-          "value": "http://pbs.twimg.com/profile_images/1001372421570662400/fcWq9aM5_normal.jpg",
+          "value": "http://pbs.twimg.com/profile_images/1001798074681962497/4h3X4rzf_normal.jpg",
           "frequency": 1
         },
         {
-          "value": "http://pbs.twimg.com/profile_images/1001372522808360960/Yn3BfEYQ_normal.jpg",
+          "value": "http://pbs.twimg.com/profile_images/1002195257629532161/croHu6Vf_normal.jpg",
           "frequency": 1
         },
         {
-          "value": "http://pbs.twimg.com/profile_images/1001377567105011713/6kJisb9k_normal.jpg",
+          "value": "http://pbs.twimg.com/profile_images/1002276716914642951/Ruvh2yDO_normal.jpg",
           "frequency": 1
         },
         {
-          "value": "http://pbs.twimg.com/profile_images/1001393051624005632/yWfuA6oN_normal.jpg",
+          "value": "http://pbs.twimg.com/profile_images/1002304649083392001/kU6u5Ybl_normal.jpg",
           "frequency": 1
         },
         {
-          "value": "http://pbs.twimg.com/profile_images/1001416644298723328/cXkJO4qe_normal.jpg",
+          "value": "http://pbs.twimg.com/profile_images/1002539337169424385/NuvtOnCa_normal.jpg",
           "frequency": 1
         },
         {
-          "value": "http://pbs.twimg.com/profile_images/1001456909248028673/6-Ax_VXu_normal.jpg",
+          "value": "http://pbs.twimg.com/profile_images/1002572995787882496/pEsJu0hN_normal.jpg",
+          "frequency": 1
+        },
+        {
+          "value": "http://pbs.twimg.com/profile_images/1002614304527405056/5ZxSQnf3_normal.jpg",
+          "frequency": 1
+        },
+        {
+          "value": "http://pbs.twimg.com/profile_images/1002686762844647424/WDtu4Lpj_normal.jpg",
+          "frequency": 1
+        },
+        {
+          "value": "http://pbs.twimg.com/profile_images/1002997302615838722/epjX_OPw_normal.jpg",
+          "frequency": 1
+        },
+        {
+          "value": "http://pbs.twimg.com/profile_images/1003052813616758784/RS0jIwL7_normal.jpg",
+          "frequency": 1
+        },
+        {
+          "value": "http://pbs.twimg.com/profile_images/1003196351553966080/xhLC4kNk_normal.jpg",
+          "frequency": 1
+        },
+        {
+          "value": "http://pbs.twimg.com/profile_images/1003201523223093250/Ym4cSWgO_normal.jpg",
+          "frequency": 1
+        },
+        {
+          "value": "http://pbs.twimg.com/profile_images/1003201918376660993/PMdaaVm__normal.jpg",
+          "frequency": 1
+        },
+        {
+          "value": "http://pbs.twimg.com/profile_images/1003733463932030978/NpoHeTjy_normal.jpg",
+          "frequency": 1
+        },
+        {
+          "value": "http://pbs.twimg.com/profile_images/1003858130722156544/qPeEk_UT_normal.jpg",
+          "frequency": 1
+        },
+        {
+          "value": "http://pbs.twimg.com/profile_images/1003940042061074432/-sNqYnNy_normal.jpg",
+          "frequency": 1
+        },
+        {
+          "value": "http://pbs.twimg.com/profile_images/1004093742477869056/QnJWkNcQ_normal.jpg",
+          "frequency": 1
+        },
+        {
+          "value": "http://pbs.twimg.com/profile_images/1004280934730903555/DgQ9NyVO_normal.jpg",
+          "frequency": 1
+        },
+        {
+          "value": "http://pbs.twimg.com/profile_images/1004656428781535237/MJnjCrb6_normal.jpg",
+          "frequency": 1
+        },
+        {
+          "value": "http://pbs.twimg.com/profile_images/1004659371899588608/T_YiZPVH_normal.jpg",
+          "frequency": 1
+        },
+        {
+          "value": "http://pbs.twimg.com/profile_images/1004806451838124032/Z_DK45oZ_normal.jpg",
+          "frequency": 1
+        },
+        {
+          "value": "http://pbs.twimg.com/profile_images/1004925207738552320/fLUOs5aL_normal.jpg",
+          "frequency": 1
+        },
+        {
+          "value": "http://pbs.twimg.com/profile_images/1005098194953523201/rmE8xLit_normal.jpg",
+          "frequency": 1
+        },
+        {
+          "value": "http://pbs.twimg.com/profile_images/1005100821623857153/AXdknTHy_normal.jpg",
+          "frequency": 1
+        },
+        {
+          "value": "http://pbs.twimg.com/profile_images/1005167253036421120/Fle5b8uw_normal.jpg",
+          "frequency": 1
+        },
+        {
+          "value": "http://pbs.twimg.com/profile_images/1005332686511267840/ATEy5Gep_normal.jpg",
+          "frequency": 1
+        },
+        {
+          "value": "http://pbs.twimg.com/profile_images/1005364782893953025/2SARz-C5_normal.jpg",
+          "frequency": 1
+        },
+        {
+          "value": "http://pbs.twimg.com/profile_images/1006159336748605445/TLxrBuJ0_normal.jpg",
+          "frequency": 1
+        },
+        {
+          "value": "http://pbs.twimg.com/profile_images/1006174222555623424/XLfyRweG_normal.jpg",
+          "frequency": 1
+        },
+        {
+          "value": "http://pbs.twimg.com/profile_images/1006342544031191045/k-99m1rg_normal.jpg",
+          "frequency": 1
+        },
+        {
+          "value": "http://pbs.twimg.com/profile_images/1006360517718372352/yGCeiO3T_normal.jpg",
+          "frequency": 1
+        },
+        {
+          "value": "http://pbs.twimg.com/profile_images/1006560980837339137/ZCStQKzG_normal.jpg",
+          "frequency": 1
+        },
+        {
+          "value": "http://pbs.twimg.com/profile_images/1006599332148269056/u8RZaVwv_normal.jpg",
           "frequency": 1
         }
       ],
@@ -8029,15 +8854,7 @@
       ],
       "url": [
         {
-          "value": "https://t.co/EZndXBuCfP",
-          "frequency": 5
-        },
-        {
           "value": "https://t.co/9gwTdxV1hF",
-          "frequency": 4
-        },
-        {
-          "value": "https://t.co/AqJUTzfVd9",
           "frequency": 4
         },
         {
@@ -8045,12 +8862,8 @@
           "frequency": 4
         },
         {
-          "value": "https://t.co/7k8yQJOv6f",
-          "frequency": 3
-        },
-        {
-          "value": "https://t.co/8vs7MtA52k",
-          "frequency": 3
+          "value": "https://t.co/EZndXBuCfP",
+          "frequency": 4
         },
         {
           "value": "https://t.co/JSIaZFJEaE",
@@ -8069,23 +8882,11 @@
           "frequency": 2
         },
         {
-          "value": "https://t.co/0X1XBXTuQc",
-          "frequency": 2
-        },
-        {
-          "value": "https://t.co/0oCWQs9DTT",
-          "frequency": 2
-        },
-        {
           "value": "https://t.co/0zGB8AiA8n",
           "frequency": 2
         },
         {
           "value": "https://t.co/2HbcsmkX5w",
-          "frequency": 2
-        },
-        {
-          "value": "https://t.co/3ZrZk3iBk0",
           "frequency": 2
         },
         {
@@ -8097,14 +8898,6 @@
           "frequency": 2
         },
         {
-          "value": "https://t.co/7BTHoqtofL",
-          "frequency": 2
-        },
-        {
-          "value": "https://t.co/7IDoW8Ah9W",
-          "frequency": 2
-        },
-        {
           "value": "https://t.co/7Lph0xvkDh",
           "frequency": 2
         },
@@ -8113,15 +8906,11 @@
           "frequency": 2
         },
         {
-          "value": "https://t.co/Cof4jnIJnQ",
+          "value": "https://t.co/8vs7MtA52k",
           "frequency": 2
         },
         {
           "value": "https://t.co/G5JLhlnBWB",
-          "frequency": 2
-        },
-        {
-          "value": "https://t.co/GHWnZvrZdc",
           "frequency": 2
         },
         {
@@ -8157,27 +8946,11 @@
           "frequency": 2
         },
         {
-          "value": "https://t.co/KEouxmZGDj",
-          "frequency": 2
-        },
-        {
-          "value": "https://t.co/L1UeoZ4x1M",
-          "frequency": 2
-        },
-        {
           "value": "https://t.co/Lx0hvcSQbg",
           "frequency": 2
         },
         {
-          "value": "https://t.co/MDxqKxYxIH",
-          "frequency": 2
-        },
-        {
           "value": "https://t.co/MJsj9430T3",
-          "frequency": 2
-        },
-        {
-          "value": "https://t.co/RGAPpCZtz4",
           "frequency": 2
         },
         {
@@ -8197,19 +8970,7 @@
           "frequency": 2
         },
         {
-          "value": "https://t.co/XdjqRQ6a9E",
-          "frequency": 2
-        },
-        {
-          "value": "https://t.co/YlWcBmzy8y",
-          "frequency": 2
-        },
-        {
           "value": "https://t.co/ai8HTiQCmz",
-          "frequency": 2
-        },
-        {
-          "value": "https://t.co/bbOowJPYHE",
           "frequency": 2
         },
         {
@@ -8217,16 +8978,80 @@
           "frequency": 2
         },
         {
-          "value": "https://t.co/g4Uxt4PJ8w",
-          "frequency": 2
-        },
-        {
           "value": "https://t.co/hNdjhZGUkG",
           "frequency": 2
         },
         {
-          "value": "https://t.co/hpnJLQhsET",
+          "value": "https://t.co/lojGiEmNH9",
           "frequency": 2
+        },
+        {
+          "value": "https://t.co/m6FGR38IwB",
+          "frequency": 2
+        },
+        {
+          "value": "https://t.co/mEMQmF03Fv",
+          "frequency": 2
+        },
+        {
+          "value": "https://t.co/oljDqwiRAO",
+          "frequency": 2
+        },
+        {
+          "value": "https://t.co/pU6zm2yhX3",
+          "frequency": 2
+        },
+        {
+          "value": "https://t.co/rXrTV1KwMN",
+          "frequency": 2
+        },
+        {
+          "value": "https://t.co/smEDCJ815b",
+          "frequency": 2
+        },
+        {
+          "value": "https://t.co/twxHxOtlG0",
+          "frequency": 2
+        },
+        {
+          "value": "https://t.co/vNgWaA7a6c",
+          "frequency": 2
+        },
+        {
+          "value": "https://t.co/w75xfGA5Jq",
+          "frequency": 2
+        },
+        {
+          "value": "http://500px.com/nikuyoshi",
+          "frequency": 1
+        },
+        {
+          "value": "http://jmb.c.la",
+          "frequency": 1
+        },
+        {
+          "value": "http://qiita.com/kenmatsu4",
+          "frequency": 1
+        },
+        {
+          "value": "http://t.co/00IY7OGfvl",
+          "frequency": 1
+        },
+        {
+          "value": "http://t.co/03tgpmKUVH",
+          "frequency": 1
+        },
+        {
+          "value": "http://t.co/04HPxq7Qhp",
+          "frequency": 1
+        },
+        {
+          "value": "http://t.co/04rcGcRlnD",
+          "frequency": 1
+        },
+        {
+          "value": "http://t.co/06AMuyt5JA",
+          "frequency": 1
         }
       ]
     }
@@ -8246,42 +9071,90 @@
     "include_value_profile": true
   },
   "question_summary": {
-    "top_tokens": [
+    "top_terms": [
       [
-        "tweet",
-        99
+        "the",
+        187
+      ],
+      [
+        "tweets",
+        93
       ],
       [
         "neo4j",
         92
       ],
       [
-        "user",
-        82
+        "users",
+        74
       ],
       [
         "top",
         61
       ],
       [
+        "that",
+        54
+      ],
+      [
         "3",
         54
+      ],
+      [
+        "are",
+        46
+      ],
+      [
+        "by",
+        46
+      ],
+      [
+        "list",
+        44
       ],
       [
         "5",
         40
       ],
       [
+        "who",
+        40
+      ],
+      [
+        "have",
+        39
+      ],
+      [
+        "of",
+        34
+      ],
+      [
         "most",
         33
+      ],
+      [
+        "and",
+        30
+      ],
+      [
+        "in",
+        28
+      ],
+      [
+        "with",
+        27
       ],
       [
         "first",
         27
       ],
       [
-        "hashtag",
+        "what",
         25
+      ],
+      [
+        "which",
+        22
       ],
       [
         "number",
@@ -8292,11 +9165,15 @@
         20
       ],
       [
-        "follower",
-        18
+        "a",
+        19
       ],
       [
         "retweeted",
+        17
+      ],
+      [
+        "followers",
         17
       ],
       [
@@ -8316,6 +9193,18 @@
         14
       ],
       [
+        "hashtags",
+        14
+      ],
+      [
+        "show",
+        13
+      ],
+      [
+        "is",
+        13
+      ],
+      [
         "than",
         13
       ],
@@ -8325,6 +9214,10 @@
       ],
       [
         "mentioned",
+        11
+      ],
+      [
+        "hashtag",
         11
       ],
       [
@@ -8340,12 +9233,20 @@
         10
       ],
       [
+        "on",
+        10
+      ],
+      [
         "contain",
         10
       ],
       [
         "been",
         10
+      ],
+      [
+        "has",
+        9
       ],
       [
         "education",
@@ -8356,142 +9257,24 @@
         8
       ],
       [
+        "user",
+        8
+      ],
+      [
         "highest",
+        8
+      ],
+      [
+        "from",
         8
       ],
       [
         "me",
         7
-      ],
-      [
-        "links",
-        7
-      ],
-      [
-        "average",
-        7
-      ],
-      [
-        "amplified",
-        6
-      ],
-      [
-        "mentions",
-        6
-      ],
-      [
-        "containing",
-        6
-      ],
-      [
-        "betweenness",
-        6
-      ],
-      [
-        "followed",
-        6
-      ],
-      [
-        "following",
-        5
-      ],
-      [
-        "10000",
-        5
-      ],
-      [
-        "frequently",
-        4
-      ],
-      [
-        "where",
-        4
-      ],
-      [
-        "count",
-        4
-      ],
-      [
-        "date",
-        4
-      ],
-      [
-        "retweets",
-        4
-      ],
-      [
-        "profile",
-        4
-      ],
-      [
-        "were",
-        4
-      ],
-      [
-        "mentioning",
-        4
-      ],
-      [
-        "screen",
-        4
-      ],
-      [
-        "names",
-        4
-      ],
-      [
-        "they",
-        3
-      ],
-      [
-        "statuses",
-        3
       ]
     ],
-    "intent_counts": [
-      [
-        "filter_literal",
-        109
-      ],
-      [
-        "limit",
-        88
-      ],
-      [
-        "ranking_desc",
-        80
-      ],
-      [
-        "aggregation_count",
-        25
-      ],
-      [
-        "filter_numeric",
-        12
-      ],
-      [
-        "date_or_year",
-        11
-      ],
-      [
-        "text_contains",
-        11
-      ],
-      [
-        "aggregation_avg",
-        7
-      ],
-      [
-        "ranking_asc",
-        3
-      ],
-      [
-        "same_entity_multi_role",
-        3
-      ]
-    ],
-    "literal_questions": 117,
-    "numeric_questions": 111
+    "literal_count": 117,
+    "number_count": 111
   },
   "cypher_summary": {
     "labels": [
@@ -8947,352 +9730,7 @@
       ]
     ]
   },
-  "intent_to_shape_signatures": {
-    "aggregation_avg": [
-      [
-        "clauses=MATCH,WITH,RETURN|motifs=|returns=variable",
-        2
-      ],
-      [
-        "clauses=MATCH,WITH,RETURN|motifs=(Tweet)-[:MENTIONS]->(User);(Tweet)-[:TAGS]->(Hashtag)|returns=variable",
-        1
-      ],
-      [
-        "clauses=MATCH,WITH,RETURN|motifs=(Tweet)-[:TAGS]->(Hashtag)|returns=variable",
-        1
-      ],
-      [
-        "clauses=MATCH,WHERE,WITH,RETURN|motifs=(User)-[:FOLLOWS]->(User);(Tweet)-[:MENTIONS]->(User)|returns=aggregate",
-        1
-      ],
-      [
-        "clauses=MATCH,WITH,RETURN|motifs=(Me)-[:MENTIONS]-(Tweet)|returns=variable",
-        1
-      ],
-      [
-        "clauses=MATCH,WITH,RETURN|motifs=(Tweet)-[:TAGS]->(Hashtag);(User)-[:POSTS]->(Tweet)|returns=aggregate",
-        1
-      ]
-    ],
-    "aggregation_count": [
-      [
-        "clauses=MATCH,RETURN,ORDER_BY,LIMIT|motifs=|returns=node_property,node_property",
-        4
-      ],
-      [
-        "clauses=MATCH,RETURN,ORDER_BY,LIMIT|motifs=|returns=node_property,node_property,node_property",
-        2
-      ],
-      [
-        "clauses=MATCH,RETURN,ORDER_BY,LIMIT|motifs=|returns=node",
-        2
-      ],
-      [
-        "clauses=MATCH,RETURN,ORDER_BY,LIMIT|motifs=(Me)-[:INTERACTS_WITH]->(User)|returns=node_property,aggregate",
-        2
-      ],
-      [
-        "clauses=MATCH,RETURN,ORDER_BY,LIMIT|motifs=(User)-[:FOLLOWS]->(User)|returns=node_property,node_property,expression",
-        1
-      ],
-      [
-        "clauses=MATCH,WHERE,RETURN|motifs=(Tweet)-[:MENTIONS]->(User)|returns=node_property,node_property,node_property",
-        1
-      ],
-      [
-        "clauses=MATCH,RETURN,ORDER_BY,LIMIT|motifs=(Me)-[:POSTS]->(Tweet)|returns=node_property,node_property",
-        1
-      ],
-      [
-        "clauses=MATCH,RETURN,ORDER_BY,LIMIT|motifs=(Tweet)-[:CONTAINS]->(Link)|returns=node_property,node_property,node_property",
-        1
-      ],
-      [
-        "clauses=MATCH,WITH,RETURN|motifs=(Tweet)-[:MENTIONS]->(User);(Tweet)-[:TAGS]->(Hashtag)|returns=variable",
-        1
-      ],
-      [
-        "clauses=MATCH,RETURN,ORDER_BY,LIMIT|motifs=(User)-[:POSTS]->(Tweet)|returns=node",
-        1
-      ]
-    ],
-    "date_or_year": [
-      [
-        "clauses=MATCH,RETURN,ORDER_BY,LIMIT|motifs=|returns=node",
-        2
-      ],
-      [
-        "clauses=MATCH,RETURN,ORDER_BY,LIMIT|motifs=|returns=node_property,node_property,node_property,node_property,node_property,node_property,node_property,node_property",
-        1
-      ],
-      [
-        "clauses=MATCH,RETURN,ORDER_BY,LIMIT|motifs=(User)-[:POSTS]->(Tweet)|returns=node_property,node_property",
-        1
-      ],
-      [
-        "clauses=MATCH,RETURN,ORDER_BY,LIMIT|motifs=(Tweet)-[:MENTIONS]->(User);(Tweet)-[:CONTAINS]->(Link)|returns=node_property,node_property,node_property",
-        1
-      ],
-      [
-        "clauses=MATCH,WITH,RETURN|motifs=(User)-[:FOLLOWS]->(User);(Tweet)-[:MENTIONS]->(User)|returns=aggregate",
-        1
-      ],
-      [
-        "clauses=MATCH,WHERE,RETURN,LIMIT|motifs=(Tweet)-[:MENTIONS]->(User);(Tweet)-[:TAGS]->(Hashtag)|returns=node",
-        1
-      ],
-      [
-        "clauses=MATCH,WITH,RETURN,ORDER_BY,LIMIT|motifs=(User)-[:POSTS]->(Tweet)|returns=node_property",
-        1
-      ],
-      [
-        "clauses=MATCH,RETURN,ORDER_BY,LIMIT|motifs=|returns=node_property,node_property",
-        1
-      ],
-      [
-        "clauses=MATCH,RETURN,ORDER_BY,LIMIT|motifs=(User)-[:FOLLOWS]->(Me)|returns=node_property,node_property",
-        1
-      ],
-      [
-        "clauses=MATCH,RETURN,ORDER_BY,LIMIT|motifs=(User)-[:POSTS]->(Tweet)|returns=node_property",
-        1
-      ]
-    ],
-    "filter_literal": [
-      [
-        "clauses=MATCH,RETURN,ORDER_BY,LIMIT|motifs=(User)-[:POSTS]->(Tweet)|returns=node",
-        5
-      ],
-      [
-        "clauses=MATCH,RETURN,ORDER_BY,LIMIT|motifs=(User)-[:POSTS]->(Tweet)|returns=node_property,node_property",
-        5
-      ],
-      [
-        "clauses=MATCH,RETURN,ORDER_BY,LIMIT|motifs=(Me)-[:INTERACTS_WITH]->(User)|returns=node_property,aggregate",
-        4
-      ],
-      [
-        "clauses=MATCH,RETURN,ORDER_BY,LIMIT|motifs=(Me)-[:POSTS]->(Tweet)|returns=node_property,node_property",
-        3
-      ],
-      [
-        "clauses=MATCH,RETURN,ORDER_BY,LIMIT|motifs=|returns=node_property,node_property",
-        3
-      ],
-      [
-        "clauses=MATCH,WHERE,RETURN|motifs=(Me)-[:FOLLOWS]->(User)|returns=node_property,node_property",
-        3
-      ],
-      [
-        "clauses=MATCH,RETURN,ORDER_BY,LIMIT|motifs=(Me)-[:AMPLIFIES]->(User)|returns=node_property,aggregate",
-        2
-      ],
-      [
-        "clauses=MATCH,RETURN|motifs=(User)-[:FOLLOWS]->(User);(User)-[:POSTS]->(Tweet)|returns=expression",
-        2
-      ],
-      [
-        "clauses=MATCH,RETURN|motifs=(User)-[:POSTS]->(Tweet)|returns=node",
-        2
-      ],
-      [
-        "clauses=MATCH,RETURN,ORDER_BY,LIMIT|motifs=(Me)-[:AMPLIFIES]->(User)|returns=node",
-        2
-      ]
-    ],
-    "filter_numeric": [
-      [
-        "clauses=MATCH,WHERE,RETURN|motifs=(Me)-[:FOLLOWS]->(User)|returns=node_property,node_property",
-        3
-      ],
-      [
-        "clauses=MATCH,WHERE,RETURN,ORDER_BY,LIMIT|motifs=|returns=node_property,node_property,node_property",
-        2
-      ],
-      [
-        "clauses=MATCH,WHERE,RETURN,LIMIT|motifs=(User)-[:POSTS]->(Tweet)|returns=node",
-        1
-      ],
-      [
-        "clauses=MATCH,WHERE,RETURN|motifs=|returns=node_property,node_property,node_property",
-        1
-      ],
-      [
-        "clauses=MATCH,WHERE,RETURN,ORDER_BY,LIMIT|motifs=(User)-[:POSTS]->(Tweet)|returns=node",
-        1
-      ],
-      [
-        "clauses=MATCH,WHERE,RETURN|motifs=(User)-[:POSTS]->(Tweet)|returns=expression",
-        1
-      ],
-      [
-        "clauses=MATCH,WHERE,RETURN|motifs=(User)-[:POSTS]->(Tweet);(Tweet)-[:TAGS]->(Hashtag)|returns=expression",
-        1
-      ],
-      [
-        "clauses=MATCH,WHERE,RETURN|motifs=|returns=node_property,node_property",
-        1
-      ],
-      [
-        "clauses=MATCH,WHERE,WITH,RETURN|motifs=(Tweet)-[:MENTIONS]->(User);(Tweet)-[:USING]->(Source)|returns=expression",
-        1
-      ]
-    ],
-    "limit": [
-      [
-        "clauses=MATCH,RETURN,ORDER_BY,LIMIT|motifs=|returns=node_property,node_property",
-        7
-      ],
-      [
-        "clauses=MATCH,RETURN,ORDER_BY,LIMIT|motifs=(User)-[:POSTS]->(Tweet)|returns=node",
-        5
-      ],
-      [
-        "clauses=MATCH,RETURN,ORDER_BY,LIMIT|motifs=|returns=node",
-        4
-      ],
-      [
-        "clauses=MATCH,RETURN,ORDER_BY,LIMIT|motifs=(User)-[:POSTS]->(Tweet)|returns=node_property,node_property",
-        4
-      ],
-      [
-        "clauses=MATCH,RETURN,ORDER_BY,LIMIT|motifs=(Me)-[:POSTS]->(Tweet)|returns=node_property,node_property",
-        3
-      ],
-      [
-        "clauses=MATCH,RETURN,ORDER_BY,LIMIT|motifs=(Me)-[:INTERACTS_WITH]->(User)|returns=node_property,aggregate",
-        3
-      ],
-      [
-        "clauses=MATCH,RETURN,ORDER_BY,LIMIT|motifs=|returns=node_property,node_property,node_property",
-        2
-      ],
-      [
-        "clauses=MATCH,RETURN,ORDER_BY,LIMIT|motifs=(Me)-[:AMPLIFIES]->(User)|returns=node_property,aggregate",
-        2
-      ],
-      [
-        "clauses=MATCH,WHERE,RETURN,ORDER_BY,LIMIT|motifs=|returns=node_property,node_property,node_property",
-        2
-      ],
-      [
-        "clauses=MATCH,RETURN,ORDER_BY,LIMIT|motifs=(Me)-[:AMPLIFIES]->(User)|returns=node",
-        2
-      ]
-    ],
-    "ranking_asc": [
-      [
-        "clauses=MATCH,RETURN,ORDER_BY,LIMIT|motifs=|returns=node_property,node_property",
-        1
-      ],
-      [
-        "clauses=MATCH,RETURN,ORDER_BY,LIMIT|motifs=|returns=node",
-        1
-      ],
-      [
-        "clauses=MATCH,RETURN,ORDER_BY,LIMIT|motifs=(User)-[:FOLLOWS]->(Me)|returns=node",
-        1
-      ]
-    ],
-    "ranking_desc": [
-      [
-        "clauses=MATCH,RETURN,ORDER_BY,LIMIT|motifs=|returns=node_property,node_property",
-        7
-      ],
-      [
-        "clauses=MATCH,RETURN,ORDER_BY,LIMIT|motifs=(User)-[:POSTS]->(Tweet)|returns=node_property,node_property",
-        5
-      ],
-      [
-        "clauses=MATCH,RETURN,ORDER_BY,LIMIT|motifs=(Me)-[:INTERACTS_WITH]->(User)|returns=node_property,aggregate",
-        4
-      ],
-      [
-        "clauses=MATCH,RETURN,ORDER_BY,LIMIT|motifs=|returns=node",
-        4
-      ],
-      [
-        "clauses=MATCH,RETURN,ORDER_BY,LIMIT|motifs=(User)-[:POSTS]->(Tweet)|returns=node",
-        3
-      ],
-      [
-        "clauses=MATCH,RETURN,ORDER_BY,LIMIT|motifs=(Me)-[:POSTS]->(Tweet)|returns=node_property,node_property",
-        3
-      ],
-      [
-        "clauses=MATCH,RETURN,ORDER_BY,LIMIT|motifs=|returns=node_property,node_property,node_property",
-        2
-      ],
-      [
-        "clauses=MATCH,RETURN,ORDER_BY,LIMIT|motifs=(Me)-[:AMPLIFIES]->(User)|returns=node_property,aggregate",
-        2
-      ],
-      [
-        "clauses=MATCH,RETURN,ORDER_BY,LIMIT|motifs=|returns=node_property,aggregate",
-        2
-      ],
-      [
-        "clauses=MATCH,RETURN,ORDER_BY,LIMIT|motifs=|returns=node_property,node_property,node_property,node_property,node_property,node_property,node_property,node_property",
-        1
-      ]
-    ],
-    "same_entity_multi_role": [
-      [
-        "clauses=MATCH,WITH,RETURN|motifs=(Tweet)-[:MENTIONS]->(User);(Tweet)-[:TAGS]->(Hashtag)|returns=variable",
-        1
-      ],
-      [
-        "clauses=MATCH,WHERE,RETURN,LIMIT|motifs=(Tweet)-[:MENTIONS]->(User);(Tweet)-[:TAGS]->(Hashtag)|returns=node",
-        1
-      ],
-      [
-        "clauses=MATCH,WITH,RETURN|motifs=(User)-[:POSTS]->(Tweet);(Tweet)-[:TAGS]->(Hashtag)|returns=expression",
-        1
-      ]
-    ],
-    "text_contains": [
-      [
-        "clauses=MATCH,RETURN|motifs=(User)-[:POSTS]->(Tweet)|returns=node",
-        2
-      ],
-      [
-        "clauses=MATCH,RETURN,ORDER_BY,LIMIT|motifs=(Me)-[:POSTS]->(Tweet)|returns=node_property,node_property",
-        1
-      ],
-      [
-        "clauses=MATCH,RETURN|motifs=(User)-[:FOLLOWS]->(User);(User)-[:POSTS]->(Tweet)|returns=expression",
-        1
-      ],
-      [
-        "clauses=MATCH,RETURN,ORDER_BY,LIMIT|motifs=(Tweet)-[:MENTIONS]->(User);(Tweet)-[:CONTAINS]->(Link)|returns=node_property,node_property,node_property",
-        1
-      ],
-      [
-        "clauses=MATCH,RETURN,ORDER_BY,LIMIT|motifs=(User)-[:POSTS]->(Tweet)|returns=node_property,node_property,node_property",
-        1
-      ],
-      [
-        "clauses=MATCH,RETURN,ORDER_BY,LIMIT|motifs=(User)-[:POSTS]->(Tweet)|returns=node",
-        1
-      ],
-      [
-        "clauses=MATCH,WHERE,RETURN,ORDER_BY,LIMIT|motifs=(Tweet)-[:TAGS]->(Hashtag)|returns=node_property,aggregate",
-        1
-      ],
-      [
-        "clauses=MATCH,WHERE,RETURN|motifs=(Tweet)-[:MENTIONS]->(User);(Tweet)-[:CONTAINS]->(Link)|returns=node",
-        1
-      ],
-      [
-        "clauses=MATCH,WHERE,RETURN,ORDER_BY,LIMIT|motifs=(Tweet)-[:CONTAINS]->(Link)|returns=node",
-        1
-      ],
-      [
-        "clauses=MATCH,WHERE,WITH,RETURN|motifs=(User)-[:POSTS]->(Tweet);(?)-[:CONTAINS]->(Link);(Tweet)-[:TAGS]->(Hashtag)|returns=node_property",
-        1
-      ]
-    ]
-  },
+  "intent_to_shape_signatures": {},
   "motif_to_return_contracts": {
     "(?)-[:CONTAINS]->(Link)": [
       [
@@ -9732,6 +10170,66 @@
         2
       ]
     ],
+    "a": [
+      [
+        "(Tweet)-[:MENTIONS]->(User)",
+        8
+      ],
+      [
+        "(User)-[:POSTS]->(Tweet)",
+        5
+      ],
+      [
+        "(Tweet)-[:TAGS]->(Hashtag)",
+        4
+      ],
+      [
+        "(Tweet)-[:CONTAINS]->(Link)",
+        3
+      ],
+      [
+        "(Me)-[:FOLLOWS]->(User)",
+        2
+      ],
+      [
+        "(User)-[:FOLLOWS]->(Me)",
+        2
+      ],
+      [
+        "(User)-[:FOLLOWS]->(User)",
+        1
+      ],
+      [
+        "(Me)-[:POSTS]->(Tweet)",
+        1
+      ]
+    ],
+    "all": [
+      [
+        "(User)-[:POSTS]->(Tweet)",
+        3
+      ],
+      [
+        "(Tweet)-[:MENTIONS]->(User)",
+        2
+      ],
+      [
+        "(?)-[:TAGS]->(Hashtag)",
+        1
+      ],
+      [
+        "(Me)-[:POSTS]->(Tweet)",
+        1
+      ],
+      [
+        "(User)-[:FOLLOWS]->(Me)",
+        1
+      ],
+      [
+        "(Tweet)-[:CONTAINS]->(Link)",
+        1
+      ]
+    ],
     "also": [
       [
         "(Tweet)-[:TAGS]->(Hashtag)",
@@ -9755,6 +10253,40 @@
     "amplifies": [
       [
         "(Me)-[:AMPLIFIES]->(User)",
+        2
+      ]
+    ],
+    "and": [
+      [
+        "(Tweet)-[:MENTIONS]->(User)",
+        9
+      ],
+      [
+        "(User)-[:POSTS]->(Tweet)",
+        8
+      ],
+      [
+        "(User)-[:FOLLOWS]->(User)",
+        5
+      ],
+      [
+        "(Tweet)-[:TAGS]->(Hashtag)",
+        5
+      ],
+      [
+        "(Tweet)-[:CONTAINS]->(Link)",
+        4
+      ],
+      [
+        "(Me)-[:FOLLOWS]->(User)",
+        4
+      ],
+      [
+        "(Me)-[:POSTS]->(Tweet)",
+        2
+      ],
+      [
+        "(User)-[:FOLLOWS]->(Me)",
         2
       ]
     ],
@@ -9787,6 +10319,54 @@
       ],
       [
         "(User)-[:POSTS]->(Tweet)",
+        1
+      ]
+    ],
+    "are": [
+      [
+        "(User)-[:POSTS]->(Tweet)",
+        10
+      ],
+      [
+        "(Me)-[:POSTS]->(Tweet)",
+        8
+      ],
+      [
+        "(Me)-[:AMPLIFIES]->(User)",
+        6
+      ],
+      [
+        "(Me)-[:FOLLOWS]->(User)",
+        4
+      ],
+      [
+        "(Tweet)-[:TAGS]->(Hashtag)",
+        4
+      ],
+      [
+        "(User)-[:FOLLOWS]->(User)",
+        2
+      ],
+      [
+        "(Tweet)-[:MENTIONS]->(User)",
+        2
+      ],
+      [
+        "(User)-[:FOLLOWS]->(Me)",
+        2
+      ]
+    ],
+    "as": [
+      [
+        "(User)-[:FOLLOWS]->(User)",
+        1
+      ],
+      [
+        "(Tweet)-[:MENTIONS]->(User)",
+        1
+      ],
+      [
+        "(Me)-[:MENTIONS]-(Tweet)",
         1
       ]
     ],
@@ -9882,6 +10462,40 @@
       [
         "(Tweet)-[:TAGS]->(Hashtag)",
         1
+      ]
+    ],
+    "by": [
+      [
+        "(User)-[:POSTS]->(Tweet)",
+        21
+      ],
+      [
+        "(Me)-[:POSTS]->(Tweet)",
+        8
+      ],
+      [
+        "(User)-[:FOLLOWS]->(User)",
+        5
+      ],
+      [
+        "(Tweet)-[:TAGS]->(Hashtag)",
+        5
+      ],
+      [
+        "(Me)-[:AMPLIFIES]->(User)",
+        4
+      ],
+      [
+        "(Tweet)-[:MENTIONS]->(User)",
+        4
+      ],
+      [
+        "(Me)-[:FOLLOWS]->(User)",
+        4
+      ],
+      [
+        "(Tweet)-[:CONTAINS]->(Link)",
+        3
       ]
     ],
     "commonly": [
@@ -10112,7 +10726,7 @@
         3
       ]
     ],
-    "follower": [
+    "followers": [
       [
         "(User)-[:POSTS]->(Tweet)",
         3
@@ -10128,10 +10742,6 @@
       [
         "(Tweet)-[:TAGS]->(Hashtag)",
         2
-      ],
-      [
-        "(Me)-[:POSTS]->(Tweet)",
-        1
       ],
       [
         "(User)-[:FOLLOWS]->(User)",
@@ -10164,6 +10774,28 @@
         1
       ]
     ],
+    "for": [
+      [
+        "(Tweet)-[:TAGS]->(Hashtag)",
+        3
+      ],
+      [
+        "(Tweet)-[:MENTIONS]->(User)",
+        2
+      ],
+      [
+        "(User)-[:FOLLOWS]->(User)",
+        1
+      ],
+      [
+        "(Me)-[:MENTIONS]-(Tweet)",
+        1
+      ],
+      [
+        "(User)-[:POSTS]->(Tweet)",
+        1
+      ]
+    ],
     "frequently": [
       [
         "(Me)-[:INTERACTS_WITH]->(User)",
@@ -10178,24 +10810,94 @@
         1
       ]
     ],
+    "from": [
+      [
+        "(User)-[:POSTS]->(Tweet)",
+        5
+      ],
+      [
+        "(Me)-[:POSTS]->(Tweet)",
+        2
+      ],
+      [
+        "(Tweet)-[:RETWEETS]->(Tweet)",
+        1
+      ],
+      [
+        "(Tweet)-[:MENTIONS]->(User)",
+        1
+      ],
+      [
+        "(Me)-[:RT_MENTIONS]->(User)",
+        1
+      ]
+    ],
     "graphs": [
       [
         "(User)-[:POSTS]->(Tweet)",
         2
       ]
     ],
-    "hashtag": [
+    "has": [
       [
-        "(Tweet)-[:TAGS]->(Hashtag)",
-        15
+        "(Me)-[:POSTS]->(Tweet)",
+        3
       ],
       [
         "(User)-[:POSTS]->(Tweet)",
-        12
+        2
+      ],
+      [
+        "(Me)-[:AMPLIFIES]->(User)",
+        2
       ],
       [
         "(Tweet)-[:MENTIONS]->(User)",
+        1
+      ],
+      [
+        "(Tweet)-[:POSTS]-(User)",
+        1
+      ],
+      [
+        "(Me)-[:POSTS]->(?)",
+        1
+      ],
+      [
+        "(?)-[:TAGS]->(?)",
+        1
+      ],
+      [
+        "(Tweet)-[:TAGS]->(Hashtag)",
+        1
+      ]
+    ],
+    "hashtag": [
+      [
+        "(User)-[:POSTS]->(Tweet)",
         6
+      ],
+      [
+        "(Tweet)-[:TAGS]->(Hashtag)",
+        6
+      ],
+      [
+        "(Tweet)-[:MENTIONS]->(User)",
+        3
+      ]
+    ],
+    "hashtags": [
+      [
+        "(Tweet)-[:TAGS]->(Hashtag)",
+        9
+      ],
+      [
+        "(User)-[:POSTS]->(Tweet)",
+        6
+      ],
+      [
+        "(Tweet)-[:MENTIONS]->(User)",
+        3
       ],
       [
         "(Me)-[:POSTS]->(Tweet)",
@@ -10216,6 +10918,40 @@
       [
         "(?)-[:CONTAINS]->(Link)",
         1
+      ]
+    ],
+    "have": [
+      [
+        "(User)-[:POSTS]->(Tweet)",
+        17
+      ],
+      [
+        "(Tweet)-[:TAGS]->(Hashtag)",
+        6
+      ],
+      [
+        "(User)-[:FOLLOWS]->(User)",
+        5
+      ],
+      [
+        "(Tweet)-[:MENTIONS]->(User)",
+        5
+      ],
+      [
+        "(Me)-[:POSTS]->(Tweet)",
+        4
+      ],
+      [
+        "(User)-[:FOLLOWS]->(Me)",
+        3
+      ],
+      [
+        "(Me)-[:FOLLOWS]->(User)",
+        3
+      ],
+      [
+        "(Tweet)-[:RETWEETS]->(Tweet)",
+        2
       ]
     ],
     "highest": [
@@ -10272,6 +11008,40 @@
         3
       ]
     ],
+    "in": [
+      [
+        "(User)-[:POSTS]->(Tweet)",
+        9
+      ],
+      [
+        "(Tweet)-[:TAGS]->(Hashtag)",
+        8
+      ],
+      [
+        "(Tweet)-[:MENTIONS]->(User)",
+        7
+      ],
+      [
+        "(Me)-[:POSTS]->(Tweet)",
+        5
+      ],
+      [
+        "(User)-[:FOLLOWS]->(User)",
+        3
+      ],
+      [
+        "(?)-[:TAGS]->(Hashtag)",
+        1
+      ],
+      [
+        "(Me)-[:POSTS]->(?)",
+        1
+      ],
+      [
+        "(?)-[:TAGS]->(?)",
+        1
+      ]
+    ],
     "include": [
       [
         "(Me)-[:FOLLOWS]->(User)",
@@ -10298,6 +11068,32 @@
       [
         "(Me)-[:INTERACTS_WITH]->(User)",
         2
+      ]
+    ],
+    "is": [
+      [
+        "(Tweet)-[:MENTIONS]->(User)",
+        6
+      ],
+      [
+        "(Tweet)-[:TAGS]->(Hashtag)",
+        3
+      ],
+      [
+        "(User)-[:FOLLOWS]->(User)",
+        2
+      ],
+      [
+        "(Tweet)-[:RETWEETS]->(Tweet)",
+        2
+      ],
+      [
+        "(User)-[:POSTS]->(Tweet)",
+        2
+      ],
+      [
+        "(Me)-[:MENTIONS]-(Tweet)",
+        1
       ]
     ],
     "link": [
@@ -10337,6 +11133,40 @@
       ],
       [
         "(Tweet)-[:TAGS]->(Hashtag)",
+        1
+      ]
+    ],
+    "list": [
+      [
+        "(User)-[:POSTS]->(Tweet)",
+        14
+      ],
+      [
+        "(Tweet)-[:MENTIONS]->(User)",
+        9
+      ],
+      [
+        "(Me)-[:POSTS]->(Tweet)",
+        5
+      ],
+      [
+        "(Tweet)-[:TAGS]->(Hashtag)",
+        5
+      ],
+      [
+        "(User)-[:FOLLOWS]->(Me)",
+        3
+      ],
+      [
+        "(Tweet)-[:CONTAINS]->(Link)",
+        2
+      ],
+      [
+        "(Tweet)-[:RETWEETS]->(Tweet)",
+        2
+      ],
+      [
+        "(Me)-[:AMPLIFIES]->(User)",
         1
       ]
     ],
@@ -10608,6 +11438,58 @@
         1
       ]
     ],
+    "of": [
+      [
+        "(User)-[:POSTS]->(Tweet)",
+        6
+      ],
+      [
+        "(Tweet)-[:MENTIONS]->(User)",
+        4
+      ],
+      [
+        "(User)-[:FOLLOWS]->(Me)",
+        4
+      ],
+      [
+        "(User)-[:FOLLOWS]->(User)",
+        3
+      ],
+      [
+        "(Tweet)-[:TAGS]->(Hashtag)",
+        3
+      ],
+      [
+        "(Tweet)-[:CONTAINS]->(Link)",
+        2
+      ],
+      [
+        "(Me)-[:INTERACTS_WITH]->(User)",
+        2
+      ],
+      [
+        "(Me)-[:POSTS]->(Tweet)",
+        1
+      ]
+    ],
+    "on": [
+      [
+        "(Me)-[:POSTS]->(Tweet)",
+        2
+      ],
+      [
+        "(Me)-[:INTERACTS_WITH]->(User)",
+        2
+      ],
+      [
+        "(User)-[:POSTS]->(Tweet)",
+        1
+      ],
+      [
+        "(User)-[:FOLLOWS]->(Me)",
+        1
+      ]
+    ],
     "posted": [
       [
         "(User)-[:POSTS]->(Tweet)",
@@ -10752,6 +11634,40 @@
         1
       ]
     ],
+    "show": [
+      [
+        "(Tweet)-[:MENTIONS]->(User)",
+        3
+      ],
+      [
+        "(User)-[:POSTS]->(Tweet)",
+        2
+      ],
+      [
+        "(Me)-[:POSTS]->(Tweet)",
+        2
+      ],
+      [
+        "(User)-[:FOLLOWS]->(Me)",
+        2
+      ],
+      [
+        "(Me)-[:INTERACTS_WITH]->(User)",
+        2
+      ],
+      [
+        "(Me)-[:AMPLIFIES]->(User)",
+        1
+      ],
+      [
+        "(Tweet)-[:USING]->(Source)",
+        1
+      ],
+      [
+        "(Tweet)-[:CONTAINS]->(Link)",
+        1
+      ]
+    ],
     "source": [
       [
         "(User)-[:POSTS]->(Tweet)",
@@ -10828,6 +11744,84 @@
         1
       ]
     ],
+    "that": [
+      [
+        "(Tweet)-[:MENTIONS]->(User)",
+        15
+      ],
+      [
+        "(User)-[:POSTS]->(Tweet)",
+        13
+      ],
+      [
+        "(Me)-[:POSTS]->(Tweet)",
+        12
+      ],
+      [
+        "(Tweet)-[:TAGS]->(Hashtag)",
+        12
+      ],
+      [
+        "(Tweet)-[:CONTAINS]->(Link)",
+        4
+      ],
+      [
+        "(Me)-[:AMPLIFIES]->(User)",
+        3
+      ],
+      [
+        "(Me)-[:FOLLOWS]->(User)",
+        2
+      ],
+      [
+        "(User)-[:FOLLOWS]->(User)",
+        2
+      ]
+    ],
+    "the": [
+      [
+        "(User)-[:POSTS]->(Tweet)",
+        51
+      ],
+      [
+        "(Tweet)-[:MENTIONS]->(User)",
+        28
+      ],
+      [
+        "(Me)-[:POSTS]->(Tweet)",
+        22
+      ],
+      [
+        "(Tweet)-[:TAGS]->(Hashtag)",
+        19
+      ],
+      [
+        "(User)-[:FOLLOWS]->(User)",
+        11
+      ],
+      [
+        "(Me)-[:AMPLIFIES]->(User)",
+        8
+      ],
+      [
+        "(User)-[:FOLLOWS]->(Me)",
+        8
+      ],
+      [
+        "(Tweet)-[:CONTAINS]->(Link)",
+        6
+      ]
+    ],
+    "their": [
+      [
+        "(User)-[:POSTS]->(Tweet)",
+        2
+      ],
+      [
+        "(Me)-[:POSTS]->(Tweet)",
+        1
+      ]
+    ],
     "they": [
       [
         "(User)-[:FOLLOWS]->(User)",
@@ -10868,6 +11862,24 @@
         1
       ]
     ],
+    "to": [
+      [
+        "(Me)-[:AMPLIFIES]->(User)",
+        1
+      ],
+      [
+        "(Tweet)-[:USING]->(Source)",
+        1
+      ],
+      [
+        "(User)-[:POSTS]->(Tweet)",
+        1
+      ],
+      [
+        "(Tweet)-[:CONTAINS]->(Link)",
+        1
+      ]
+    ],
     "top": [
       [
         "(User)-[:POSTS]->(Tweet)",
@@ -10904,12 +11916,30 @@
     ],
     "tweet": [
       [
+        "(Tweet)-[:MENTIONS]->(User)",
+        3
+      ],
+      [
         "(User)-[:POSTS]->(Tweet)",
-        37
+        2
+      ],
+      [
+        "(User)-[:FOLLOWS]->(User)",
+        1
+      ],
+      [
+        "(Tweet)-[:RETWEETS]->(Tweet)",
+        1
+      ]
+    ],
+    "tweets": [
+      [
+        "(User)-[:POSTS]->(Tweet)",
+        35
       ],
       [
         "(Tweet)-[:MENTIONS]->(User)",
-        22
+        19
       ],
       [
         "(Tweet)-[:TAGS]->(Hashtag)",
@@ -10920,19 +11950,19 @@
         14
       ],
       [
-        "(User)-[:FOLLOWS]->(User)",
-        6
-      ],
-      [
         "(Tweet)-[:CONTAINS]->(Link)",
         6
       ],
       [
-        "(Tweet)-[:RETWEETS]->(Tweet)",
-        4
+        "(User)-[:FOLLOWS]->(User)",
+        5
       ],
       [
         "(Tweet)-[:USING]->(Source)",
+        3
+      ],
+      [
+        "(Tweet)-[:RETWEETS]->(Tweet)",
         3
       ]
     ],
@@ -11006,27 +12036,57 @@
     ],
     "user": [
       [
-        "(User)-[:POSTS]->(Tweet)",
-        19
+        "(Tweet)-[:MENTIONS]->(User)",
+        5
       ],
       [
-        "(Tweet)-[:MENTIONS]->(User)",
-        11
+        "(User)-[:POSTS]->(Tweet)",
+        2
+      ],
+      [
+        "(Me)-[:FOLLOWS]->(User)",
+        1
+      ],
+      [
+        "(User)-[:MENTIONS]-(Tweet)",
+        1
       ],
       [
         "(User)-[:FOLLOWS]->(User)",
-        9
+        1
+      ],
+      [
+        "(Tweet)-[:TAGS]->(Hashtag)",
+        1
       ],
       [
         "(Me)-[:POSTS]->(Tweet)",
-        9
+        1
+      ],
+      [
+        "(Tweet)-[:RETWEETS]->(Tweet)",
+        1
+      ]
+    ],
+    "users": [
+      [
+        "(User)-[:POSTS]->(Tweet)",
+        17
+      ],
+      [
+        "(User)-[:FOLLOWS]->(User)",
+        8
+      ],
+      [
+        "(Me)-[:POSTS]->(Tweet)",
+        8
       ],
       [
         "(Me)-[:AMPLIFIES]->(User)",
         7
       ],
       [
-        "(Me)-[:FOLLOWS]->(User)",
+        "(Tweet)-[:MENTIONS]->(User)",
         6
       ],
       [
@@ -11034,8 +12094,12 @@
         6
       ],
       [
+        "(Me)-[:FOLLOWS]->(User)",
+        5
+      ],
+      [
         "(Tweet)-[:TAGS]->(Hashtag)",
-        4
+        3
       ]
     ],
     "using": [
@@ -11088,6 +12152,36 @@
         1
       ]
     ],
+    "what": [
+      [
+        "(User)-[:POSTS]->(Tweet)",
+        9
+      ],
+      [
+        "(Tweet)-[:TAGS]->(Hashtag)",
+        5
+      ],
+      [
+        "(Tweet)-[:MENTIONS]->(User)",
+        3
+      ],
+      [
+        "(Me)-[:POSTS]->(Tweet)",
+        2
+      ],
+      [
+        "(User)-[:FOLLOWS]->(User)",
+        2
+      ],
+      [
+        "(User)-[:FOLLOWS]->(Me)",
+        1
+      ],
+      [
+        "(Me)-[:MENTIONS]-(Tweet)",
+        1
+      ]
+    ],
     "where": [
       [
         "(Tweet)-[:MENTIONS]->(User)",
@@ -11101,26 +12195,122 @@
         "(User)-[:POSTS]->(Tweet)",
         1
       ]
+    ],
+    "which": [
+      [
+        "(Me)-[:AMPLIFIES]->(User)",
+        4
+      ],
+      [
+        "(User)-[:POSTS]->(Tweet)",
+        4
+      ],
+      [
+        "(Me)-[:FOLLOWS]->(User)",
+        3
+      ],
+      [
+        "(User)-[:FOLLOWS]->(Me)",
+        2
+      ],
+      [
+        "(Tweet)-[:MENTIONS]->(User)",
+        2
+      ],
+      [
+        "(User)-[:FOLLOWS]->(User)",
+        2
+      ],
+      [
+        "(Me)-[:INTERACTS_WITH]->(User)",
+        1
+      ]
+    ],
+    "who": [
+      [
+        "(User)-[:POSTS]->(Tweet)",
+        12
+      ],
+      [
+        "(Me)-[:POSTS]->(Tweet)",
+        6
+      ],
+      [
+        "(User)-[:FOLLOWS]->(Me)",
+        5
+      ],
+      [
+        "(User)-[:FOLLOWS]->(User)",
+        4
+      ],
+      [
+        "(Me)-[:AMPLIFIES]->(User)",
+        3
+      ],
+      [
+        "(Tweet)-[:MENTIONS]->(User)",
+        2
+      ],
+      [
+        "(Tweet)-[:TAGS]->(Hashtag)",
+        2
+      ],
+      [
+        "(Me)-[:FOLLOWS]->(User)",
+        1
+      ]
+    ],
+    "with": [
+      [
+        "(User)-[:POSTS]->(Tweet)",
+        5
+      ],
+      [
+        "(Me)-[:INTERACTS_WITH]->(User)",
+        4
+      ],
+      [
+        "(Tweet)-[:MENTIONS]->(User)",
+        3
+      ],
+      [
+        "(Tweet)-[:TAGS]->(Hashtag)",
+        3
+      ],
+      [
+        "(Me)-[:POSTS]->(Tweet)",
+        2
+      ],
+      [
+        "(User)-[:MENTIONS]-(Tweet)",
+        1
+      ],
+      [
+        "(Tweet)-[:CONTAINS]->(Link)",
+        1
+      ],
+      [
+        "(Tweet)-[:USING]->(Source)",
+        1
+      ]
     ]
   },
   "examples": [
     {
       "row": 1,
       "question": "List the 5 most recent users who started following 'Neo4j'.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "list",
+          "the",
           "5",
           "most",
           "recent",
-          "user",
+          "users",
+          "who",
           "started",
           "following",
           "neo4j"
-        ],
-        "intents": [
-          "ranking_desc",
-          "filter_literal",
-          "date_or_year"
         ],
         "literals": [
           "Neo4j"
@@ -11210,17 +12400,19 @@
     {
       "row": 2,
       "question": "Which users are amplified by 'Me' according to the AMPLIFIES relationship?",
-      "question_profile": {
-        "tokens": [
-          "user",
+      "question_evidence": {
+        "terms": [
+          "which",
+          "users",
+          "are",
           "amplified",
+          "by",
           "me",
           "according",
+          "to",
+          "the",
           "amplifies",
           "relationship"
-        ],
-        "intents": [
-          "filter_literal"
         ],
         "literals": [
           "Me"
@@ -11259,21 +12451,21 @@
     {
       "row": 3,
       "question": "Who are the top 5 users that a specific user named 'Neo4j' follows?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "who",
+          "are",
+          "the",
           "top",
           "5",
-          "user",
+          "users",
+          "that",
+          "a",
           "specific",
           "user",
           "named",
           "neo4j",
           "follows"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "filter_literal"
         ],
         "literals": [
           "Neo4j"
@@ -11337,21 +12529,21 @@
     {
       "row": 4,
       "question": "Identify the top 3 users by the number of people they are following.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
           "identify",
+          "the",
           "top",
           "3",
-          "user",
+          "users",
+          "by",
+          "the",
           "number",
+          "of",
           "people",
           "they",
+          "are",
           "following"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "aggregation_count"
         ],
         "literals": [],
         "numbers": [
@@ -11405,17 +12597,15 @@
     {
       "row": 5,
       "question": "Who does 'neo4j' interact with most frequently?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "who",
           "does",
           "neo4j",
           "interact",
+          "with",
           "most",
           "frequently"
-        ],
-        "intents": [
-          "ranking_desc",
-          "filter_literal"
         ],
         "literals": [
           "neo4j"
@@ -11463,21 +12653,24 @@
     {
       "row": 6,
       "question": "Show the tweets where 'neo4j' is mentioned and the tweet has a favorite count over 100.",
-      "question_profile": {
-        "tokens": [
-          "tweet",
+      "question_evidence": {
+        "terms": [
+          "show",
+          "the",
+          "tweets",
           "where",
           "neo4j",
+          "is",
           "mentioned",
+          "and",
+          "the",
           "tweet",
+          "has",
+          "a",
           "favorite",
           "count",
           "over",
           "100"
-        ],
-        "intents": [
-          "aggregation_count",
-          "filter_literal"
         ],
         "literals": [
           "neo4j"
@@ -11535,19 +12728,19 @@
     {
       "row": 7,
       "question": "List the first 5 tweets with the highest number of favorites.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "list",
+          "the",
           "first",
           "5",
-          "tweet",
+          "tweets",
+          "with",
+          "the",
           "highest",
           "number",
+          "of",
           "favorites"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "aggregation_count"
         ],
         "literals": [],
         "numbers": [
@@ -11590,18 +12783,20 @@
     {
       "row": 8,
       "question": "Who are the users that 'neo4j' mentions most frequently in their tweets?",
-      "question_profile": {
-        "tokens": [
-          "user",
+      "question_evidence": {
+        "terms": [
+          "who",
+          "are",
+          "the",
+          "users",
+          "that",
           "neo4j",
           "mentions",
           "most",
           "frequently",
-          "tweet"
-        ],
-        "intents": [
-          "ranking_desc",
-          "filter_literal"
+          "in",
+          "their",
+          "tweets"
         ],
         "literals": [
           "neo4j"
@@ -11649,18 +12844,21 @@
     {
       "row": 9,
       "question": "List the tweets that mention users who have retweeted tweets that mention \"Neo4j\".",
-      "question_profile": {
-        "tokens": [
-          "tweet",
+      "question_evidence": {
+        "terms": [
+          "list",
+          "the",
+          "tweets",
+          "that",
           "mention",
-          "user",
+          "users",
+          "who",
+          "have",
           "retweeted",
-          "tweet",
+          "tweets",
+          "that",
           "mention",
           "neo4j"
-        ],
-        "intents": [
-          "filter_literal"
         ],
         "literals": [
           "Neo4j"
@@ -11700,17 +12898,17 @@
     {
       "row": 10,
       "question": "Find all tweets posted by 'Neo4j' containing a hashtag.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
           "find",
-          "tweet",
+          "all",
+          "tweets",
           "posted",
+          "by",
           "neo4j",
           "containing",
+          "a",
           "hashtag"
-        ],
-        "intents": [
-          "filter_literal"
         ],
         "literals": [
           "Neo4j"
@@ -11758,21 +12956,21 @@
     {
       "row": 11,
       "question": "What are the top 5 most recent tweets based on the creation date?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "what",
+          "are",
+          "the",
           "top",
           "5",
           "most",
           "recent",
-          "tweet",
+          "tweets",
           "based",
+          "on",
+          "the",
           "creation",
           "date"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "date_or_year"
         ],
         "literals": [],
         "numbers": [
@@ -11808,19 +13006,20 @@
     {
       "row": 12,
       "question": "What are the first 3 locations where the most users are based?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "what",
+          "are",
+          "the",
           "first",
           "3",
           "locations",
           "where",
+          "the",
           "most",
-          "user",
+          "users",
+          "are",
           "based"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit"
         ],
         "literals": [],
         "numbers": [
@@ -11866,20 +13065,18 @@
     {
       "row": 13,
       "question": "Find the top 5 users by number of statuses posted.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
           "find",
+          "the",
           "top",
           "5",
-          "user",
+          "users",
+          "by",
           "number",
+          "of",
           "statuses",
           "posted"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "aggregation_count"
         ],
         "literals": [],
         "numbers": [
@@ -11929,21 +13126,24 @@
     {
       "row": 14,
       "question": "List all tweets by 'neo4j' that have more than 200 favorites and show the first 5.",
-      "question_profile": {
-        "tokens": [
-          "tweet",
+      "question_evidence": {
+        "terms": [
+          "list",
+          "all",
+          "tweets",
+          "by",
           "neo4j",
+          "that",
+          "have",
           "more",
           "than",
           "200",
           "favorites",
+          "and",
+          "show",
+          "the",
           "first",
           "5"
-        ],
-        "intents": [
-          "limit",
-          "filter_literal",
-          "filter_numeric"
         ],
         "literals": [
           "neo4j"
@@ -11989,19 +13189,19 @@
     {
       "row": 15,
       "question": "What are the 3 most recent tweets posted by any user?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "what",
+          "are",
+          "the",
           "3",
           "most",
           "recent",
-          "tweet",
+          "tweets",
           "posted",
+          "by",
           "any",
           "user"
-        ],
-        "intents": [
-          "ranking_desc",
-          "date_or_year"
         ],
         "literals": [],
         "numbers": [
@@ -12049,20 +13249,20 @@
     {
       "row": 16,
       "question": "Which users does 'neo4j' amplify the most and list the top 5?",
-      "question_profile": {
-        "tokens": [
-          "user",
+      "question_evidence": {
+        "terms": [
+          "which",
+          "users",
           "does",
           "neo4j",
           "amplify",
+          "the",
           "most",
+          "and",
+          "list",
+          "the",
           "top",
           "5"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "filter_literal"
         ],
         "literals": [
           "neo4j"
@@ -12112,20 +13312,20 @@
     {
       "row": 17,
       "question": "List the first 3 tweets that 'Neo4j' retweets on '2021-03-16'.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "list",
+          "the",
           "first",
           "3",
-          "tweet",
+          "tweets",
+          "that",
           "neo4j",
           "retweets",
+          "on",
           "2021",
           "03",
           "16"
-        ],
-        "intents": [
-          "limit",
-          "filter_literal"
         ],
         "literals": [
           "Neo4j",
@@ -12181,19 +13381,21 @@
     {
       "row": 18,
       "question": "List the first 3 tweets that mention the user with the highest betweenness.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "list",
+          "the",
           "first",
           "3",
-          "tweet",
+          "tweets",
+          "that",
           "mention",
+          "the",
           "user",
+          "with",
+          "the",
           "highest",
           "betweenness"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit"
         ],
         "literals": [],
         "numbers": [
@@ -12239,20 +13441,21 @@
     {
       "row": 19,
       "question": "Who are the top 3 users mentioned in the tweets that 'Neo4j' mentions?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "who",
+          "are",
+          "the",
           "top",
           "3",
-          "user",
+          "users",
           "mentioned",
-          "tweet",
+          "in",
+          "the",
+          "tweets",
+          "that",
           "neo4j",
           "mentions"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "filter_literal"
         ],
         "literals": [
           "Neo4j"
@@ -12305,17 +13508,17 @@
     {
       "row": 20,
       "question": "List the first 3 tweets that 'Neo4j' has retweeted.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "list",
+          "the",
           "first",
           "3",
-          "tweet",
+          "tweets",
+          "that",
           "neo4j",
+          "has",
           "retweeted"
-        ],
-        "intents": [
-          "limit",
-          "filter_literal"
         ],
         "literals": [
           "Neo4j"
@@ -12358,20 +13561,20 @@
     {
       "row": 21,
       "question": "List the top 3 tweets from users located in 'Graphs Are Everywhere'.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "list",
+          "the",
           "top",
           "3",
-          "tweet",
-          "user",
+          "tweets",
+          "from",
+          "users",
           "located",
+          "in",
           "graphs",
+          "are",
           "everywhere"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "filter_literal"
         ],
         "literals": [
           "Graphs Are Everywhere"
@@ -12414,21 +13617,21 @@
     {
       "row": 22,
       "question": "List the top 5 tweets that contain links and are posted by 'Neo4j'.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "list",
+          "the",
           "top",
           "5",
-          "tweet",
+          "tweets",
+          "that",
           "contain",
           "links",
+          "and",
+          "are",
           "posted",
+          "by",
           "neo4j"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "filter_literal",
-          "text_contains"
         ],
         "literals": [
           "Neo4j"
@@ -12480,21 +13683,23 @@
     {
       "row": 23,
       "question": "Find the tweets that contain links and have been posted by users who follow \"Neo4j\".",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
           "find",
-          "tweet",
+          "the",
+          "tweets",
+          "that",
           "contain",
           "links",
+          "and",
+          "have",
           "been",
           "posted",
-          "user",
+          "by",
+          "users",
+          "who",
           "follow",
           "neo4j"
-        ],
-        "intents": [
-          "filter_literal",
-          "text_contains"
         ],
         "literals": [
           "Neo4j"
@@ -12537,19 +13742,19 @@
     {
       "row": 24,
       "question": "List the first 3 users with the lowest number of followers.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "list",
+          "the",
           "first",
           "3",
-          "user",
+          "users",
+          "with",
+          "the",
           "lowest",
           "number",
-          "follower"
-        ],
-        "intents": [
-          "ranking_asc",
-          "limit",
-          "aggregation_count"
+          "of",
+          "followers"
         ],
         "literals": [],
         "numbers": [
@@ -12592,23 +13797,22 @@
     {
       "row": 25,
       "question": "List the top 3 tweets that mention 'Neo4j' and have more than 100 favorites.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "list",
+          "the",
           "top",
           "3",
-          "tweet",
+          "tweets",
+          "that",
           "mention",
           "neo4j",
+          "and",
+          "have",
           "more",
           "than",
           "100",
           "favorites"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "filter_literal",
-          "filter_numeric"
         ],
         "literals": [
           "Neo4j"
@@ -12667,16 +13871,18 @@
     {
       "row": 26,
       "question": "List all the hashtags used in tweets that mention 'neo4j'.",
-      "question_profile": {
-        "tokens": [
-          "hashtag",
+      "question_evidence": {
+        "terms": [
+          "list",
+          "all",
+          "the",
+          "hashtags",
           "used",
-          "tweet",
+          "in",
+          "tweets",
+          "that",
           "mention",
           "neo4j"
-        ],
-        "intents": [
-          "filter_literal"
         ],
         "literals": [
           "neo4j"
@@ -12718,18 +13924,17 @@
     {
       "row": 27,
       "question": "Who are the top 3 users amplified by 'Me'?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "who",
+          "are",
+          "the",
           "top",
           "3",
-          "user",
+          "users",
           "amplified",
+          "by",
           "me"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "filter_literal"
         ],
         "literals": [
           "Me"
@@ -12779,21 +13984,20 @@
     {
       "row": 28,
       "question": "What are the top 5 tweets by 'Neo4j' based on favorites count?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "what",
+          "are",
+          "the",
           "top",
           "5",
-          "tweet",
+          "tweets",
+          "by",
           "neo4j",
           "based",
+          "on",
           "favorites",
           "count"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "aggregation_count",
-          "filter_literal"
         ],
         "literals": [
           "Neo4j"
@@ -12843,22 +14047,21 @@
     {
       "row": 29,
       "question": "List the 3 most recent tweets that mention 'Neo4j' and contain a link.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "list",
+          "the",
           "3",
           "most",
           "recent",
-          "tweet",
+          "tweets",
+          "that",
           "mention",
           "neo4j",
+          "and",
           "contain",
+          "a",
           "link"
-        ],
-        "intents": [
-          "ranking_desc",
-          "filter_literal",
-          "text_contains",
-          "date_or_year"
         ],
         "literals": [
           "Neo4j"
@@ -12918,21 +14121,18 @@
     {
       "row": 30,
       "question": "Identify the top 5 tweets with text containing 'critical service'.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
           "identify",
+          "the",
           "top",
           "5",
-          "tweet",
+          "tweets",
+          "with",
           "text",
           "containing",
           "critical",
           "service"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "filter_literal"
         ],
         "literals": [
           "critical service"
@@ -12973,21 +14173,22 @@
     {
       "row": 31,
       "question": "Find the top 5 tweets with links and sort them by number of favorites.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
           "find",
+          "the",
           "top",
           "5",
-          "tweet",
+          "tweets",
+          "with",
           "links",
+          "and",
           "sort",
+          "them",
+          "by",
           "number",
+          "of",
           "favorites"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "aggregation_count"
         ],
         "literals": [],
         "numbers": [
@@ -13042,19 +14243,19 @@
     {
       "row": 32,
       "question": "Who are the top 5 users that 'neo4j' retweets the most?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "who",
+          "are",
+          "the",
           "top",
           "5",
-          "user",
+          "users",
+          "that",
           "neo4j",
           "retweets",
+          "the",
           "most"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "filter_literal"
         ],
         "literals": [
           "neo4j"
@@ -13106,22 +14307,26 @@
     {
       "row": 33,
       "question": "What is the date and time of the most recent tweet that mentions a user followed by 'Neo4j'?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "what",
+          "is",
+          "the",
           "date",
+          "and",
           "time",
+          "of",
+          "the",
           "most",
           "recent",
           "tweet",
+          "that",
           "mentions",
+          "a",
           "user",
           "followed",
+          "by",
           "neo4j"
-        ],
-        "intents": [
-          "ranking_desc",
-          "filter_literal",
-          "date_or_year"
         ],
         "literals": [
           "Neo4j"
@@ -13163,18 +14368,19 @@
     {
       "row": 34,
       "question": "List the profile URLs of the top 3 users by betweenness.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "list",
+          "the",
           "profile",
           "urls",
+          "of",
+          "the",
           "top",
           "3",
-          "user",
+          "users",
+          "by",
           "betweenness"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit"
         ],
         "literals": [],
         "numbers": [
@@ -13213,22 +14419,24 @@
     {
       "row": 35,
       "question": "What is the average number of favorites for tweets that mention both \"Neo4j\" and a hashtag?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "what",
+          "is",
+          "the",
           "average",
           "number",
+          "of",
           "favorites",
-          "tweet",
+          "for",
+          "tweets",
+          "that",
           "mention",
           "both",
           "neo4j",
+          "and",
+          "a",
           "hashtag"
-        ],
-        "intents": [
-          "aggregation_count",
-          "aggregation_avg",
-          "filter_literal",
-          "same_entity_multi_role"
         ],
         "literals": [
           "Neo4j"
@@ -13270,17 +14478,16 @@
     {
       "row": 36,
       "question": "Which tweets by 'neo4j' contain the hashtag 'education'?",
-      "question_profile": {
-        "tokens": [
-          "tweet",
+      "question_evidence": {
+        "terms": [
+          "which",
+          "tweets",
+          "by",
           "neo4j",
           "contain",
+          "the",
           "hashtag",
           "education"
-        ],
-        "intents": [
-          "filter_literal",
-          "text_contains"
         ],
         "literals": [
           "neo4j",
@@ -13322,18 +14529,17 @@
     {
       "row": 37,
       "question": "Find the tweets posted by \"Neo4j\" that contain links.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
           "find",
-          "tweet",
+          "the",
+          "tweets",
           "posted",
+          "by",
           "neo4j",
+          "that",
           "contain",
           "links"
-        ],
-        "intents": [
-          "filter_literal",
-          "text_contains"
         ],
         "literals": [
           "Neo4j"
@@ -13374,17 +14580,17 @@
     {
       "row": 38,
       "question": "Show the first 3 tweets that 'Me' has retweeted.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "show",
+          "the",
           "first",
           "3",
-          "tweet",
+          "tweets",
+          "that",
           "me",
+          "has",
           "retweeted"
-        ],
-        "intents": [
-          "limit",
-          "filter_literal"
         ],
         "literals": [
           "Me"
@@ -13428,20 +14634,19 @@
     {
       "row": 39,
       "question": "Identify the URLs of the top 5 tweets retweeted by 'Neo4j'.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
           "identify",
+          "the",
           "urls",
+          "of",
+          "the",
           "top",
           "5",
-          "tweet",
+          "tweets",
           "retweeted",
+          "by",
           "neo4j"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "filter_literal"
         ],
         "literals": [
           "Neo4j"
@@ -13489,18 +14694,19 @@
     {
       "row": 40,
       "question": "Which three users have the highest 'betweenness' metric in the network?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "which",
           "three",
-          "user",
+          "users",
+          "have",
+          "the",
           "highest",
           "betweenness",
           "metric",
+          "in",
+          "the",
           "network"
-        ],
-        "intents": [
-          "ranking_desc",
-          "filter_literal"
         ],
         "literals": [
           "betweenness"
@@ -13543,19 +14749,19 @@
     {
       "row": 41,
       "question": "Identify the first 3 users who mentioned 'Neo4j' in their tweets.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
           "identify",
+          "the",
           "first",
           "3",
-          "user",
+          "users",
+          "who",
           "mentioned",
           "neo4j",
-          "tweet"
-        ],
-        "intents": [
-          "limit",
-          "filter_literal"
+          "in",
+          "their",
+          "tweets"
         ],
         "literals": [
           "Neo4j"
@@ -13607,20 +14813,20 @@
     {
       "row": 42,
       "question": "Which users have more than 10000 followers and less than 15000 statuses?",
-      "question_profile": {
-        "tokens": [
-          "user",
+      "question_evidence": {
+        "terms": [
+          "which",
+          "users",
+          "have",
           "more",
           "than",
           "10000",
-          "follower",
+          "followers",
+          "and",
           "less",
           "than",
           "15000",
           "statuses"
-        ],
-        "intents": [
-          "filter_numeric"
         ],
         "literals": [],
         "numbers": [
@@ -13673,18 +14879,20 @@
     {
       "row": 43,
       "question": "Who are the users that 'neo4j' mentions most frequently in their tweets?",
-      "question_profile": {
-        "tokens": [
-          "user",
+      "question_evidence": {
+        "terms": [
+          "who",
+          "are",
+          "the",
+          "users",
+          "that",
           "neo4j",
           "mentions",
           "most",
           "frequently",
-          "tweet"
-        ],
-        "intents": [
-          "ranking_desc",
-          "filter_literal"
+          "in",
+          "their",
+          "tweets"
         ],
         "literals": [
           "neo4j"
@@ -13734,17 +14942,19 @@
     {
       "row": 44,
       "question": "What is the average betweenness centrality of users who follow Neo4j?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "what",
+          "is",
+          "the",
           "average",
           "betweenness",
           "centrality",
-          "user",
+          "of",
+          "users",
+          "who",
           "follow",
           "neo4j"
-        ],
-        "intents": [
-          "aggregation_avg"
         ],
         "literals": [],
         "numbers": []
@@ -13779,20 +14989,20 @@
     {
       "row": 45,
       "question": "Who are the top 3 followers of 'Neo4j' based on betweenness centrality?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "who",
+          "are",
+          "the",
           "top",
           "3",
-          "follower",
+          "followers",
+          "of",
           "neo4j",
           "based",
+          "on",
           "betweenness",
           "centrality"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "filter_literal"
         ],
         "literals": [
           "Neo4j"
@@ -13840,19 +15050,20 @@
     {
       "row": 46,
       "question": "What are the top 5 users with the highest number of followers?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "what",
+          "are",
+          "the",
           "top",
           "5",
-          "user",
+          "users",
+          "with",
+          "the",
           "highest",
           "number",
-          "follower"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "aggregation_count"
+          "of",
+          "followers"
         ],
         "literals": [],
         "numbers": [
@@ -13902,21 +15113,20 @@
     {
       "row": 47,
       "question": "What are the top 5 tweets by 'Neo4j' based on favorites count?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "what",
+          "are",
+          "the",
           "top",
           "5",
-          "tweet",
+          "tweets",
+          "by",
           "neo4j",
           "based",
+          "on",
           "favorites",
           "count"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "aggregation_count",
-          "filter_literal"
         ],
         "literals": [
           "Neo4j"
@@ -13959,18 +15169,18 @@
     {
       "row": 48,
       "question": "Who are the top 3 users that 'Neo4j' has amplified?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "who",
+          "are",
+          "the",
           "top",
           "3",
-          "user",
+          "users",
+          "that",
           "neo4j",
+          "has",
           "amplified"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "filter_literal"
         ],
         "literals": [
           "Neo4j"
@@ -14013,20 +15223,20 @@
     {
       "row": 49,
       "question": "List the top 3 tweets from users located in 'Graphs Are Everywhere'.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "list",
+          "the",
           "top",
           "3",
-          "tweet",
-          "user",
+          "tweets",
+          "from",
+          "users",
           "located",
+          "in",
           "graphs",
+          "are",
           "everywhere"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "filter_literal"
         ],
         "literals": [
           "Graphs Are Everywhere"
@@ -14076,18 +15286,16 @@
     {
       "row": 50,
       "question": "Identify the top 3 hashtags used in tweets.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
           "identify",
+          "the",
           "top",
           "3",
-          "hashtag",
+          "hashtags",
           "used",
-          "tweet"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit"
+          "in",
+          "tweets"
         ],
         "literals": [],
         "numbers": [
@@ -14135,17 +15343,17 @@
     {
       "row": 51,
       "question": "Show the first 3 tweets that 'neo4j' has amplified.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "show",
+          "the",
           "first",
           "3",
-          "tweet",
+          "tweets",
+          "that",
           "neo4j",
+          "has",
           "amplified"
-        ],
-        "intents": [
-          "limit",
-          "filter_literal"
         ],
         "literals": [
           "neo4j"
@@ -14190,21 +15398,19 @@
     {
       "row": 52,
       "question": "Find the top 5 tweets by 'Neo4j' using a specific source.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
           "find",
+          "the",
           "top",
           "5",
-          "tweet",
+          "tweets",
+          "by",
           "neo4j",
           "using",
+          "a",
           "specific",
           "source"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "filter_literal"
         ],
         "literals": [
           "Neo4j"
@@ -14249,18 +15455,18 @@
     {
       "row": 53,
       "question": "What are the top 3 tweets retweeted by other users?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "what",
+          "are",
+          "the",
           "top",
           "3",
-          "tweet",
+          "tweets",
           "retweeted",
+          "by",
           "other",
-          "user"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit"
+          "users"
         ],
         "literals": [],
         "numbers": [
@@ -14305,24 +15511,22 @@
     {
       "row": 54,
       "question": "Find the first 3 tweets by 'Neo4j' that were favorited more than 300 times.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
           "find",
+          "the",
           "first",
           "3",
-          "tweet",
+          "tweets",
+          "by",
           "neo4j",
+          "that",
           "were",
           "favorited",
           "more",
           "than",
           "300",
           "times"
-        ],
-        "intents": [
-          "limit",
-          "filter_literal",
-          "filter_numeric"
         ],
         "literals": [
           "Neo4j"
@@ -14369,20 +15573,21 @@
     {
       "row": 55,
       "question": "Who are the top 3 users mentioned in the tweets that 'Me' retweets?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "who",
+          "are",
+          "the",
           "top",
           "3",
-          "user",
+          "users",
           "mentioned",
-          "tweet",
+          "in",
+          "the",
+          "tweets",
+          "that",
           "me",
           "retweets"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "filter_literal"
         ],
         "literals": [
           "Me"
@@ -14436,22 +15641,26 @@
     {
       "row": 56,
       "question": "List the first 3 tweets by 'neo4j' that have been tagged with a hashtag and mention another user.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "list",
+          "the",
           "first",
           "3",
-          "tweet",
+          "tweets",
+          "by",
           "neo4j",
+          "that",
+          "have",
           "been",
           "tagged",
+          "with",
+          "a",
           "hashtag",
+          "and",
           "mention",
           "another",
           "user"
-        ],
-        "intents": [
-          "limit",
-          "filter_literal"
         ],
         "literals": [
           "neo4j"
@@ -14513,17 +15722,19 @@
     {
       "row": 57,
       "question": "What are the profile image URLs of users who follow 'neo4j'?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "what",
+          "are",
+          "the",
           "profile",
           "image",
           "urls",
-          "user",
+          "of",
+          "users",
+          "who",
           "follow",
           "neo4j"
-        ],
-        "intents": [
-          "filter_literal"
         ],
         "literals": [
           "neo4j"
@@ -14561,26 +15772,25 @@
     {
       "row": 58,
       "question": "Identify the first 3 tweets mentioning 'Neo4j' that also tag a hashtag and were created in 2021.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
           "identify",
+          "the",
           "first",
           "3",
-          "tweet",
+          "tweets",
           "mentioning",
           "neo4j",
+          "that",
           "also",
           "tag",
+          "a",
           "hashtag",
+          "and",
           "were",
           "created",
+          "in",
           "2021"
-        ],
-        "intents": [
-          "limit",
-          "filter_literal",
-          "same_entity_multi_role",
-          "date_or_year"
         ],
         "literals": [
           "Neo4j"
@@ -14630,19 +15840,19 @@
     {
       "row": 59,
       "question": "List the first 3 users who have more than 10000 followers.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "list",
+          "the",
           "first",
           "3",
-          "user",
+          "users",
+          "who",
+          "have",
           "more",
           "than",
           "10000",
-          "follower"
-        ],
-        "intents": [
-          "limit",
-          "filter_numeric"
+          "followers"
         ],
         "literals": [],
         "numbers": [
@@ -14696,19 +15906,18 @@
     {
       "row": 60,
       "question": "List the top 3 tweets with hashtags posted by 'neo4j'.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "list",
+          "the",
           "top",
           "3",
-          "tweet",
-          "hashtag",
+          "tweets",
+          "with",
+          "hashtags",
           "posted",
+          "by",
           "neo4j"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "filter_literal"
         ],
         "literals": [
           "neo4j"
@@ -14760,21 +15969,22 @@
     {
       "row": 61,
       "question": "List the top 5 tweets that mention the user with the screen name 'neo4j'.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "list",
+          "the",
           "top",
           "5",
-          "tweet",
+          "tweets",
+          "that",
           "mention",
+          "the",
           "user",
+          "with",
+          "the",
           "screen",
           "name",
           "neo4j"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "filter_literal"
         ],
         "literals": [
           "neo4j"
@@ -14817,20 +16027,19 @@
     {
       "row": 62,
       "question": "Find the top 5 tweets with the highest number of favorites.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
           "find",
+          "the",
           "top",
           "5",
-          "tweet",
+          "tweets",
+          "with",
+          "the",
           "highest",
           "number",
+          "of",
           "favorites"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "aggregation_count"
         ],
         "literals": [],
         "numbers": [
@@ -14866,20 +16075,22 @@
     {
       "row": 63,
       "question": "Which users have a profile image URL and follow 'Neo4j'? Show the first 3.",
-      "question_profile": {
-        "tokens": [
-          "user",
+      "question_evidence": {
+        "terms": [
+          "which",
+          "users",
+          "have",
+          "a",
           "profile",
           "image",
           "url",
+          "and",
           "follow",
           "neo4j",
+          "show",
+          "the",
           "first",
           "3"
-        ],
-        "intents": [
-          "limit",
-          "filter_literal"
         ],
         "literals": [
           "Neo4j"
@@ -14930,21 +16141,20 @@
     {
       "row": 64,
       "question": "Identify the top 5 tweets linking to the most popular external sources.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
           "identify",
+          "the",
           "top",
           "5",
-          "tweet",
+          "tweets",
           "linking",
+          "to",
+          "the",
           "most",
           "popular",
           "external",
           "sources"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit"
         ],
         "literals": [],
         "numbers": [
@@ -14993,14 +16203,14 @@
     {
       "row": 65,
       "question": "Which users are amplified by 'Me'?",
-      "question_profile": {
-        "tokens": [
-          "user",
+      "question_evidence": {
+        "terms": [
+          "which",
+          "users",
+          "are",
           "amplified",
+          "by",
           "me"
-        ],
-        "intents": [
-          "filter_literal"
         ],
         "literals": [
           "Me"
@@ -15046,19 +16256,19 @@
     {
       "row": 66,
       "question": "Who are the top 3 users that 'Neo4j' amplifies the most?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "who",
+          "are",
+          "the",
           "top",
           "3",
-          "user",
+          "users",
+          "that",
           "neo4j",
           "amplifies",
+          "the",
           "most"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "filter_literal"
         ],
         "literals": [
           "Neo4j"
@@ -15108,19 +16318,18 @@
     {
       "row": 67,
       "question": "List the first 3 hashtags used in tweets mentioning 'Neo4j'.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "list",
+          "the",
           "first",
           "3",
-          "hashtag",
+          "hashtags",
           "used",
-          "tweet",
+          "in",
+          "tweets",
           "mentioning",
           "neo4j"
-        ],
-        "intents": [
-          "limit",
-          "filter_literal"
         ],
         "literals": [
           "Neo4j"
@@ -15165,22 +16374,24 @@
     {
       "row": 68,
       "question": "Who are the top 5 followers of 'Neo4j' based on the number of statuses they have?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "who",
+          "are",
+          "the",
           "top",
           "5",
-          "follower",
+          "followers",
+          "of",
           "neo4j",
           "based",
+          "on",
+          "the",
           "number",
+          "of",
           "statuses",
-          "they"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "aggregation_count",
-          "filter_literal"
+          "they",
+          "have"
         ],
         "literals": [
           "Neo4j"
@@ -15237,21 +16448,22 @@
     {
       "row": 69,
       "question": "Find the users who have retweeted tweets that mention hashtags also used by \"Neo4j\".",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
           "find",
-          "user",
+          "the",
+          "users",
+          "who",
+          "have",
           "retweeted",
-          "tweet",
+          "tweets",
+          "that",
           "mention",
-          "hashtag",
+          "hashtags",
           "also",
           "used",
+          "by",
           "neo4j"
-        ],
-        "intents": [
-          "filter_literal",
-          "same_entity_multi_role"
         ],
         "literals": [
           "Neo4j"
@@ -15295,23 +16507,24 @@
     {
       "row": 70,
       "question": "List the top 5 tweets that include a link and were posted by users following 'Neo4j'.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "list",
+          "the",
           "top",
           "5",
-          "tweet",
+          "tweets",
+          "that",
           "include",
+          "a",
           "link",
+          "and",
           "were",
           "posted",
-          "user",
+          "by",
+          "users",
           "following",
           "neo4j"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "filter_literal"
         ],
         "literals": [
           "Neo4j"
@@ -15373,22 +16586,20 @@
     {
       "row": 71,
       "question": "Find the top 5 tweets by 'Neo4j' that contain the hashtag '#education'.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
           "find",
+          "the",
           "top",
           "5",
-          "tweet",
+          "tweets",
+          "by",
           "neo4j",
+          "that",
           "contain",
+          "the",
           "hashtag",
           "education"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "filter_literal",
-          "text_contains"
         ],
         "literals": [
           "Neo4j",
@@ -15448,19 +16659,20 @@
     {
       "row": 72,
       "question": "List the top 5 tweets that have been retweeted the most times.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "list",
+          "the",
           "top",
           "5",
-          "tweet",
+          "tweets",
+          "that",
+          "have",
           "been",
           "retweeted",
+          "the",
           "most",
           "times"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit"
         ],
         "literals": [],
         "numbers": [
@@ -15507,20 +16719,20 @@
     {
       "row": 73,
       "question": "List the first 3 hashtags appearing in the latest tweets by 'Neo4j'.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "list",
+          "the",
           "first",
           "3",
-          "hashtag",
+          "hashtags",
           "appearing",
+          "in",
+          "the",
           "latest",
-          "tweet",
+          "tweets",
+          "by",
           "neo4j"
-        ],
-        "intents": [
-          "limit",
-          "filter_literal",
-          "date_or_year"
         ],
         "literals": [
           "Neo4j"
@@ -15566,22 +16778,23 @@
     {
       "row": 74,
       "question": "Show the top 5 users that 'Neo4j' interacts with based on the number of interactions.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "show",
+          "the",
           "top",
           "5",
-          "user",
+          "users",
+          "that",
           "neo4j",
           "interacts",
+          "with",
           "based",
+          "on",
+          "the",
           "number",
+          "of",
           "interactions"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "aggregation_count",
-          "filter_literal"
         ],
         "literals": [
           "Neo4j"
@@ -15631,21 +16844,23 @@
     {
       "row": 75,
       "question": "List the first 3 tweets from 'neo4j' that have been retweeted and mention another user.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "list",
+          "the",
           "first",
           "3",
-          "tweet",
+          "tweets",
+          "from",
           "neo4j",
+          "that",
+          "have",
           "been",
           "retweeted",
+          "and",
           "mention",
           "another",
           "user"
-        ],
-        "intents": [
-          "limit",
-          "filter_literal"
         ],
         "literals": [
           "neo4j"
@@ -15692,19 +16907,19 @@
     {
       "row": 76,
       "question": "Who are the top 3 users that 'Neo4j' retweets mentions from?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "who",
+          "are",
+          "the",
           "top",
           "3",
-          "user",
+          "users",
+          "that",
           "neo4j",
           "retweets",
-          "mentions"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "filter_literal"
+          "mentions",
+          "from"
         ],
         "literals": [
           "Neo4j"
@@ -15754,19 +16969,22 @@
     {
       "row": 77,
       "question": "Show the tweets that 'neo4j' has retweeted from users with a lower follower count.",
-      "question_profile": {
-        "tokens": [
-          "tweet",
+      "question_evidence": {
+        "terms": [
+          "show",
+          "the",
+          "tweets",
+          "that",
           "neo4j",
+          "has",
           "retweeted",
-          "user",
+          "from",
+          "users",
+          "with",
+          "a",
           "lower",
           "follower",
           "count"
-        ],
-        "intents": [
-          "aggregation_count",
-          "filter_literal"
         ],
         "literals": [
           "neo4j"
@@ -15831,18 +17049,16 @@
     {
       "row": 78,
       "question": "List the top 3 tweets that mention 'Neo4j'.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "list",
+          "the",
           "top",
           "3",
-          "tweet",
+          "tweets",
+          "that",
           "mention",
           "neo4j"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "filter_literal"
         ],
         "literals": [
           "Neo4j"
@@ -15891,22 +17107,20 @@
     {
       "row": 79,
       "question": "List the top 5 most recent tweets based on the 'created_at' date.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "list",
+          "the",
           "top",
           "5",
           "most",
           "recent",
-          "tweet",
+          "tweets",
           "based",
+          "on",
+          "the",
           "created_at",
           "date"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "filter_literal",
-          "date_or_year"
         ],
         "literals": [
           "created_at"
@@ -15951,20 +17165,24 @@
     {
       "row": 80,
       "question": "What are the screen names of the top 3 users who have posted the most tweets?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "what",
+          "are",
+          "the",
           "screen",
           "names",
+          "of",
+          "the",
           "top",
           "3",
-          "user",
+          "users",
+          "who",
+          "have",
           "posted",
+          "the",
           "most",
-          "tweet"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit"
+          "tweets"
         ],
         "literals": [],
         "numbers": [
@@ -16006,15 +17224,18 @@
     {
       "row": 81,
       "question": "Who are the users that have been retweeted by 'neo4j'?",
-      "question_profile": {
-        "tokens": [
-          "user",
+      "question_evidence": {
+        "terms": [
+          "who",
+          "are",
+          "the",
+          "users",
+          "that",
+          "have",
           "been",
           "retweeted",
+          "by",
           "neo4j"
-        ],
-        "intents": [
-          "filter_literal"
         ],
         "literals": [
           "neo4j"
@@ -16062,19 +17283,19 @@
     {
       "row": 82,
       "question": "List the top 5 tweets by 'neo4j' with the most favorites.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "list",
+          "the",
           "top",
           "5",
-          "tweet",
+          "tweets",
+          "by",
           "neo4j",
+          "with",
+          "the",
           "most",
           "favorites"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "filter_literal"
         ],
         "literals": [
           "neo4j"
@@ -16124,18 +17345,20 @@
     {
       "row": 83,
       "question": "Find the hashtags that are commonly used in tweets that mention 'neo4j'.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
           "find",
-          "hashtag",
+          "the",
+          "hashtags",
+          "that",
+          "are",
           "commonly",
           "used",
-          "tweet",
+          "in",
+          "tweets",
+          "that",
           "mention",
           "neo4j"
-        ],
-        "intents": [
-          "filter_literal"
         ],
         "literals": [
           "neo4j"
@@ -16185,18 +17408,18 @@
     {
       "row": 84,
       "question": "Which users have 'Neo4j' mentioned in its tweets the most?",
-      "question_profile": {
-        "tokens": [
-          "user",
+      "question_evidence": {
+        "terms": [
+          "which",
+          "users",
+          "have",
           "neo4j",
           "mentioned",
+          "in",
           "its",
-          "tweet",
+          "tweets",
+          "the",
           "most"
-        ],
-        "intents": [
-          "ranking_desc",
-          "filter_literal"
         ],
         "literals": [
           "Neo4j"
@@ -16245,19 +17468,21 @@
     {
       "row": 85,
       "question": "Which 5 users are most similar to Neo4j based on the SIMILAR_TO score?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "which",
           "5",
-          "user",
+          "users",
+          "are",
           "most",
           "similar",
+          "to",
           "neo4j",
           "based",
+          "on",
+          "the",
           "similar_to",
           "score"
-        ],
-        "intents": [
-          "ranking_desc"
         ],
         "literals": [],
         "numbers": [
@@ -16303,20 +17528,18 @@
     {
       "row": 86,
       "question": "List the 5 most recent users who started following 'Neo4j'.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "list",
+          "the",
           "5",
           "most",
           "recent",
-          "user",
+          "users",
+          "who",
           "started",
           "following",
           "neo4j"
-        ],
-        "intents": [
-          "ranking_desc",
-          "filter_literal",
-          "date_or_year"
         ],
         "literals": [
           "Neo4j"
@@ -16366,18 +17589,18 @@
     {
       "row": 87,
       "question": "Which tweets by 'neo4j' have the highest number of favorites?",
-      "question_profile": {
-        "tokens": [
-          "tweet",
+      "question_evidence": {
+        "terms": [
+          "which",
+          "tweets",
+          "by",
           "neo4j",
+          "have",
+          "the",
           "highest",
           "number",
+          "of",
           "favorites"
-        ],
-        "intents": [
-          "ranking_desc",
-          "aggregation_count",
-          "filter_literal"
         ],
         "literals": [
           "neo4j"
@@ -16425,20 +17648,22 @@
     {
       "row": 88,
       "question": "What is the average number of favorites for tweets that use the hashtag 'education'?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "what",
+          "is",
+          "the",
           "average",
           "number",
+          "of",
           "favorites",
-          "tweet",
+          "for",
+          "tweets",
+          "that",
           "use",
+          "the",
           "hashtag",
           "education"
-        ],
-        "intents": [
-          "aggregation_count",
-          "aggregation_avg",
-          "filter_literal"
         ],
         "literals": [
           "education"
@@ -16478,22 +17703,26 @@
     {
       "row": 89,
       "question": "List the screen names of users who have posted tweets containing links and have more than 10000 followers.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "list",
+          "the",
           "screen",
           "names",
-          "user",
+          "of",
+          "users",
+          "who",
+          "have",
           "posted",
-          "tweet",
+          "tweets",
           "containing",
           "links",
+          "and",
+          "have",
           "more",
           "than",
           "10000",
-          "follower"
-        ],
-        "intents": [
-          "filter_numeric"
+          "followers"
         ],
         "literals": [],
         "numbers": [
@@ -16537,21 +17766,22 @@
     {
       "row": 90,
       "question": "Find the first 3 users who have mentioned 'neo4j' in tweets and follow 'neo4j'.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
           "find",
+          "the",
           "first",
           "3",
-          "user",
+          "users",
+          "who",
+          "have",
           "mentioned",
           "neo4j",
-          "tweet",
+          "in",
+          "tweets",
+          "and",
           "follow",
           "neo4j"
-        ],
-        "intents": [
-          "limit",
-          "filter_literal"
         ],
         "literals": [
           "neo4j",
@@ -16597,19 +17827,20 @@
     {
       "row": 91,
       "question": "Which users are followed by 'Neo4j' and have more than 1000 followers?",
-      "question_profile": {
-        "tokens": [
-          "user",
+      "question_evidence": {
+        "terms": [
+          "which",
+          "users",
+          "are",
           "followed",
+          "by",
           "neo4j",
+          "and",
+          "have",
           "more",
           "than",
           "1000",
-          "follower"
-        ],
-        "intents": [
-          "filter_literal",
-          "filter_numeric"
+          "followers"
         ],
         "literals": [
           "Neo4j"
@@ -16660,22 +17891,22 @@
     {
       "row": 92,
       "question": "Show the top 5 tweets with the most favorites that were posted using 'Buffer'.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "show",
+          "the",
           "top",
           "5",
-          "tweet",
+          "tweets",
+          "with",
+          "the",
           "most",
           "favorites",
+          "that",
           "were",
           "posted",
           "using",
           "buffer"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "filter_literal"
         ],
         "literals": [
           "Buffer"
@@ -16725,16 +17956,20 @@
     {
       "row": 93,
       "question": "What are the names of all hashtags used in tweets from 'Neo4j'?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "what",
+          "are",
+          "the",
           "names",
-          "hashtag",
+          "of",
+          "all",
+          "hashtags",
           "used",
-          "tweet",
+          "in",
+          "tweets",
+          "from",
           "neo4j"
-        ],
-        "intents": [
-          "filter_literal"
         ],
         "literals": [
           "Neo4j"
@@ -16775,19 +18010,18 @@
     {
       "row": 94,
       "question": "List the first 3 tweets containing a hashtag named 'education'.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "list",
+          "the",
           "first",
           "3",
-          "tweet",
+          "tweets",
           "containing",
+          "a",
           "hashtag",
           "named",
           "education"
-        ],
-        "intents": [
-          "limit",
-          "filter_literal"
         ],
         "literals": [
           "education"
@@ -16829,17 +18063,18 @@
     {
       "row": 95,
       "question": "Who are the top 3 users with the most followers?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "who",
+          "are",
+          "the",
           "top",
           "3",
-          "user",
+          "users",
+          "with",
+          "the",
           "most",
-          "follower"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit"
+          "followers"
         ],
         "literals": [],
         "numbers": [
@@ -16882,19 +18117,19 @@
     {
       "row": 96,
       "question": "List the first 5 tweets with the highest number of favorites.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "list",
+          "the",
           "first",
           "5",
-          "tweet",
+          "tweets",
+          "with",
+          "the",
           "highest",
           "number",
+          "of",
           "favorites"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "aggregation_count"
         ],
         "literals": [],
         "numbers": [
@@ -16930,20 +18165,21 @@
     {
       "row": 97,
       "question": "Which users have 'Neo4j' mentioned the most in tweets? List the top 3.",
-      "question_profile": {
-        "tokens": [
-          "user",
+      "question_evidence": {
+        "terms": [
+          "which",
+          "users",
+          "have",
           "neo4j",
           "mentioned",
+          "the",
           "most",
-          "tweet",
+          "in",
+          "tweets",
+          "list",
+          "the",
           "top",
           "3"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "filter_literal"
         ],
         "literals": [
           "Neo4j"
@@ -16992,19 +18228,20 @@
     {
       "row": 98,
       "question": "Which users are followed by 'neo4j' and have more than 10000 followers?",
-      "question_profile": {
-        "tokens": [
-          "user",
+      "question_evidence": {
+        "terms": [
+          "which",
+          "users",
+          "are",
           "followed",
+          "by",
           "neo4j",
+          "and",
+          "have",
           "more",
           "than",
           "10000",
-          "follower"
-        ],
-        "intents": [
-          "filter_literal",
-          "filter_numeric"
+          "followers"
         ],
         "literals": [
           "neo4j"
@@ -17055,20 +18292,19 @@
     {
       "row": 99,
       "question": "Identify the top 3 tweets with the highest number of favorites.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
           "identify",
+          "the",
           "top",
           "3",
-          "tweet",
+          "tweets",
+          "with",
+          "the",
           "highest",
           "number",
+          "of",
           "favorites"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "aggregation_count"
         ],
         "literals": [],
         "numbers": [
@@ -17111,17 +18347,18 @@
     {
       "row": 100,
       "question": "Which three tweets have the most mentions of other users?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "which",
           "three",
-          "tweet",
+          "tweets",
+          "have",
+          "the",
           "most",
           "mentions",
+          "of",
           "other",
-          "user"
-        ],
-        "intents": [
-          "ranking_desc"
+          "users"
         ],
         "literals": [],
         "numbers": []
@@ -17175,14 +18412,14 @@
     {
       "row": 101,
       "question": "List all users retweeted by 'Me'.",
-      "question_profile": {
-        "tokens": [
-          "user",
+      "question_evidence": {
+        "terms": [
+          "list",
+          "all",
+          "users",
           "retweeted",
+          "by",
           "me"
-        ],
-        "intents": [
-          "filter_literal"
         ],
         "literals": [
           "Me"
@@ -17223,21 +18460,23 @@
     {
       "row": 102,
       "question": "Find the first 3 tweets where 'neo4j' is mentioned and the tweet is a retweet.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
           "find",
+          "the",
           "first",
           "3",
-          "tweet",
+          "tweets",
           "where",
           "neo4j",
+          "is",
           "mentioned",
+          "and",
+          "the",
           "tweet",
+          "is",
+          "a",
           "retweet"
-        ],
-        "intents": [
-          "limit",
-          "filter_literal"
         ],
         "literals": [
           "neo4j"
@@ -17282,20 +18521,19 @@
     {
       "row": 103,
       "question": "Identify the first 3 users who have retweeted tweets mentioning 'Neo4j'.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
           "identify",
+          "the",
           "first",
           "3",
-          "user",
+          "users",
+          "who",
+          "have",
           "retweeted",
-          "tweet",
+          "tweets",
           "mentioning",
           "neo4j"
-        ],
-        "intents": [
-          "limit",
-          "filter_literal"
         ],
         "literals": [
           "Neo4j"
@@ -17341,19 +18579,19 @@
     {
       "row": 104,
       "question": "Who has 'Neo4j' retweeted the most? List the top 3 users.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "who",
+          "has",
           "neo4j",
           "retweeted",
+          "the",
           "most",
+          "list",
+          "the",
           "top",
           "3",
-          "user"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "filter_literal"
+          "users"
         ],
         "literals": [
           "Neo4j"
@@ -17408,24 +18646,30 @@
     {
       "row": 105,
       "question": "What is the average number of followers for users who have been mentioned in the same tweets as users followed by 'Neo4j'?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "what",
+          "is",
+          "the",
           "average",
           "number",
-          "follower",
-          "user",
+          "of",
+          "followers",
+          "for",
+          "users",
+          "who",
+          "have",
           "been",
           "mentioned",
+          "in",
+          "the",
           "same",
-          "tweet",
-          "user",
+          "tweets",
+          "as",
+          "users",
           "followed",
+          "by",
           "neo4j"
-        ],
-        "intents": [
-          "aggregation_count",
-          "aggregation_avg",
-          "filter_literal"
         ],
         "literals": [
           "Neo4j"
@@ -17468,16 +18712,17 @@
     {
       "row": 106,
       "question": "Which users are located in \"Sweden\" and follow \"Neo4j\"?",
-      "question_profile": {
-        "tokens": [
-          "user",
+      "question_evidence": {
+        "terms": [
+          "which",
+          "users",
+          "are",
           "located",
+          "in",
           "sweden",
+          "and",
           "follow",
           "neo4j"
-        ],
-        "intents": [
-          "filter_literal"
         ],
         "literals": [
           "Sweden",
@@ -17516,18 +18761,23 @@
     {
       "row": 107,
       "question": "Show the tweets that replied to a tweet by 'neo4j' and list the first 3.",
-      "question_profile": {
-        "tokens": [
-          "tweet",
+      "question_evidence": {
+        "terms": [
+          "show",
+          "the",
+          "tweets",
+          "that",
           "replied",
+          "to",
+          "a",
           "tweet",
+          "by",
           "neo4j",
+          "and",
+          "list",
+          "the",
           "first",
           "3"
-        ],
-        "intents": [
-          "limit",
-          "filter_literal"
         ],
         "literals": [
           "neo4j"
@@ -17571,20 +18821,20 @@
     {
       "row": 108,
       "question": "Which users interact most frequently with 'neo4j' and list the top 5?",
-      "question_profile": {
-        "tokens": [
-          "user",
+      "question_evidence": {
+        "terms": [
+          "which",
+          "users",
           "interact",
           "most",
           "frequently",
+          "with",
           "neo4j",
+          "and",
+          "list",
+          "the",
           "top",
           "5"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "filter_literal"
         ],
         "literals": [
           "neo4j"
@@ -17634,17 +18884,18 @@
     {
       "row": 109,
       "question": "Find tweets that mention 'Neo4j' and are tagged with 'education'.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
           "find",
-          "tweet",
+          "tweets",
+          "that",
           "mention",
           "neo4j",
+          "and",
+          "are",
           "tagged",
+          "with",
           "education"
-        ],
-        "intents": [
-          "filter_literal"
         ],
         "literals": [
           "Neo4j",
@@ -17686,18 +18937,19 @@
     {
       "row": 110,
       "question": "Who are the top 5 users mentioned in the most tweets?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "who",
+          "are",
+          "the",
           "top",
           "5",
-          "user",
+          "users",
           "mentioned",
+          "in",
+          "the",
           "most",
-          "tweet"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit"
+          "tweets"
         ],
         "literals": [],
         "numbers": [
@@ -17743,20 +18995,18 @@
     {
       "row": 111,
       "question": "Identify the top 5 tweets tagged with the hashtag 'education'.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
           "identify",
+          "the",
           "top",
           "5",
-          "tweet",
+          "tweets",
           "tagged",
+          "with",
+          "the",
           "hashtag",
           "education"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "filter_literal"
         ],
         "literals": [
           "education"
@@ -17797,19 +19047,20 @@
     {
       "row": 112,
       "question": "What are the top 5 tweets by 'neo4j' with the most replies?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "what",
+          "are",
+          "the",
           "top",
           "5",
-          "tweet",
+          "tweets",
+          "by",
           "neo4j",
+          "with",
+          "the",
           "most",
           "replies"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "filter_literal"
         ],
         "literals": [
           "neo4j"
@@ -17862,20 +19113,19 @@
     {
       "row": 113,
       "question": "Display the first 3 tweets from 'neo4j' that contain a hashtag.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
           "display",
+          "the",
           "first",
           "3",
-          "tweet",
+          "tweets",
+          "from",
           "neo4j",
+          "that",
           "contain",
+          "a",
           "hashtag"
-        ],
-        "intents": [
-          "limit",
-          "filter_literal",
-          "text_contains"
         ],
         "literals": [
           "neo4j"
@@ -17920,18 +19170,19 @@
     {
       "row": 114,
       "question": "List the hashtags used by users with more than 1000 followers.",
-      "question_profile": {
-        "tokens": [
-          "hashtag",
+      "question_evidence": {
+        "terms": [
+          "list",
+          "the",
+          "hashtags",
           "used",
-          "user",
+          "by",
+          "users",
+          "with",
           "more",
           "than",
           "1000",
-          "follower"
-        ],
-        "intents": [
-          "filter_numeric"
+          "followers"
         ],
         "literals": [],
         "numbers": [
@@ -17976,22 +19227,23 @@
     {
       "row": 115,
       "question": "Show the top 5 users that 'Neo4j' interacts with based on the number of interactions.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "show",
+          "the",
           "top",
           "5",
-          "user",
+          "users",
+          "that",
           "neo4j",
           "interacts",
+          "with",
           "based",
+          "on",
+          "the",
           "number",
+          "of",
           "interactions"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "aggregation_count",
-          "filter_literal"
         ],
         "literals": [
           "Neo4j"
@@ -18041,19 +19293,19 @@
     {
       "row": 116,
       "question": "List the top 5 tweets by 'neo4j' with the most favorites.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "list",
+          "the",
           "top",
           "5",
-          "tweet",
+          "tweets",
+          "by",
           "neo4j",
+          "with",
+          "the",
           "most",
           "favorites"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "filter_literal"
         ],
         "literals": [
           "neo4j"
@@ -18103,20 +19355,24 @@
     {
       "row": 117,
       "question": "What is the 'location' of the user who posted the tweet with the earliest 'created_at' date?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "what",
+          "is",
+          "the",
           "location",
+          "of",
+          "the",
           "user",
+          "who",
           "posted",
+          "the",
           "tweet",
+          "with",
+          "the",
           "earliest",
           "created_at",
           "date"
-        ],
-        "intents": [
-          "ranking_asc",
-          "filter_literal",
-          "date_or_year"
         ],
         "literals": [
           "location",
@@ -18153,14 +19409,14 @@
     {
       "row": 118,
       "question": "Which users are amplified by 'Me'?",
-      "question_profile": {
-        "tokens": [
-          "user",
+      "question_evidence": {
+        "terms": [
+          "which",
+          "users",
+          "are",
           "amplified",
+          "by",
           "me"
-        ],
-        "intents": [
-          "filter_literal"
         ],
         "literals": [
           "Me"
@@ -18199,21 +19455,21 @@
     {
       "row": 119,
       "question": "Identify the top 3 users by the number of people they are following.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
           "identify",
+          "the",
           "top",
           "3",
-          "user",
+          "users",
+          "by",
+          "the",
           "number",
+          "of",
           "people",
           "they",
+          "are",
           "following"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "aggregation_count"
         ],
         "literals": [],
         "numbers": [
@@ -18256,21 +19512,24 @@
     {
       "row": 120,
       "question": "What are the top 3 hashtags used in the tweets that have been retweeted by 'Neo4j'?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "what",
+          "are",
+          "the",
           "top",
           "3",
-          "hashtag",
+          "hashtags",
           "used",
-          "tweet",
+          "in",
+          "the",
+          "tweets",
+          "that",
+          "have",
           "been",
           "retweeted",
+          "by",
           "neo4j"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "filter_literal"
         ],
         "literals": [
           "Neo4j"
@@ -18325,21 +19584,20 @@
     {
       "row": 121,
       "question": "What are the top 5 hashtags in tweets containing the word 'education'?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "what",
+          "are",
+          "the",
           "top",
           "5",
-          "hashtag",
-          "tweet",
+          "hashtags",
+          "in",
+          "tweets",
           "containing",
+          "the",
           "word",
           "education"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "filter_literal",
-          "text_contains"
         ],
         "literals": [
           "education"
@@ -18392,14 +19650,14 @@
     {
       "row": 122,
       "question": "List all users who follow 'neo4j'.",
-      "question_profile": {
-        "tokens": [
-          "user",
+      "question_evidence": {
+        "terms": [
+          "list",
+          "all",
+          "users",
+          "who",
           "follow",
           "neo4j"
-        ],
-        "intents": [
-          "filter_literal"
         ],
         "literals": [
           "neo4j"
@@ -18437,20 +19695,20 @@
     {
       "row": 123,
       "question": "Find the first 3 users who have retweeted tweets posted by 'neo4j'.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
           "find",
+          "the",
           "first",
           "3",
-          "user",
+          "users",
+          "who",
+          "have",
           "retweeted",
-          "tweet",
+          "tweets",
           "posted",
+          "by",
           "neo4j"
-        ],
-        "intents": [
-          "limit",
-          "filter_literal"
         ],
         "literals": [
           "neo4j"
@@ -18494,21 +19752,20 @@
     {
       "row": 124,
       "question": "Identify the top 5 hashtags used in tweets that 'Neo4j' has retweeted.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
           "identify",
+          "the",
           "top",
           "5",
-          "hashtag",
+          "hashtags",
           "used",
-          "tweet",
+          "in",
+          "tweets",
+          "that",
           "neo4j",
+          "has",
           "retweeted"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "filter_literal"
         ],
         "literals": [
           "Neo4j"
@@ -18560,22 +19817,27 @@
     {
       "row": 125,
       "question": "What is the average number of followers for users who have been mentioned in the same tweets as 'Neo4j'?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "what",
+          "is",
+          "the",
           "average",
           "number",
-          "follower",
-          "user",
+          "of",
+          "followers",
+          "for",
+          "users",
+          "who",
+          "have",
           "been",
           "mentioned",
+          "in",
+          "the",
           "same",
-          "tweet",
+          "tweets",
+          "as",
           "neo4j"
-        ],
-        "intents": [
-          "aggregation_count",
-          "aggregation_avg",
-          "filter_literal"
         ],
         "literals": [
           "Neo4j"
@@ -18616,23 +19878,22 @@
     {
       "row": 126,
       "question": "List the top 3 users with the lowest number of followers who follow 'Neo4j'.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "list",
+          "the",
           "top",
           "3",
-          "user",
+          "users",
+          "with",
+          "the",
           "lowest",
           "number",
-          "follower",
+          "of",
+          "followers",
+          "who",
           "follow",
           "neo4j"
-        ],
-        "intents": [
-          "ranking_desc",
-          "ranking_asc",
-          "limit",
-          "aggregation_count",
-          "filter_literal"
         ],
         "literals": [
           "Neo4j"
@@ -18675,17 +19936,18 @@
     {
       "row": 127,
       "question": "Show all tweets that mention 'Neo4j' and contain a link.",
-      "question_profile": {
-        "tokens": [
-          "tweet",
+      "question_evidence": {
+        "terms": [
+          "show",
+          "all",
+          "tweets",
+          "that",
           "mention",
           "neo4j",
+          "and",
           "contain",
+          "a",
           "link"
-        ],
-        "intents": [
-          "filter_literal",
-          "text_contains"
         ],
         "literals": [
           "Neo4j"
@@ -18726,21 +19988,24 @@
     {
       "row": 128,
       "question": "List the users who follow Neo4j and have posted tweets using the source \"Twitter Web App\".",
-      "question_profile": {
-        "tokens": [
-          "user",
+      "question_evidence": {
+        "terms": [
+          "list",
+          "the",
+          "users",
+          "who",
           "follow",
           "neo4j",
+          "and",
+          "have",
           "posted",
-          "tweet",
+          "tweets",
           "using",
+          "the",
           "source",
           "twitter",
           "web",
           "app"
-        ],
-        "intents": [
-          "filter_literal"
         ],
         "literals": [
           "Twitter Web App"
@@ -18783,22 +20048,22 @@
     {
       "row": 129,
       "question": "Which users followed by 'Neo4j' have posted tweets mentioning 'Neo4j'? Show the top 5.",
-      "question_profile": {
-        "tokens": [
-          "user",
+      "question_evidence": {
+        "terms": [
+          "which",
+          "users",
           "followed",
+          "by",
           "neo4j",
+          "have",
           "posted",
-          "tweet",
+          "tweets",
           "mentioning",
           "neo4j",
+          "show",
+          "the",
           "top",
           "5"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "filter_literal"
         ],
         "literals": [
           "Neo4j",
@@ -18852,23 +20117,20 @@
     {
       "row": 130,
       "question": "Identify the top 3 tweets that contain links to 'https://twitter.com'.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
           "identify",
+          "the",
           "top",
           "3",
-          "tweet",
+          "tweets",
+          "that",
           "contain",
           "links",
+          "to",
           "https",
           "twitter",
           "com"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "filter_literal",
-          "text_contains"
         ],
         "literals": [
           "https://twitter.com"
@@ -18914,18 +20176,17 @@
     {
       "row": 131,
       "question": "Which three users have posted the most about 'education'?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "which",
           "three",
-          "user",
+          "users",
+          "have",
           "posted",
+          "the",
           "most",
           "about",
           "education"
-        ],
-        "intents": [
-          "ranking_desc",
-          "filter_literal"
         ],
         "literals": [
           "education"
@@ -18981,22 +20242,25 @@
     {
       "row": 132,
       "question": "What is the average number of followers for users who have posted tweets containing the hashtag \"education\"?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "what",
+          "is",
+          "the",
           "average",
           "number",
-          "follower",
-          "user",
+          "of",
+          "followers",
+          "for",
+          "users",
+          "who",
+          "have",
           "posted",
-          "tweet",
+          "tweets",
           "containing",
+          "the",
           "hashtag",
           "education"
-        ],
-        "intents": [
-          "aggregation_count",
-          "aggregation_avg",
-          "filter_literal"
         ],
         "literals": [
           "education"
@@ -19039,19 +20303,20 @@
     {
       "row": 133,
       "question": "What are the top 3 locations from where the most tweets originate?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "what",
+          "are",
+          "the",
           "top",
           "3",
           "locations",
+          "from",
           "where",
+          "the",
           "most",
-          "tweet",
+          "tweets",
           "originate"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit"
         ],
         "literals": [],
         "numbers": [
@@ -19102,16 +20367,16 @@
     {
       "row": 134,
       "question": "Which users have a betweenness higher than 1000000?",
-      "question_profile": {
-        "tokens": [
-          "user",
+      "question_evidence": {
+        "terms": [
+          "which",
+          "users",
+          "have",
+          "a",
           "betweenness",
           "higher",
           "than",
           "1000000"
-        ],
-        "intents": [
-          "filter_numeric"
         ],
         "literals": [],
         "numbers": [
@@ -19155,20 +20420,24 @@
     {
       "row": 135,
       "question": "What are the screen names of the top 3 users who have posted the most tweets?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "what",
+          "are",
+          "the",
           "screen",
           "names",
+          "of",
+          "the",
           "top",
           "3",
-          "user",
+          "users",
+          "who",
+          "have",
           "posted",
+          "the",
           "most",
-          "tweet"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit"
+          "tweets"
         ],
         "literals": [],
         "numbers": [
@@ -19217,21 +20486,20 @@
     {
       "row": 136,
       "question": "Identify the top 5 hashtags used in tweets that 'Neo4j' has retweeted.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
           "identify",
+          "the",
           "top",
           "5",
-          "hashtag",
+          "hashtags",
           "used",
-          "tweet",
+          "in",
+          "tweets",
+          "that",
           "neo4j",
+          "has",
           "retweeted"
-        ],
-        "intents": [
-          "ranking_desc",
-          "limit",
-          "filter_literal"
         ],
         "literals": [
           "Neo4j"
@@ -19285,19 +20553,20 @@
     {
       "row": 137,
       "question": "Which users are followed by 'neo4j' and have more than 10000 followers?",
-      "question_profile": {
-        "tokens": [
-          "user",
+      "question_evidence": {
+        "terms": [
+          "which",
+          "users",
+          "are",
           "followed",
+          "by",
           "neo4j",
+          "and",
+          "have",
           "more",
           "than",
           "10000",
-          "follower"
-        ],
-        "intents": [
-          "filter_literal",
-          "filter_numeric"
+          "followers"
         ],
         "literals": [
           "neo4j"
@@ -19348,19 +20617,20 @@
     {
       "row": 138,
       "question": "List the sources used in tweets that mention more than 3 users.",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "list",
+          "the",
           "sources",
           "used",
-          "tweet",
+          "in",
+          "tweets",
+          "that",
           "mention",
           "more",
           "than",
           "3",
-          "user"
-        ],
-        "intents": [
-          "filter_numeric"
+          "users"
         ],
         "literals": [],
         "numbers": [
@@ -19404,20 +20674,22 @@
     {
       "row": 139,
       "question": "Which users have a profile image URL and follow 'Neo4j'? Show the first 3.",
-      "question_profile": {
-        "tokens": [
-          "user",
+      "question_evidence": {
+        "terms": [
+          "which",
+          "users",
+          "have",
+          "a",
           "profile",
           "image",
           "url",
+          "and",
           "follow",
           "neo4j",
+          "show",
+          "the",
           "first",
           "3"
-        ],
-        "intents": [
-          "limit",
-          "filter_literal"
         ],
         "literals": [
           "Neo4j"
@@ -19462,21 +20734,26 @@
     {
       "row": 140,
       "question": "List the hashtags that have been used in tweets that contain links and have been posted by \"Neo4j\".",
-      "question_profile": {
-        "tokens": [
-          "hashtag",
+      "question_evidence": {
+        "terms": [
+          "list",
+          "the",
+          "hashtags",
+          "that",
+          "have",
           "been",
           "used",
-          "tweet",
+          "in",
+          "tweets",
+          "that",
           "contain",
           "links",
+          "and",
+          "have",
           "been",
           "posted",
+          "by",
           "neo4j"
-        ],
-        "intents": [
-          "filter_literal",
-          "text_contains"
         ],
         "literals": [
           "Neo4j"
@@ -19522,18 +20799,17 @@
     {
       "row": 141,
       "question": "What is the most recent tweet posted by \"Neo4j\"?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "what",
+          "is",
+          "the",
           "most",
           "recent",
           "tweet",
           "posted",
+          "by",
           "neo4j"
-        ],
-        "intents": [
-          "ranking_desc",
-          "filter_literal",
-          "date_or_year"
         ],
         "literals": [
           "Neo4j"
@@ -19574,19 +20850,20 @@
     {
       "row": 142,
       "question": "What is the average number of followers for users who follow 'Neo4j'?",
-      "question_profile": {
-        "tokens": [
+      "question_evidence": {
+        "terms": [
+          "what",
+          "is",
+          "the",
           "average",
           "number",
-          "follower",
-          "user",
+          "of",
+          "followers",
+          "for",
+          "users",
+          "who",
           "follow",
           "neo4j"
-        ],
-        "intents": [
-          "aggregation_count",
-          "aggregation_avg",
-          "filter_literal"
         ],
         "literals": [
           "Neo4j"

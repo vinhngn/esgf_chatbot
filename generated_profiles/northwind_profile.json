@@ -20,7 +20,7 @@
       }
     ]
   },
-  "schema_fingerprint": "sha256:e3612dc643a243e106a2a7a22416580eee0b4304de541adff0d5065fe6fec573",
+  "schema_fingerprint": "sha256:1be9b00adfd6b489018d60455fda249decfdfddf7101004854b8a67238a80dcc",
   "row_count": 196,
   "schema_profile": {
     "labels": [
@@ -470,7 +470,14 @@
           {
             "from": "Order",
             "to": "Product",
-            "count": null
+            "count": 2155,
+            "count_kind": "upper_bound",
+            "count_method": "neo4j_min_endpoint_counts",
+            "relationship_count": 2155,
+            "start_endpoint_count": 2155,
+            "end_endpoint_count": 2155,
+            "outgoing_fanout": 2.5963855421686746,
+            "incoming_fanout": 27.98701298701299
           }
         ],
         "properties": [
@@ -522,7 +529,14 @@
           {
             "from": "Product",
             "to": "Category",
-            "count": null
+            "count": 77,
+            "count_kind": "upper_bound",
+            "count_method": "neo4j_min_endpoint_counts",
+            "relationship_count": 77,
+            "start_endpoint_count": 77,
+            "end_endpoint_count": 77,
+            "outgoing_fanout": 1.0,
+            "incoming_fanout": 9.625
           }
         ],
         "properties": []
@@ -533,7 +547,14 @@
           {
             "from": "Customer",
             "to": "Order",
-            "count": null
+            "count": 830,
+            "count_kind": "upper_bound",
+            "count_method": "neo4j_min_endpoint_counts",
+            "relationship_count": 830,
+            "start_endpoint_count": 830,
+            "end_endpoint_count": 830,
+            "outgoing_fanout": 9.12087912087912,
+            "incoming_fanout": 1.0
           }
         ],
         "properties": []
@@ -544,7 +565,14 @@
           {
             "from": "Supplier",
             "to": "Product",
-            "count": null
+            "count": 77,
+            "count_kind": "upper_bound",
+            "count_method": "neo4j_min_endpoint_counts",
+            "relationship_count": 77,
+            "start_endpoint_count": 77,
+            "end_endpoint_count": 77,
+            "outgoing_fanout": 2.6551724137931036,
+            "incoming_fanout": 1.0
           }
         ],
         "properties": []
@@ -894,6 +922,119 @@
       "limit": 10000,
       "max_hops": 8
     },
+    "indexes": [
+      {
+        "name": "__org_neo4j_schema_index_label_scan_store_converted_to_token_index",
+        "type": "LOOKUP",
+        "entity_type": "NODE",
+        "labels_or_types": [],
+        "properties": [],
+        "state": "ONLINE",
+        "population_percent": 100.0,
+        "owning_constraint": null,
+        "dimensions": null,
+        "similarity_function": null,
+        "provider": "token-lookup-1.0"
+      },
+      {
+        "name": "index_22b7066a",
+        "type": "RANGE",
+        "entity_type": "NODE",
+        "labels_or_types": [
+          "Customer"
+        ],
+        "properties": [
+          "customerID"
+        ],
+        "state": "ONLINE",
+        "population_percent": 100.0,
+        "owning_constraint": null,
+        "dimensions": null,
+        "similarity_function": null,
+        "provider": "range-1.0"
+      },
+      {
+        "name": "index_44f4e370",
+        "type": "RANGE",
+        "entity_type": "NODE",
+        "labels_or_types": [
+          "Category"
+        ],
+        "properties": [
+          "categoryID"
+        ],
+        "state": "ONLINE",
+        "population_percent": 100.0,
+        "owning_constraint": null,
+        "dimensions": null,
+        "similarity_function": null,
+        "provider": "range-1.0"
+      },
+      {
+        "name": "index_9cd40186",
+        "type": "RANGE",
+        "entity_type": "NODE",
+        "labels_or_types": [
+          "Order"
+        ],
+        "properties": [
+          "orderID"
+        ],
+        "state": "ONLINE",
+        "population_percent": 100.0,
+        "owning_constraint": null,
+        "dimensions": null,
+        "similarity_function": null,
+        "provider": "range-1.0"
+      },
+      {
+        "name": "index_de8a8b8f",
+        "type": "RANGE",
+        "entity_type": "NODE",
+        "labels_or_types": [
+          "Supplier"
+        ],
+        "properties": [
+          "supplierID"
+        ],
+        "state": "ONLINE",
+        "population_percent": 100.0,
+        "owning_constraint": null,
+        "dimensions": null,
+        "similarity_function": null,
+        "provider": "range-1.0"
+      },
+      {
+        "name": "index_eadfd5a0",
+        "type": "RANGE",
+        "entity_type": "NODE",
+        "labels_or_types": [
+          "Product"
+        ],
+        "properties": [
+          "productID"
+        ],
+        "state": "ONLINE",
+        "population_percent": 100.0,
+        "owning_constraint": null,
+        "dimensions": null,
+        "similarity_function": null,
+        "provider": "range-1.0"
+      }
+    ],
+    "index_discovery": {
+      "status": "available",
+      "count": 6,
+      "error_type": null,
+      "message": ""
+    },
+    "constraints": [],
+    "constraint_discovery": {
+      "status": "available",
+      "count": 0,
+      "error_type": null,
+      "message": ""
+    },
     "vector_indexes": [],
     "vector_index_discovery": {
       "status": "available",
@@ -945,27 +1086,223 @@
           "type": "ORDERS",
           "from": "Order",
           "to": "Product",
-          "count": null
+          "count": 2155
         },
         {
           "type": "PART_OF",
           "from": "Product",
           "to": "Category",
-          "count": null
+          "count": 77
         },
         {
           "type": "PURCHASED",
           "from": "Customer",
           "to": "Order",
-          "count": null
+          "count": 830
         },
         {
           "type": "SUPPLIES",
           "from": "Supplier",
           "to": "Product",
-          "count": null
+          "count": 77
         }
       ]
+    }
+  },
+  "planner_profile": {
+    "access_paths": {
+      "indexes": [
+        {
+          "name": "__org_neo4j_schema_index_label_scan_store_converted_to_token_index",
+          "type": "LOOKUP",
+          "entity_type": "NODE",
+          "labels_or_types": [],
+          "properties": [],
+          "state": "ONLINE",
+          "population_percent": 100.0,
+          "owning_constraint": null,
+          "dimensions": null,
+          "similarity_function": null,
+          "provider": "token-lookup-1.0"
+        },
+        {
+          "name": "index_22b7066a",
+          "type": "RANGE",
+          "entity_type": "NODE",
+          "labels_or_types": [
+            "Customer"
+          ],
+          "properties": [
+            "customerID"
+          ],
+          "state": "ONLINE",
+          "population_percent": 100.0,
+          "owning_constraint": null,
+          "dimensions": null,
+          "similarity_function": null,
+          "provider": "range-1.0"
+        },
+        {
+          "name": "index_44f4e370",
+          "type": "RANGE",
+          "entity_type": "NODE",
+          "labels_or_types": [
+            "Category"
+          ],
+          "properties": [
+            "categoryID"
+          ],
+          "state": "ONLINE",
+          "population_percent": 100.0,
+          "owning_constraint": null,
+          "dimensions": null,
+          "similarity_function": null,
+          "provider": "range-1.0"
+        },
+        {
+          "name": "index_9cd40186",
+          "type": "RANGE",
+          "entity_type": "NODE",
+          "labels_or_types": [
+            "Order"
+          ],
+          "properties": [
+            "orderID"
+          ],
+          "state": "ONLINE",
+          "population_percent": 100.0,
+          "owning_constraint": null,
+          "dimensions": null,
+          "similarity_function": null,
+          "provider": "range-1.0"
+        },
+        {
+          "name": "index_de8a8b8f",
+          "type": "RANGE",
+          "entity_type": "NODE",
+          "labels_or_types": [
+            "Supplier"
+          ],
+          "properties": [
+            "supplierID"
+          ],
+          "state": "ONLINE",
+          "population_percent": 100.0,
+          "owning_constraint": null,
+          "dimensions": null,
+          "similarity_function": null,
+          "provider": "range-1.0"
+        },
+        {
+          "name": "index_eadfd5a0",
+          "type": "RANGE",
+          "entity_type": "NODE",
+          "labels_or_types": [
+            "Product"
+          ],
+          "properties": [
+            "productID"
+          ],
+          "state": "ONLINE",
+          "population_percent": 100.0,
+          "owning_constraint": null,
+          "dimensions": null,
+          "similarity_function": null,
+          "provider": "range-1.0"
+        }
+      ],
+      "constraints": [],
+      "index_discovery": {
+        "status": "available",
+        "count": 6,
+        "error_type": null,
+        "message": ""
+      },
+      "constraint_discovery": {
+        "status": "available",
+        "count": 0,
+        "error_type": null,
+        "message": ""
+      }
+    },
+    "graph_statistics": {
+      "source": "cypher_count_store_queries",
+      "all_node_count": 1035,
+      "all_relationship_count": 3139,
+      "node_counts": {
+        "Category": 8,
+        "Customer": 91,
+        "Order": 830,
+        "Product": 77,
+        "Supplier": 29
+      },
+      "relationship_counts": {
+        "ORDERS": 2155,
+        "PART_OF": 77,
+        "PURCHASED": 830,
+        "SUPPLIES": 77
+      },
+      "relationship_start_counts": {
+        "Order|ORDERS": 2155,
+        "Product|PART_OF": 77,
+        "Customer|PURCHASED": 830,
+        "Supplier|SUPPLIES": 77
+      },
+      "relationship_end_counts": {
+        "ORDERS|Product": 2155,
+        "PART_OF|Category": 77,
+        "PURCHASED|Order": 830,
+        "SUPPLIES|Product": 77
+      },
+      "index_statistics": [],
+      "pattern_steps": [
+        {
+          "from": "Order",
+          "type": "ORDERS",
+          "to": "Product",
+          "estimated_count": 2155,
+          "count_kind": "upper_bound",
+          "count_method": "neo4j_min_endpoint_counts",
+          "outgoing_fanout": 2.5963855421686746,
+          "incoming_fanout": 27.98701298701299
+        },
+        {
+          "from": "Product",
+          "type": "PART_OF",
+          "to": "Category",
+          "estimated_count": 77,
+          "count_kind": "upper_bound",
+          "count_method": "neo4j_min_endpoint_counts",
+          "outgoing_fanout": 1.0,
+          "incoming_fanout": 9.625
+        },
+        {
+          "from": "Customer",
+          "type": "PURCHASED",
+          "to": "Order",
+          "estimated_count": 830,
+          "count_kind": "upper_bound",
+          "count_method": "neo4j_min_endpoint_counts",
+          "outgoing_fanout": 9.12087912087912,
+          "incoming_fanout": 1.0
+        },
+        {
+          "from": "Supplier",
+          "type": "SUPPLIES",
+          "to": "Product",
+          "estimated_count": 77,
+          "count_kind": "upper_bound",
+          "count_method": "neo4j_min_endpoint_counts",
+          "outgoing_fanout": 2.6551724137931036,
+          "incoming_fanout": 1.0
+        }
+      ],
+      "discovery": {
+        "status": "fallback",
+        "count": 17,
+        "error_type": null,
+        "message": "db.stats unavailable; used count-store-compatible Cypher"
+      }
     }
   },
   "value_profile": {

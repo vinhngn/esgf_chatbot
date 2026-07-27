@@ -37,7 +37,7 @@ from neo4j_t2c.grounding.context import (
     get_grounded_schema as _get_grounded_schema,
 )
 from neo4j_t2c.grounding.context import (
-    get_learned_profile_context as _get_learned_profile_context,
+    get_learned_profile_evidence as _get_learned_profile_evidence,
 )
 from neo4j_t2c.grounding.context import (
     get_runtime_property_context as _get_runtime_property_context,
@@ -53,6 +53,15 @@ from neo4j_t2c.observability.tracing import (
     trace_event,
     verbose_trace_enabled,
 )
+from neo4j_t2c.planning import (
+    SemanticContract,
+    assess_uncertainty,
+    build_initial_graph_program,
+    render_schema_slice,
+    run_adaptive_search,
+    verification_feedback,
+    verify_candidate,
+)
 from neo4j_t2c.profiles.paths import profile_path
 from neo4j_t2c.runtime import PipelineDependencies
 
@@ -65,6 +74,14 @@ def _cypher_retries() -> int:
         return max(0, int(os.getenv("T2C_CYPHER_RETRIES", str(DEFAULT_CYPHER_RETRIES))))
     except ValueError:
         return DEFAULT_CYPHER_RETRIES
+
+
+def _adaptive_planning_mode() -> str:
+    mode = os.getenv(
+        "T2C_ADAPTIVE_PLANNING_MODE",
+        "shadow",
+    ).strip().lower()
+    return mode if mode in {"shadow", "active"} else "shadow"
 
 
 def _graph_schema(graph: object) -> str:
@@ -107,6 +124,9 @@ def invoke_chain(
 
     full_schema = schema or _graph_schema(graph)
     grounding_debug = {}
+    adaptive_evidence_context = ""
+    semantic_contract: SemanticContract | None = None
+    planning_mode = _adaptive_planning_mode()
 
     trace_event(
         logger,
@@ -196,13 +216,74 @@ def invoke_chain(
         else os.getenv("T2C_GENERATE_ONLY", "").strip().lower()
         not in {"1", "true", "yes", "on"}
     )
-    learned_context = _get_learned_profile_context(
+    planning_enabled = should_execute or planning_mode == "active"
+    learned_evidence = _get_learned_profile_evidence(
         question,
         trace_id,
         database=database_name,
         profile_store=profile_store,
-        reranker_model=llm if should_execute else None,
+        reranker_model=llm if planning_enabled else None,
     )
+    learned_context = learned_evidence.context
+    semantic_payload = learned_evidence.structured.get("semantic_contract")
+    if semantic_payload:
+        semantic_contract = SemanticContract.model_validate(semantic_payload)
+        graph_program = build_initial_graph_program(
+            semantic_contract,
+            learned_evidence.structured,
+        )
+        uncertainty = assess_uncertainty(
+            graph_program,
+            learned_evidence.structured,
+        )
+        planning_model = (
+            dependencies.semantic_planning_model
+            if dependencies is not None
+            else llm
+        )
+        search_outcome = run_adaptive_search(
+            state=graph_program,
+            uncertainty=uncertainty,
+            profile_context=learned_evidence.structured,
+            runtime_schema=full_schema,
+            graph=graph,
+            model=planning_model,
+        )
+        planning_debug = {
+            "semantic_contract": semantic_contract.model_dump(mode="json"),
+            "graph_program": graph_program.model_dump(mode="json"),
+            "uncertainty": uncertainty.model_dump(mode="json"),
+            "search": search_outcome.model_dump(mode="json"),
+            "mode": planning_mode,
+        }
+        if search_outcome.observations:
+            first_observation = search_outcome.observations[0]
+            planning_debug["selected_action"] = (
+                first_observation.action.model_dump(mode="json")
+            )
+            planning_debug["observation"] = (
+                first_observation.model_dump(mode="json")
+            )
+        if planning_mode == "active":
+            adaptive_evidence_context = search_outcome.evidence_context
+            sliced_schema = render_schema_slice(
+                full_schema,
+                search_outcome.final_state,
+            )
+            if sliced_schema:
+                db_schema = sliced_schema
+                planning_debug["schema_slice"] = {
+                    "chars": len(sliced_schema),
+                    "full_schema_chars": len(full_schema),
+                }
+        grounding_debug["adaptive_planning"] = planning_debug
+        trace_event(
+            logger,
+            trace_id,
+            "CHAIN-04A",
+            f"Adaptive graph program planning evaluated in {planning_mode} mode",
+            planning_debug,
+        )
     trace_event(
         logger,
         trace_id,
@@ -241,7 +322,15 @@ def invoke_chain(
         messages = _build_coder_messages(
             schema=db_schema,
             learned_context=learned_context,
-            evidence_context=f"{entity_context}\n\n{property_context}",
+            evidence_context="\n\n".join(
+                part
+                for part in (
+                    adaptive_evidence_context,
+                    entity_context,
+                    property_context,
+                )
+                if part
+            ),
             question=question,
             current_cypher=current_cypher,
             last_error=last_error,
@@ -367,6 +456,32 @@ def invoke_chain(
                 "Neo4j execution completed",
                 _result_summary(raw_result),
             )
+
+            if semantic_contract is not None:
+                verification = verify_candidate(
+                    contract=semantic_contract,
+                    cypher=current_cypher,
+                    rows=raw_result,
+                    graph=graph if planning_mode == "active" else None,
+                    row_cap=_execution_row_cap(),
+                )
+                grounding_debug["candidate_verification"] = (
+                    verification.model_dump(mode="json")
+                )
+                trace_event(
+                    logger,
+                    trace_id,
+                    "CHAIN-09V",
+                    "Semantic contract and metamorphic verification completed",
+                    grounding_debug["candidate_verification"],
+                )
+                if (
+                    planning_mode == "active"
+                    and verification.contradictions
+                    and attempt < max_cypher_retries
+                ):
+                    last_error = verification_feedback(verification)
+                    continue
 
             quality_feedback = _result_quality_feedback(
                 raw_result,

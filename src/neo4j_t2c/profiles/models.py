@@ -37,6 +37,7 @@ class ProfileDocument(BaseModel):
     schema_fingerprint: str = ""
     row_count: int = Field(default=0, ge=0)
     schema_profile: dict[str, Any] = Field(default_factory=dict)
+    planner_profile: dict[str, Any] = Field(default_factory=dict)
     value_profile: dict[str, Any] = Field(default_factory=dict)
     query_recipe_profile: dict[str, Any] = Field(default_factory=dict)
     build_options: dict[str, Any] = Field(default_factory=dict)

@@ -108,6 +108,49 @@ def _schema_signature(
             }
         )
 
+    indexes = []
+    for item in schema_profile.get("indexes", []):
+        if not isinstance(item, Mapping):
+            continue
+        indexes.append(
+            {
+                "name": str(item.get("name") or ""),
+                "type": str(item.get("type") or ""),
+                "entity_type": str(item.get("entity_type") or ""),
+                "labels_or_types": sorted(
+                    str(value)
+                    for value in item.get("labels_or_types", [])
+                ),
+                "properties": sorted(
+                    str(value) for value in item.get("properties", [])
+                ),
+                "dimensions": item.get("dimensions"),
+                "similarity_function": str(
+                    item.get("similarity_function") or ""
+                ),
+            }
+        )
+
+    constraints = []
+    for item in schema_profile.get("constraints", []):
+        if not isinstance(item, Mapping):
+            continue
+        constraints.append(
+            {
+                "name": str(item.get("name") or ""),
+                "type": str(item.get("type") or ""),
+                "entity_type": str(item.get("entity_type") or ""),
+                "labels_or_types": sorted(
+                    str(value)
+                    for value in item.get("labels_or_types", [])
+                ),
+                "properties": sorted(
+                    str(value) for value in item.get("properties", [])
+                ),
+                "property_type": str(item.get("property_type") or ""),
+            }
+        )
+
     return {
         "labels": sorted(labels, key=lambda item: item["label"]),
         "relationships": sorted(
@@ -119,6 +162,11 @@ def _schema_signature(
         ),
         "vector_indexes": sorted(
             vector_indexes,
+            key=lambda item: item["name"],
+        ),
+        "indexes": sorted(indexes, key=lambda item: item["name"]),
+        "constraints": sorted(
+            constraints,
             key=lambda item: item["name"],
         ),
     }

@@ -104,12 +104,15 @@ def _render_summary(state: StudioState, run_id: str) -> None:
 
     if summary.get("error"):
         st.error(str(summary["error"]))
-    if status == RunStatus.RUNNING.value and st.button(
-        "Stop benchmark",
-        type="secondary",
-    ):
-        state.benchmarks.stop()
-        st.rerun()
+    managed_by_this_client = state.benchmarks.active_run_id == run_id
+    if status == RunStatus.RUNNING.value:
+        if managed_by_this_client:
+            if st.button(
+                "Stop benchmark",
+                type="secondary",
+            ):
+                state.benchmarks.stop()
+                st.rerun()
     resumable = status in {
         RunStatus.INTERRUPTED.value,
         RunStatus.CANCELLED.value,

@@ -23,7 +23,6 @@ class BenchmarkStore:
         )
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self._initialize()
-        self.mark_interrupted_runs()
 
     def _connect(self) -> sqlite3.Connection:
         connection = sqlite3.connect(self.path, timeout=30)

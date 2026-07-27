@@ -41,14 +41,20 @@ class EntityEvidence:
         return bool(self.vector_resolution.get("active"))
 
 
-def get_learned_profile_context(
+@dataclass(frozen=True)
+class LearnedProfileEvidence:
+    context: str
+    structured: dict
+
+
+def get_learned_profile_evidence(
     question: str,
     trace_id: str,
     *,
     database: str | None = None,
     profile_store: ProfileStore | None = None,
     reranker_model: ChatModel | None = None,
-) -> str:
+) -> LearnedProfileEvidence:
     """Load the generated query/data profile for the active logical database."""
     db_name = database or legacy_database_names()[0]
     path = profile_path(db_name) if profile_store is None else None
@@ -79,11 +85,14 @@ def get_learned_profile_context(
                 "build_command": build_command,
             },
         )
-        return (
-            "=== LEARNED DATA/QUERY PROFILE CONTEXT ===\n"
-            "No learned profile is available for this database.\n"
-            f"Profile expected at: {location}\n"
-            f"Build command: {build_command}"
+        return LearnedProfileEvidence(
+            context=(
+                "=== LEARNED DATA/QUERY PROFILE CONTEXT ===\n"
+                "No learned profile is available for this database.\n"
+                f"Profile expected at: {location}\n"
+                f"Build command: {build_command}"
+            ),
+            structured={},
         )
 
     try:
@@ -117,7 +126,7 @@ def get_learned_profile_context(
                 "reranking": context.get("reranking", {}),
             },
         )
-        return formatted
+        return LearnedProfileEvidence(context=formatted, structured=context)
     except Exception as exc:
         logger.warning("[Context] Failed to load learned profile: %s", exc)
         trace_event(
@@ -127,10 +136,31 @@ def get_learned_profile_context(
             "Learned profile context failed to load; continue without it",
             {"error": str(exc), "profile_location": location},
         )
-        return (
-            "=== LEARNED DATA/QUERY PROFILE CONTEXT ===\n"
-            "Profile loading failed; rely on runtime schema and live evidence."
+        return LearnedProfileEvidence(
+            context=(
+                "=== LEARNED DATA/QUERY PROFILE CONTEXT ===\n"
+                "Profile loading failed; rely on runtime schema and live evidence."
+            ),
+            structured={},
         )
+
+
+def get_learned_profile_context(
+    question: str,
+    trace_id: str,
+    *,
+    database: str | None = None,
+    profile_store: ProfileStore | None = None,
+    reranker_model: ChatModel | None = None,
+) -> str:
+    """Compatibility wrapper returning only prompt-ready profile context."""
+    return get_learned_profile_evidence(
+        question,
+        trace_id,
+        database=database,
+        profile_store=profile_store,
+        reranker_model=reranker_model,
+    ).context
 
 
 def get_runtime_property_context(

@@ -20,7 +20,7 @@
       }
     ]
   },
-  "schema_fingerprint": "sha256:9cfffc0394d0a570fba1bcda1604698d3acf45bfb61fc8a0a315f87898355c05",
+  "schema_fingerprint": "sha256:bd754e41b1b32916ea2d01900259084afc8f5e5bdcbe2e934bc6f0262cbadd4f",
   "row_count": 185,
   "schema_profile": {
     "labels": [
@@ -92,7 +92,14 @@
           {
             "from": "Person",
             "to": "Movie",
-            "count": null
+            "count": 172,
+            "count_kind": "upper_bound",
+            "count_method": "neo4j_min_endpoint_counts",
+            "relationship_count": 172,
+            "start_endpoint_count": 172,
+            "end_endpoint_count": 172,
+            "outgoing_fanout": 1.2932330827067668,
+            "incoming_fanout": 4.526315789473684
           }
         ],
         "properties": [
@@ -112,7 +119,14 @@
           {
             "from": "Person",
             "to": "Movie",
-            "count": null
+            "count": 44,
+            "count_kind": "upper_bound",
+            "count_method": "neo4j_min_endpoint_counts",
+            "relationship_count": 44,
+            "start_endpoint_count": 44,
+            "end_endpoint_count": 44,
+            "outgoing_fanout": 0.3308270676691729,
+            "incoming_fanout": 1.1578947368421053
           }
         ],
         "properties": []
@@ -123,7 +137,14 @@
           {
             "from": "Person",
             "to": "Person",
-            "count": null
+            "count": 3,
+            "count_kind": "upper_bound",
+            "count_method": "neo4j_min_endpoint_counts",
+            "relationship_count": 3,
+            "start_endpoint_count": 3,
+            "end_endpoint_count": 3,
+            "outgoing_fanout": 0.022556390977443608,
+            "incoming_fanout": 0.022556390977443608
           }
         ],
         "properties": []
@@ -134,7 +155,14 @@
           {
             "from": "Person",
             "to": "Movie",
-            "count": null
+            "count": 15,
+            "count_kind": "upper_bound",
+            "count_method": "neo4j_min_endpoint_counts",
+            "relationship_count": 15,
+            "start_endpoint_count": 15,
+            "end_endpoint_count": 15,
+            "outgoing_fanout": 0.11278195488721804,
+            "incoming_fanout": 0.39473684210526316
           }
         ],
         "properties": []
@@ -145,7 +173,14 @@
           {
             "from": "Person",
             "to": "Movie",
-            "count": null
+            "count": 9,
+            "count_kind": "upper_bound",
+            "count_method": "neo4j_min_endpoint_counts",
+            "relationship_count": 9,
+            "start_endpoint_count": 9,
+            "end_endpoint_count": 9,
+            "outgoing_fanout": 0.06766917293233082,
+            "incoming_fanout": 0.23684210526315788
           }
         ],
         "properties": [
@@ -173,7 +208,14 @@
           {
             "from": "Person",
             "to": "Movie",
-            "count": null
+            "count": 10,
+            "count_kind": "upper_bound",
+            "count_method": "neo4j_min_endpoint_counts",
+            "relationship_count": 10,
+            "start_endpoint_count": 10,
+            "end_endpoint_count": 10,
+            "outgoing_fanout": 0.07518796992481203,
+            "incoming_fanout": 0.2631578947368421
           }
         ],
         "properties": []
@@ -319,6 +361,142 @@
       "limit": 10000,
       "max_hops": 8
     },
+    "indexes": [
+      {
+        "name": "__org_neo4j_schema_index_label_scan_store_converted_to_token_index",
+        "type": "LOOKUP",
+        "entity_type": "NODE",
+        "labels_or_types": [],
+        "properties": [],
+        "state": "ONLINE",
+        "population_percent": 100.0,
+        "owning_constraint": null,
+        "dimensions": null,
+        "similarity_function": null,
+        "provider": "token-lookup-1.0"
+      },
+      {
+        "name": "constraint_3044d997",
+        "type": "RANGE",
+        "entity_type": "NODE",
+        "labels_or_types": [
+          "Movie"
+        ],
+        "properties": [
+          "title"
+        ],
+        "state": "ONLINE",
+        "population_percent": 100.0,
+        "owning_constraint": "constraint_3044d997",
+        "dimensions": null,
+        "similarity_function": null,
+        "provider": "range-1.0"
+      },
+      {
+        "name": "constraint_e26b1a8b",
+        "type": "RANGE",
+        "entity_type": "NODE",
+        "labels_or_types": [
+          "Person"
+        ],
+        "properties": [
+          "name"
+        ],
+        "state": "ONLINE",
+        "population_percent": 100.0,
+        "owning_constraint": "constraint_e26b1a8b",
+        "dimensions": null,
+        "similarity_function": null,
+        "provider": "range-1.0"
+      },
+      {
+        "name": "index_1d2d0abd",
+        "type": "RANGE",
+        "entity_type": "NODE",
+        "labels_or_types": [
+          "Person"
+        ],
+        "properties": [
+          "born"
+        ],
+        "state": "ONLINE",
+        "population_percent": 100.0,
+        "owning_constraint": null,
+        "dimensions": null,
+        "similarity_function": null,
+        "provider": "range-1.0"
+      },
+      {
+        "name": "index_f3bd8bc6",
+        "type": "RANGE",
+        "entity_type": "NODE",
+        "labels_or_types": [
+          "Person"
+        ],
+        "properties": [
+          "released"
+        ],
+        "state": "ONLINE",
+        "population_percent": 100.0,
+        "owning_constraint": null,
+        "dimensions": null,
+        "similarity_function": null,
+        "provider": "range-1.0"
+      }
+    ],
+    "index_discovery": {
+      "status": "available",
+      "count": 5,
+      "error_type": null,
+      "message": ""
+    },
+    "constraints": [
+      {
+        "name": "constraint_3044d997",
+        "type": "UNIQUENESS",
+        "entity_type": "NODE",
+        "labels_or_types": [
+          "Movie"
+        ],
+        "properties": [
+          "title"
+        ],
+        "owned_index": "constraint_3044d997",
+        "property_type": null
+      },
+      {
+        "name": "constraint_e26b1a8b",
+        "type": "UNIQUENESS",
+        "entity_type": "NODE",
+        "labels_or_types": [
+          "Person"
+        ],
+        "properties": [
+          "name"
+        ],
+        "owned_index": "constraint_e26b1a8b",
+        "property_type": null
+      },
+      {
+        "name": "movie_votes_int",
+        "type": "NODE_PROPERTY_TYPE",
+        "entity_type": "NODE",
+        "labels_or_types": [
+          "Movie"
+        ],
+        "properties": [
+          "votes"
+        ],
+        "owned_index": null,
+        "property_type": "INTEGER"
+      }
+    ],
+    "constraint_discovery": {
+      "status": "available",
+      "count": 3,
+      "error_type": null,
+      "message": ""
+    },
     "vector_indexes": [],
     "vector_index_discovery": {
       "status": "available",
@@ -358,39 +536,281 @@
           "type": "ACTED_IN",
           "from": "Person",
           "to": "Movie",
-          "count": null
+          "count": 172
         },
         {
           "type": "DIRECTED",
           "from": "Person",
           "to": "Movie",
-          "count": null
+          "count": 44
         },
         {
           "type": "FOLLOWS",
           "from": "Person",
           "to": "Person",
-          "count": null
+          "count": 3
         },
         {
           "type": "PRODUCED",
           "from": "Person",
           "to": "Movie",
-          "count": null
+          "count": 15
         },
         {
           "type": "REVIEWED",
           "from": "Person",
           "to": "Movie",
-          "count": null
+          "count": 9
         },
         {
           "type": "WROTE",
           "from": "Person",
           "to": "Movie",
-          "count": null
+          "count": 10
         }
       ]
+    }
+  },
+  "planner_profile": {
+    "access_paths": {
+      "indexes": [
+        {
+          "name": "__org_neo4j_schema_index_label_scan_store_converted_to_token_index",
+          "type": "LOOKUP",
+          "entity_type": "NODE",
+          "labels_or_types": [],
+          "properties": [],
+          "state": "ONLINE",
+          "population_percent": 100.0,
+          "owning_constraint": null,
+          "dimensions": null,
+          "similarity_function": null,
+          "provider": "token-lookup-1.0"
+        },
+        {
+          "name": "constraint_3044d997",
+          "type": "RANGE",
+          "entity_type": "NODE",
+          "labels_or_types": [
+            "Movie"
+          ],
+          "properties": [
+            "title"
+          ],
+          "state": "ONLINE",
+          "population_percent": 100.0,
+          "owning_constraint": "constraint_3044d997",
+          "dimensions": null,
+          "similarity_function": null,
+          "provider": "range-1.0"
+        },
+        {
+          "name": "constraint_e26b1a8b",
+          "type": "RANGE",
+          "entity_type": "NODE",
+          "labels_or_types": [
+            "Person"
+          ],
+          "properties": [
+            "name"
+          ],
+          "state": "ONLINE",
+          "population_percent": 100.0,
+          "owning_constraint": "constraint_e26b1a8b",
+          "dimensions": null,
+          "similarity_function": null,
+          "provider": "range-1.0"
+        },
+        {
+          "name": "index_1d2d0abd",
+          "type": "RANGE",
+          "entity_type": "NODE",
+          "labels_or_types": [
+            "Person"
+          ],
+          "properties": [
+            "born"
+          ],
+          "state": "ONLINE",
+          "population_percent": 100.0,
+          "owning_constraint": null,
+          "dimensions": null,
+          "similarity_function": null,
+          "provider": "range-1.0"
+        },
+        {
+          "name": "index_f3bd8bc6",
+          "type": "RANGE",
+          "entity_type": "NODE",
+          "labels_or_types": [
+            "Person"
+          ],
+          "properties": [
+            "released"
+          ],
+          "state": "ONLINE",
+          "population_percent": 100.0,
+          "owning_constraint": null,
+          "dimensions": null,
+          "similarity_function": null,
+          "provider": "range-1.0"
+        }
+      ],
+      "constraints": [
+        {
+          "name": "constraint_3044d997",
+          "type": "UNIQUENESS",
+          "entity_type": "NODE",
+          "labels_or_types": [
+            "Movie"
+          ],
+          "properties": [
+            "title"
+          ],
+          "owned_index": "constraint_3044d997",
+          "property_type": null
+        },
+        {
+          "name": "constraint_e26b1a8b",
+          "type": "UNIQUENESS",
+          "entity_type": "NODE",
+          "labels_or_types": [
+            "Person"
+          ],
+          "properties": [
+            "name"
+          ],
+          "owned_index": "constraint_e26b1a8b",
+          "property_type": null
+        },
+        {
+          "name": "movie_votes_int",
+          "type": "NODE_PROPERTY_TYPE",
+          "entity_type": "NODE",
+          "labels_or_types": [
+            "Movie"
+          ],
+          "properties": [
+            "votes"
+          ],
+          "owned_index": null,
+          "property_type": "INTEGER"
+        }
+      ],
+      "index_discovery": {
+        "status": "available",
+        "count": 5,
+        "error_type": null,
+        "message": ""
+      },
+      "constraint_discovery": {
+        "status": "available",
+        "count": 3,
+        "error_type": null,
+        "message": ""
+      }
+    },
+    "graph_statistics": {
+      "source": "cypher_count_store_queries",
+      "all_node_count": 171,
+      "all_relationship_count": 253,
+      "node_counts": {
+        "Movie": 38,
+        "Person": 133
+      },
+      "relationship_counts": {
+        "ACTED_IN": 172,
+        "DIRECTED": 44,
+        "FOLLOWS": 3,
+        "PRODUCED": 15,
+        "REVIEWED": 9,
+        "WROTE": 10
+      },
+      "relationship_start_counts": {
+        "Person|ACTED_IN": 172,
+        "Person|DIRECTED": 44,
+        "Person|FOLLOWS": 3,
+        "Person|PRODUCED": 15,
+        "Person|REVIEWED": 9,
+        "Person|WROTE": 10
+      },
+      "relationship_end_counts": {
+        "ACTED_IN|Movie": 172,
+        "DIRECTED|Movie": 44,
+        "FOLLOWS|Person": 3,
+        "PRODUCED|Movie": 15,
+        "REVIEWED|Movie": 9,
+        "WROTE|Movie": 10
+      },
+      "index_statistics": [],
+      "pattern_steps": [
+        {
+          "from": "Person",
+          "type": "ACTED_IN",
+          "to": "Movie",
+          "estimated_count": 172,
+          "count_kind": "upper_bound",
+          "count_method": "neo4j_min_endpoint_counts",
+          "outgoing_fanout": 1.2932330827067668,
+          "incoming_fanout": 4.526315789473684
+        },
+        {
+          "from": "Person",
+          "type": "DIRECTED",
+          "to": "Movie",
+          "estimated_count": 44,
+          "count_kind": "upper_bound",
+          "count_method": "neo4j_min_endpoint_counts",
+          "outgoing_fanout": 0.3308270676691729,
+          "incoming_fanout": 1.1578947368421053
+        },
+        {
+          "from": "Person",
+          "type": "FOLLOWS",
+          "to": "Person",
+          "estimated_count": 3,
+          "count_kind": "upper_bound",
+          "count_method": "neo4j_min_endpoint_counts",
+          "outgoing_fanout": 0.022556390977443608,
+          "incoming_fanout": 0.022556390977443608
+        },
+        {
+          "from": "Person",
+          "type": "PRODUCED",
+          "to": "Movie",
+          "estimated_count": 15,
+          "count_kind": "upper_bound",
+          "count_method": "neo4j_min_endpoint_counts",
+          "outgoing_fanout": 0.11278195488721804,
+          "incoming_fanout": 0.39473684210526316
+        },
+        {
+          "from": "Person",
+          "type": "REVIEWED",
+          "to": "Movie",
+          "estimated_count": 9,
+          "count_kind": "upper_bound",
+          "count_method": "neo4j_min_endpoint_counts",
+          "outgoing_fanout": 0.06766917293233082,
+          "incoming_fanout": 0.23684210526315788
+        },
+        {
+          "from": "Person",
+          "type": "WROTE",
+          "to": "Movie",
+          "estimated_count": 10,
+          "count_kind": "upper_bound",
+          "count_method": "neo4j_min_endpoint_counts",
+          "outgoing_fanout": 0.07518796992481203,
+          "incoming_fanout": 0.2631578947368421
+        }
+      ],
+      "discovery": {
+        "status": "fallback",
+        "count": 20,
+        "error_type": null,
+        "message": "db.stats unavailable; used count-store-compatible Cypher"
+      }
     }
   },
   "value_profile": {

@@ -21,6 +21,7 @@ class PipelineDependencies:
     graph: GraphClient
     cypher_model: ChatModel
     grounding_model: ChatModel | None = None
+    planning_model: ChatModel | None = None
     profile_store: ProfileStore | None = None
     trace_sink: TraceSink | None = None
 
@@ -37,3 +38,7 @@ class PipelineDependencies:
     @property
     def schema_grounding_model(self) -> ChatModel:
         return self.grounding_model or self.cypher_model
+
+    @property
+    def semantic_planning_model(self) -> ChatModel:
+        return self.planning_model or self.cypher_model

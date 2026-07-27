@@ -9,6 +9,7 @@ from typing import Any
 from neo4j import GraphDatabase
 
 from neo4j_t2c.profiles import migrate_profile_payload
+from neo4j_t2c.profiles.builders import planner_evidence
 from neo4j_t2c.profiles.cypher_analysis import (
     parse_cypher_shape,
     summarize_shapes,
@@ -116,58 +117,49 @@ def _schema_visualization(session: Any) -> tuple[dict[str, list[str]], list[dict
     return {label: sorted(props) for label, props in label_props.items()}, patterns
 
 
-def _collect_vector_indexes(session: Any) -> tuple[list[dict], dict]:
-    try:
-        rows = _query(
-            session,
-            """
-            SHOW INDEXES
-            YIELD name, type, entityType, labelsOrTypes, properties, state, options
-            WHERE type = 'VECTOR'
-            RETURN name, entityType, labelsOrTypes, properties, state, options
-            ORDER BY name
-            """,
-        )
-    except Exception as exc:
-        return [], {
-            "status": "unavailable",
-            "count": None,
-            "error_type": type(exc).__name__,
-            "message": str(exc)[:500],
-        }
+def _available_discovery(count: int) -> dict:
+    return planner_evidence.available(count)
 
-    indexes: list[dict] = []
-    for row in rows:
-        labels = [
-            str(label)
-            for label in row.get("labelsOrTypes") or []
-            if not _is_internal_schema_name(str(label))
-        ]
-        properties = [str(prop) for prop in row.get("properties") or []]
-        if not labels or not properties:
-            continue
-        options = row.get("options") or {}
-        index_config = options.get("indexConfig") or {}
-        indexes.append(
-            {
-                "name": str(row.get("name") or ""),
-                "entity_type": str(row.get("entityType") or ""),
-                "labels_or_types": labels,
-                "properties": properties,
-                "state": str(row.get("state") or ""),
-                "dimensions": index_config.get("vector.dimensions"),
-                "similarity_function": index_config.get(
-                    "vector.similarity_function"
-                ),
-                "provider": options.get("indexProvider"),
-            }
-        )
-    return indexes, {
-        "status": "available",
-        "count": len(indexes),
-        "error_type": None,
-        "message": "",
-    }
+
+def _collect_indexes(session: Any) -> tuple[list[dict], dict]:
+    return planner_evidence.collect_indexes(session, _query)
+
+
+def _vector_indexes_from_indexes(indexes: list[dict]) -> list[dict]:
+    return planner_evidence.vector_indexes(indexes)
+
+
+def _collect_vector_indexes(session: Any) -> tuple[list[dict], dict]:
+    indexes, discovery = _collect_indexes(session)
+    if discovery["status"] != "available":
+        return [], discovery
+    vector_indexes = _vector_indexes_from_indexes(indexes)
+    return vector_indexes, _available_discovery(len(vector_indexes))
+
+
+def _collect_constraints(session: Any) -> tuple[list[dict], dict]:
+    return planner_evidence.collect_constraints(session, _query)
+
+
+def _collect_graph_statistics(session: Any) -> tuple[dict, dict]:
+    return planner_evidence.collect_graph_statistics(session, _query)
+
+
+def _fallback_graph_statistics(labels: list[dict]) -> dict:
+    return planner_evidence.fallback_graph_statistics(labels)
+
+
+def _collect_count_store_statistics(
+    session: Any,
+    labels: list[dict],
+    relationships: list[dict],
+) -> tuple[dict, dict]:
+    return planner_evidence.collect_count_store_statistics(
+        session,
+        _query,
+        labels,
+        relationships,
+    )
 
 
 def _sample_node_properties(session: Any, label: str, sample_limit: int) -> list[str]:
@@ -378,6 +370,20 @@ def _collect_relationships(
             }
         )
     return relationships
+
+
+def _attach_pattern_statistics(
+    relationships: list[dict],
+    statistics: dict,
+) -> list[dict]:
+    return planner_evidence.attach_pattern_statistics(
+        relationships,
+        statistics,
+    )
+
+
+def _pattern_step_statistics(relationships: list[dict]) -> list[dict]:
+    return planner_evidence.pattern_steps(relationships)
 
 
 def _label_examples(labels: list[dict]) -> list[dict]:
@@ -655,9 +661,17 @@ def _value_limit_clause(value_limit: int) -> tuple[str, dict]:
     return "", {}
 
 
-def _collect_value_profile(session: Any, labels: list[dict], value_limit: int) -> dict:
+def _collect_value_profile(
+    session: Any,
+    labels: list[dict],
+    sample_limit: int,
+    value_limit: int,
+) -> dict:
     profile: dict[str, dict] = {}
     limit_clause, params = _value_limit_clause(value_limit)
+    sample_clause = "WITH n LIMIT $sample_limit" if sample_limit > 0 else ""
+    if sample_limit > 0:
+        params["sample_limit"] = sample_limit
     for label_info in labels:
         label = label_info["label"]
         label_values: dict[str, list] = {}
@@ -673,6 +687,7 @@ def _collect_value_profile(session: Any, labels: list[dict], value_limit: int) -
                     f"""
                     MATCH (n:{_quote_ident(label)})
                     WHERE n.{_quote_ident(prop)} IS NOT NULL
+                    {sample_clause}
                     RETURN n.{_quote_ident(prop)} AS value, count(*) AS frequency
                     ORDER BY frequency DESC, value
                     {limit_clause}
@@ -796,11 +811,34 @@ def build_profile_from_neo4j(
                 effective_sample_limit,
                 visual_patterns,
             )
-            vector_indexes, vector_index_discovery = _collect_vector_indexes(session)
+            indexes, index_discovery = _collect_indexes(session)
+            vector_indexes = _vector_indexes_from_indexes(indexes)
+            vector_index_discovery = (
+                _available_discovery(len(vector_indexes))
+                if index_discovery["status"] == "available"
+                else index_discovery
+            )
+            constraints, constraint_discovery = _collect_constraints(session)
+            graph_statistics, graph_statistics_discovery = (
+                _collect_graph_statistics(session)
+            )
+            if not graph_statistics:
+                graph_statistics, graph_statistics_discovery = (
+                    _collect_count_store_statistics(
+                        session,
+                        labels,
+                        relationships,
+                    )
+                )
+            relationships = _attach_pattern_statistics(
+                relationships,
+                graph_statistics,
+            )
             value_profile = (
                 _collect_value_profile(
                     session,
                     labels,
+                    effective_sample_limit,
                     effective_value_limit,
                 )
                 if include_value_profile
@@ -849,6 +887,10 @@ def build_profile_from_neo4j(
             "relationships": relationships,
             "paths": paths,
             "path_discovery": path_discovery,
+            "indexes": indexes,
+            "index_discovery": index_discovery,
+            "constraints": constraints,
+            "constraint_discovery": constraint_discovery,
             "vector_indexes": vector_indexes,
             "vector_index_discovery": vector_index_discovery,
             "summary": _summarize_live_profile(
@@ -859,6 +901,19 @@ def build_profile_from_neo4j(
                 vector_index_discovery,
                 path_discovery,
             ),
+        },
+        "planner_profile": {
+            "access_paths": {
+                "indexes": indexes,
+                "constraints": constraints,
+                "index_discovery": index_discovery,
+                "constraint_discovery": constraint_discovery,
+            },
+            "graph_statistics": {
+                **graph_statistics,
+                "pattern_steps": _pattern_step_statistics(relationships),
+                "discovery": graph_statistics_discovery,
+            },
         },
         "value_profile": value_profile,
         "query_recipe_profile": _build_query_recipes(labels, relationships, paths),

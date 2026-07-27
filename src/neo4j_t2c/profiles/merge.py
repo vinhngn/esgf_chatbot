@@ -59,6 +59,7 @@ def merge_profile_with_live_schema(
             "physical_database": live.get("physical_database") or "",
             "build_options": live.get("build_options") or {},
             "schema_profile": live.get("schema_profile") or {},
+            "planner_profile": live.get("planner_profile") or {},
             "value_profile": live.get("value_profile") or {},
             "query_recipe_profile": live.get("query_recipe_profile") or {},
             "examples": learned_examples,

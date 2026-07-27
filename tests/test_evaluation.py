@@ -147,6 +147,27 @@ def test_benchmark_store_persists_incremental_summary(tmp_path: Path) -> None:
     assert summary["exact_match"] == 1.0
 
 
+def test_opening_a_second_store_does_not_interrupt_an_external_run(tmp_path: Path) -> None:
+    input_file = _dataset(tmp_path / "sample.csv")
+    config = BenchmarkConfig(dataset="sample", input_file=input_file)
+    path = tmp_path / "results.sqlite3"
+    first_store = BenchmarkStore(path)
+    first_store.create_run(
+        "external-run",
+        config,
+        logical_database="sample",
+        physical_database="neo4j",
+        target_rows=1,
+    )
+    first_store.update_run("external-run", RunStatus.RUNNING)
+
+    second_store = BenchmarkStore(path)
+    summary = second_store.run_summary("external-run")
+
+    assert summary is not None
+    assert summary["status"] == RunStatus.RUNNING.value
+
+
 def test_resume_preserves_completed_rows_and_skips_them(
     monkeypatch,
     tmp_path: Path,

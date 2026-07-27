@@ -15,6 +15,7 @@ def create_engine(
     model: ChatModel,
     physical_database: str | None = None,
     grounding_model: ChatModel | None = None,
+    planning_model: ChatModel | None = None,
     profile_store: ProfileStore | None = None,
     profile_directory: str | Path | None = None,
     trace_sink: TraceSink | None = None,
@@ -37,6 +38,7 @@ def create_engine(
         graph=graph,
         cypher_model=model,
         grounding_model=grounding_model,
+        planning_model=planning_model,
         profile_store=resolved_store,
         trace_sink=trace_sink,
     )

@@ -10,6 +10,7 @@ from typing import Any
 from langchain_core.messages import HumanMessage, SystemMessage
 from pydantic import BaseModel, Field
 
+from neo4j_t2c.planning.models import SemanticContract
 from neo4j_t2c.profiles import load_profile_file
 from neo4j_t2c.profiles.question_evidence import (
     extract_question_evidence,
@@ -253,10 +254,13 @@ class _RerankDecision(BaseModel):
     selected_row: int | None = None
     confidence: float = Field(default=0, ge=0, le=1)
     reason: str = ""
+    semantic_contract: SemanticContract | None = None
 
 
-_RERANK_SYSTEM_PROMPT = """Select the learned query example whose semantic structure
-best matches the current graph question. You are selecting evidence, not writing Cypher.
+_RERANK_SYSTEM_PROMPT = """First express the current question as a schema-independent
+semantic contract. Then select the learned query example whose semantic structure best
+matches that contract. You are interpreting language and selecting evidence, not writing
+Cypher or inventing Neo4j schema.
 
 Compare:
 1. target entity and relationship roles,
@@ -271,7 +275,27 @@ question did not request is a structural mismatch. Among otherwise equivalent
 candidates, select the minimum sufficient contract. Candidate order and lexical
 score are not evidence. Select null when no candidate is structurally reliable.
 Return one JSON object only:
-{"selected_row": integer_or_null, "confidence": 0.0, "reason": "brief"}"""
+{
+  "semantic_contract": {
+    "target_concepts": ["domain concepts requested as output"],
+    "operation": "retrieve|count|aggregate|rank|compare|path|exists",
+    "metric": "quantity being measured or empty",
+    "relations": ["semantic relationships between concepts"],
+    "grouping": ["grouping concepts"],
+    "projections": ["requested output concepts or attributes"],
+    "constraints": [
+      {"subject": "concept", "attribute": "attribute or empty",
+       "operator": "semantic operator", "value": "literal or empty"}
+    ],
+    "order": "none|ascending|descending",
+    "limit": null,
+    "ambiguities": ["unresolved meanings only"],
+    "confidence": 0.0
+  },
+  "selected_row": integer_or_null,
+  "confidence": 0.0,
+  "reason": "brief"
+}"""
 
 
 def _json_object(text: str) -> dict[str, Any]:
@@ -310,8 +334,6 @@ def rerank_profile_context(
 ) -> dict:
     """Cross-rank lexical candidates by semantic query structure."""
     candidates = list(context.get("selected_examples", []))
-    if not candidates:
-        return context
 
     payload = {
         "question": question,
@@ -365,6 +387,10 @@ def rerank_profile_context(
         "confidence": decision.confidence,
         "reason": decision.reason,
     }
+    if decision.semantic_contract is not None:
+        reranked["semantic_contract"] = decision.semantic_contract.model_dump(
+            mode="json"
+        )
     if selected_row is None:
         reranked["selected_recipes"] = []
         reranked["query_plan_contract"] = {}
@@ -451,6 +477,11 @@ def select_profile_context(question: str, profile: dict, *, top_k: int = 5) -> d
         "schema_profile_summary": (
             profile.get("schema_profile", {}).get("summary", {})
             if isinstance(profile.get("schema_profile"), dict)
+            else {}
+        ),
+        "planner_profile": (
+            profile.get("planner_profile", {})
+            if isinstance(profile.get("planner_profile"), dict)
             else {}
         ),
         "vector_indexes": (

@@ -50,6 +50,13 @@ def test_merge_preserves_learned_examples_and_uses_live_schema() -> None:
         },
         "value_profile": {"Movie": {"title": [{"value": "Inception", "frequency": 1}]}},
         "query_recipe_profile": {"recipes": [{"name": "entity_list"}]},
+        "planner_profile": {
+            "access_paths": {
+                "indexes": [{"name": "movieEmbedding", "type": "VECTOR"}],
+                "constraints": [],
+            },
+            "graph_statistics": {"all_node_count": 100},
+        },
     }
 
     merged = merge_profile_with_live_schema(learned, live)
@@ -61,6 +68,7 @@ def test_merge_preserves_learned_examples_and_uses_live_schema() -> None:
     assert merged["schema_profile"] == live["schema_profile"]
     assert merged["value_profile"] == live["value_profile"]
     assert merged["query_recipe_profile"] == live["query_recipe_profile"]
+    assert merged["planner_profile"] == live["planner_profile"]
     assert merged["schema_fingerprint"]
     assert merged["provenance"]["sources"] == [
         {"source": "recommendations.csv", "source_type": "benchmark_csv"},

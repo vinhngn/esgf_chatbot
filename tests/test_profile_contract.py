@@ -52,6 +52,35 @@ def test_live_profile_fingerprint_ignores_counts() -> None:
     assert schema_fingerprint(changed) == schema_fingerprint(schema)
 
 
+def test_live_profile_fingerprint_tracks_indexes_and_constraints() -> None:
+    schema = {
+        "labels": [{"label": "Company", "properties": [{"name": "id"}]}],
+        "relationships": [],
+        "indexes": [
+            {
+                "name": "company_id",
+                "type": "RANGE",
+                "entity_type": "NODE",
+                "labels_or_types": ["Company"],
+                "properties": ["id"],
+            }
+        ],
+        "constraints": [
+            {
+                "name": "company_id_key",
+                "type": "NODE_KEY",
+                "entity_type": "NODE",
+                "labels_or_types": ["Company"],
+                "properties": ["id"],
+            }
+        ],
+    }
+    changed = copy.deepcopy(schema)
+    changed["constraints"][0]["type"] = "NODE_UNIQUENESS"
+
+    assert schema_fingerprint(changed) != schema_fingerprint(schema)
+
+
 def test_profile_loader_infers_database_from_filename(tmp_path) -> None:
     path = tmp_path / "custom_graph_profile.json"
     path.write_text(
@@ -141,6 +170,45 @@ def test_formatted_profile_context_emits_one_compact_dynamic_contract() -> None:
     assert "Live schema profile: 0 labels" not in formatted
 
 
+def test_profile_context_exposes_planner_evidence_without_prompt_dumping_it() -> None:
+    profile = {
+        "source_type": "neo4j_live",
+        "schema_profile": {
+            "summary": {"label_count": 2},
+            "paths": [],
+            "vector_indexes": [],
+        },
+        "planner_profile": {
+            "access_paths": {
+                "indexes": [{"name": "company_name", "type": "RANGE"}],
+                "constraints": [{"name": "company_id", "type": "NODE_KEY"}],
+            },
+            "graph_statistics": {
+                "all_node_count": 120,
+                "pattern_steps": [
+                    {
+                        "from": "Company",
+                        "type": "IN_INDUSTRY",
+                        "to": "Industry",
+                        "estimated_count": 95,
+                    }
+                ],
+            },
+        },
+        "query_recipe_profile": {},
+        "value_profile": {},
+        "examples": [],
+    }
+
+    context = select_profile_context(
+        "Which companies belong to an industry?",
+        profile,
+    )
+
+    assert context["planner_profile"] == profile["planner_profile"]
+    assert "company_name" not in format_profile_context(context)
+
+
 class _ProfileReranker:
     def __init__(self, selected_row: int | None, confidence: float = 0.95) -> None:
         self.selected_row = selected_row
@@ -155,6 +223,26 @@ class _ProfileReranker:
                     "selected_row": self.selected_row,
                     "confidence": self.confidence,
                     "reason": "The candidate preserves target, relation, and output shape.",
+                    "semantic_contract": {
+                        "target_concepts": ["lake"],
+                        "operation": "retrieve",
+                        "metric": "",
+                        "relations": ["situated within"],
+                        "grouping": [],
+                        "projections": ["lake name"],
+                        "constraints": [
+                            {
+                                "subject": "lake",
+                                "attribute": "location",
+                                "operator": "within",
+                                "value": "Armenia",
+                            }
+                        ],
+                        "order": "none",
+                        "limit": None,
+                        "ambiguities": [],
+                        "confidence": 0.96,
+                    },
                 }
             )
         )
@@ -203,6 +291,25 @@ def test_llm_reranker_selects_structurally_equivalent_profile_recipe() -> None:
     )
     assert reranked["query_plan_contract"]["expected_operation"] == "retrieve"
     assert reranked["reranking"]["selected_row"] == 4
+    assert reranked["semantic_contract"]["target_concepts"] == ["lake"]
+    assert reranked["semantic_contract"]["constraints"][0]["value"] == "Armenia"
+
+
+def test_llm_interprets_question_even_without_profile_candidates() -> None:
+    reranked = rerank_profile_context(
+        "Show every lake found within Armenia.",
+        {
+            "selected_examples": [],
+            "selected_recipes": [],
+            "query_plan_contract": {},
+            "schema_paths": [],
+        },
+        _ProfileReranker(selected_row=None),
+    )
+
+    assert reranked["semantic_contract"]["target_concepts"] == ["lake"]
+    assert reranked["query_plan_contract"] == {}
+    assert reranked["reranking"]["selected_row"] is None
 
 
 def test_llm_reranker_drops_contract_when_no_candidate_is_reliable() -> None:
