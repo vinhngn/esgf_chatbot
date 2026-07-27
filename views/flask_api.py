@@ -5,7 +5,7 @@ Business logic lives in services/rag_service.py.
 Endpoints:
     POST /api/text2cypher  — question → Cypher → raw DB results
     POST /api/rag          — question → Cypher → LLM-formatted response
-    POST /api/set_database — info endpoint (DB set via .env)
+    POST /api/set_database — info endpoint (DB set by the running process)
     GET  /api/databases    — list available databases
     GET  /api/runtime      — effective non-secret runtime configuration
     GET  /api/schema       — schema info for current or specified DB
@@ -282,7 +282,7 @@ def rag_endpoint():
 @app.post("/api/set_database")
 def set_database():
     """
-    Info endpoint — databases are configured via .env, not at runtime.
+    Info endpoint. The Studio injects the selected database when it starts this API.
     Returns current database and available options.
     """
     available = get_available_databases()
@@ -292,7 +292,7 @@ def set_database():
             "current_database": settings.profile_database_name,
             "physical_database": settings.database_name,
             "available": available,
-            "note": "Set NEO4J_DATABASE for the physical DB and T2C_PROFILE_DATABASE for its logical profile.",
+            "note": "Use the Studio Connection page to select the physical DB and logical profile before starting the API.",
         }
     )
 
@@ -333,7 +333,7 @@ def list_databases():
             "current": settings.profile_database_name,
             "physical_database": settings.database_name,
             "available": available,
-            "note": "Set NEO4J_DATABASE for the physical DB and T2C_PROFILE_DATABASE for its logical profile.",
+            "note": "Use the Studio Connection page to select the physical DB and logical profile before starting the API.",
         }
     )
 

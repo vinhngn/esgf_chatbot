@@ -17,6 +17,16 @@ from services.control_center.store import ConnectionStore
 from services.evaluation import BenchmarkManager, BenchmarkStore
 
 
+def default_t2c_framework_root(project_root: Path, store: ConnectionStore) -> Path:
+    saved = store.get_state("t2c_framework_root")
+    if saved:
+        return Path(saved).expanduser().resolve()
+    configured = os.getenv("T2C_FRAMEWORK_ROOT")
+    if configured:
+        return Path(configured).expanduser().resolve()
+    return project_root.parent / "t2c_eval_framework"
+
+
 @dataclass
 class StudioState:
     store: ConnectionStore
@@ -42,17 +52,13 @@ class StudioState:
 def get_studio_state() -> StudioState:
     store = ConnectionStore()
     secrets = KeyringSecretStore()
+    project_root = Path(__file__).resolve().parents[2]
     runtime = RuntimeManager(
-        project_root=Path(__file__).resolve().parents[2],
+        project_root=project_root,
         secrets=secrets,
     )
     benchmarks = BenchmarkManager(
-        framework_root=Path(
-            os.getenv(
-                "T2C_FRAMEWORK_ROOT",
-                r"D:\Agent\t2c_eval_framework",
-            )
-        )
+        framework_root=default_t2c_framework_root(project_root, store)
     )
     state = StudioState(
         store=store,

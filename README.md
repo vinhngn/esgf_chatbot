@@ -55,10 +55,41 @@ applications. New integrations should import from `neo4j_t2c`.
 
 ## Development
 
+### UI-first setup
+
+The Streamlit Studio is the preferred way to configure the system. You do not
+need to create a `.env` file for normal use.
+
+```bash
+python3.11 -m venv .venv
+source .venv/bin/activate
+python -m pip install -U pip
+python -m pip install -e ".[dev]"
+streamlit run views/streamlit_app.py
+```
+
+On Windows, activate the environment with:
+
 ```powershell
-py -m pip install -e ".[dev]"
-py -m pytest -q
+.\.venv\Scripts\Activate.ps1
+```
+
+Then open `http://127.0.0.1:8501` and configure everything in the UI:
+
+- `Connection`: Neo4j URI, username, password, physical database, and optional SSH tunnel.
+- `AI model`: OpenAI or local OpenAI-compatible model, API key, base URL, and fallback mode.
+- `Profile`: build or refresh the selected database profile.
+- `Benchmark`: set the T2C framework root, start/resume benchmark runs, and inspect results.
+
+The app stores connections and model settings in a local SQLite/keyring-backed
+client store. `.env` remains optional for scripts, CI, and advanced
+automation.
+
+### Checks
+
+```bash
+python -m pytest -q
 ruff check .
 ```
 
-The compatibility applications continue to use `requirements.txt`.
+The compatibility applications continue to support `requirements.txt`.

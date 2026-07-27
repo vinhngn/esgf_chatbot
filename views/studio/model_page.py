@@ -57,7 +57,7 @@ def _model_form(state: StudioState) -> tuple[str, dict]:
                 "OpenAI API key",
                 value=state.secrets.get(MODEL_SECRET_ID, OPENAI_API_KEY_SECRET),
                 type="password",
-                help="Leave empty to use OPENAI_API_KEY from the process environment.",
+                help="Stored locally for this Studio. Leave empty if the selected provider does not need a key.",
             )
             openai_timeout = st.number_input(
                 "OpenAI timeout (seconds)",

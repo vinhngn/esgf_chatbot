@@ -6,6 +6,9 @@ import re
 import sys
 from pathlib import Path
 
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_T2C_ROOT = PROJECT_ROOT.parent / "t2c_eval_framework"
+
 
 def _load_t2c(root: Path):
     sys.path.insert(0, str(root))
@@ -34,7 +37,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         description="Run a bounded T2C benchmark sample without editing T2C config files."
     )
-    parser.add_argument("--t2c-root", default=r"D:\Agent\t2c_eval_framework")
+    parser.add_argument("--t2c-root", default=str(DEFAULT_T2C_ROOT))
     parser.add_argument("--db", required=True, help="Logical database/profile name and CSV stem.")
     parser.add_argument("--rows", type=int, default=50)
     parser.add_argument("--endpoint", default="http://127.0.0.1:8954/api/text2cypher")

@@ -1,6 +1,6 @@
 """
 Centralized configuration - single source of truth.
-Reads from .env file, no more scattered secrets.toml files.
+Reads process environment with an optional .env fallback for scripts.
 """
 
 from __future__ import annotations
@@ -23,7 +23,7 @@ def _env_bool(name: str, default: bool) -> bool:
 
 
 class Settings:
-    """Application settings loaded from .env"""
+    """Application settings loaded from the effective runtime environment."""
 
     # Neo4j
     NEO4J_URI: str = os.getenv("NEO4J_URI", "")
