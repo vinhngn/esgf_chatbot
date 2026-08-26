@@ -65,7 +65,7 @@ python3.11 -m venv .venv
 source .venv/bin/activate
 python -m pip install -U pip
 python -m pip install -e ".[dev]"
-streamlit run views/streamlit_app.py
+python -m streamlit run views/streamlit_app.py
 ```
 
 On Windows, activate the environment with:
